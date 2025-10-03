@@ -9,17 +9,17 @@
   // import * as offerDraftControllers from "./offerDraftControllers/offerDraft.controller.js"
   // import * as productController from "./productControllers/product.controller.js";
   import * as locationController from "./location.controller.js";
+  import * as authcontroller from "./auth.controller.js"
   // import * as boOfferControllers from "./offerControllers/bo.offer.controllers.js"
   // import * as offerActionsControllers from "./offerControllers/offerAction.controllers.js"
 
   // Later you can add more controllers like:
   // import * as userController from "./userController.js";
-  // import * as authController from "./authController.js";
 
   export {
     // planController,
     // userController,
-    // authController,
+    authcontroller,
     // paymentController,
     // businessOwnerController,
     // businessOwnerControllers,

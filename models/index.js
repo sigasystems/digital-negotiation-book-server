@@ -1,6 +1,9 @@
 import sequelize from "../config/db.js";
 // import Plan from "./plan.model.js";
-// import User from "./user.model.js";
+import User from "./user.model.js";
+import BusinessOwner from "./businessOwner.model.js";
+import Buyer from "./buyers.model.js";
+import Role from "./roles.model.js";
 // import Payment from "./payment.model.js";
 // import BusinessOwner from "./businessOwner.model.js"
 // import Buyer from "./buyers.model.js";
@@ -18,12 +21,12 @@ import Location from "./location.model.js";
 
 export {
   sequelize,
-  // User,
+  User,
   // Plan,
   // Payment,
-  // BusinessOwner,
-  // Buyer,
-  // Role,
+  BusinessOwner,
+  Buyer,
+  Role,
   // OfferDraft,
   Location ,
   // Product,

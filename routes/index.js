@@ -8,6 +8,7 @@
 // import boOfferRoutes from "./offerRoutes/boOffer.routes.js"
 // import offerActionsRoutes from "./offerRoutes/offerActions.routes.js"
 import locationRoutes from "./location.route.js";
+import authRoutes from "./auth.routes.js"
 
 // export {authRoutes, boBuyersRoutes, businessOwnersRoutes, offerDraftRoutes, paymentRoutes, planRoutes, superadminRoutes, boOfferRoutes, offerActionsRoutes }
-export {locationRoutes};
+export {locationRoutes, authRoutes};
