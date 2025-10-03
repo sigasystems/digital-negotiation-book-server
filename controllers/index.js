@@ -10,6 +10,7 @@
   // import * as productController from "./productControllers/product.controller.js";
   import * as locationController from "./location.controller.js";
   import * as authcontroller from "./auth.controller.js"
+  import * as businessOwnerController from "./businessOwner.controllers.js"
   // import * as boOfferControllers from "./offerControllers/bo.offer.controllers.js"
   // import * as offerActionsControllers from "./offerControllers/offerAction.controllers.js"
 
@@ -22,7 +23,7 @@
     authcontroller,
     // paymentController,
     // businessOwnerController,
-    // businessOwnerControllers,
+    businessOwnerController,
     // boBuyersControllers,
     // offerDraftControllers,
     // productController,
