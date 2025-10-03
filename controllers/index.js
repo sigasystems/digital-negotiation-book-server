@@ -11,7 +11,9 @@
   import * as locationController from "./location.controller.js";
   import * as authcontroller from "./auth.controller.js"
   import * as businessOwnerController from "./businessOwner.controller.js"
-  import *  as superadminController from "./sa.businessowner.controller.js"
+  import * as superadminController from "./sa.businessowner.controller.js"
+  import * as offerController from "./offer.controller.js"
+  import * as offeDraftController from "./offerDraft.controller.js"
 
   
   // import * as boOfferControllers from "./offerControllers/bo.offer.controllers.js"
@@ -32,6 +34,8 @@
     productController,
     locationController,
     superadminController,
+    offerController,
+    offeDraftController
     // boOfferControllers,
     // offerActionsControllers
   };
