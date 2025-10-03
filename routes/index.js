@@ -14,4 +14,4 @@ import offerRoute from "./offer.route.js"
 // import 
 
 // export {authRoutes, boBuyersRoutes, offerDraftRoutes, paymentRoutes, planRoutes, superadminRoutes, boOfferRoutes, offerActionsRoutes }
-export {locationRoutes, authRoutes, businessOwnerRoutes , superadminRoutes ,productRoutes, offerDraftRoute, offerRoute,,planRoutes};
+export {locationRoutes, authRoutes, businessOwnerRoutes , superadminRoutes ,productRoutes, offerDraftRoute, offerRoute,planRoutes};
