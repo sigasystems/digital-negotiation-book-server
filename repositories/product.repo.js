@@ -1,14 +1,23 @@
 import { Op } from "sequelize";
-import { Product } from "../models/index.js";
+import { BusinessOwner, Product } from "../models/index.js";
 
 export const ProductRepository = {
   createMany: async (products) => {
     return await Product.bulkCreate(products);
   },
 
-  findAll: async () => {
-    return await Product.findAll();
-  },
+  findAll: async (ownerid) => {
+  return await Product.findAll({
+    where: { ownerid }, // use correct column name
+    include: [
+      {
+        model: BusinessOwner,
+        as: "owner",
+        attributes: ["id", "businessName", "email"], // pick fields you want
+      },
+    ],
+  });
+},
 
   findById: async (id) => {
     return await Product.findByPk(id);
@@ -30,13 +39,14 @@ export const ProductRepository = {
     return await product.destroy();
   },
 
-  search: async (filters, pagination) => {
-    const { limit, offset } = pagination;
-    return await Product.findAndCountAll({
-      where: filters,
-      limit,
-      offset,
-      order: [["productName", "ASC"]],
-    });
-  },
+  searchByOwner: async (ownerid, filters, pagination) => {
+  const { limit, offset } = pagination;
+  return await Product.findAndCountAll({
+    where: { ...filters, ownerid },
+    limit,
+    offset,
+    order: [["productName", "ASC"]],
+  });
+},
+
 };

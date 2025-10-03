@@ -1,4 +1,4 @@
-import  {Plan}  from "../../model/index.js";
+import { Plan } from "../models/index.js";
 
 export const PlanRepository = {
   create: async (data) => {

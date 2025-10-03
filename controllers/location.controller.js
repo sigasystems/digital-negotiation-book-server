@@ -58,7 +58,9 @@ export const searchLocations = asyncHandler(async (req, res) => {
   const { query, country, code, portalCode } = req.query;
   const { limit, offset, page } = getPagination(req.query);
 
-  const { count, rows } = await locationService.search({
+  if(req.query)
+  {
+    const { count, rows } = await locationService.search({
     query,
     country,
     code,
@@ -73,4 +75,9 @@ export const searchLocations = asyncHandler(async (req, res) => {
     currentPage: page,
     locations: rows,
   });
+  }
+  else
+  {
+    return errorResponse(res, 400, "Query is required");
+  }
 });
