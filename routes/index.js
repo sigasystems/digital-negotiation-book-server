@@ -9,6 +9,9 @@ import locationRoutes from "./location.route.js";
 import authRoutes from "./auth.routes.js"
 import businessOwnerRoutes from "./businessOwner.route.js"
 import productRoutes from "./product.routes.js"
+import offerDraftRoute from "./offerDraft.route.js"
+import offerRoute from "./offer.route.js"
+// import 
 
 // export {authRoutes, boBuyersRoutes, offerDraftRoutes, paymentRoutes, planRoutes, superadminRoutes, boOfferRoutes, offerActionsRoutes }
-export {locationRoutes, authRoutes, businessOwnerRoutes , superadminRoutes ,productRoutes ,planRoutes};
+export {locationRoutes, authRoutes, businessOwnerRoutes , superadminRoutes ,productRoutes, offerDraftRoute, offerRoute,,planRoutes};
