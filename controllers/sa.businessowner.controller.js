@@ -89,14 +89,10 @@ export const reviewBusinessOwner = asyncHandler(async (req, res) => {
   try {
     authorizeRoles(req, ["super_admin"]);
     const { action } = req.query; // ?action=approve or ?action=reject
-    console.log("check action form controller", action)
     if (!["approve", "reject"].includes(action)) {
       return errorResponse(res, 400, "Invalid action. Use 'approve' or 'reject'.");
     }
-    console.log("hahaha")
-    
     const owner = await superAdminService.reviewBusinessOwner(req.params.id, action);
-    console.log("log owner in controler", owner)
     const message = action === "approve" ? "Business owner approved successfully" : "Business owner rejected successfully";
     return successResponse(res, 200, message, owner);
   } catch (err) {

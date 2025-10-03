@@ -7,20 +7,30 @@ import { authorizeRoles } from "../utlis/authorizeRoles.js";
 export const createProducts = asyncHandler(async (req, res) => {
   try {
     authorizeRoles(req, ["business_owner"]);
-    const products = await ProductService.createProducts(req.body);
+
+    // Attach the logged-in owner's ID to the product
+    const productData = {
+      ...req.body,
+      ownerid: req.user.id, // lowercase matches DB
+    };
+    // Pass req.body directly (array) + ownerid
+  const products = await ProductService.createProducts(req.body, req.user.id);
     return successResponse(res, 201, "Products created successfully", products);
   } catch (error) {
     return errorResponse(res, 400, error.message);
   }
 });
 
+
 export const getAllProducts = asyncHandler(async (req, res) => {
-  const products = await ProductService.getAllProducts();
+  authorizeRoles(req, ["business_owner"]);
+  const products = await ProductService.getAllProducts(req.user.id);
   return successResponse(res, 200, "Products retrieved successfully", products);
 });
 
 export const getProductById = asyncHandler(async (req, res) => {
   try {
+    authorizeRoles(req, ["business_owner"]);
     const product = await ProductService.getProductById(req.params.id);
     return successResponse(res, 200, "Product retrieved successfully", product);
   } catch (error) {
@@ -30,7 +40,7 @@ export const getProductById = asyncHandler(async (req, res) => {
 
 export const updateProduct = asyncHandler(async (req, res) => {
   try {
-        authorizeRoles(req, ["business_owner"]);
+    authorizeRoles(req, ["business_owner"]);
     const updated = await ProductService.updateProduct(req.params.id, req.body);
     return successResponse(res, 200, "Product updated successfully", updated);
   } catch (error) {
@@ -40,8 +50,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
 
 export const deleteProduct = asyncHandler(async (req, res) => {
   try {
-        authorizeRoles(req, ["business_owner"]);
-
+    authorizeRoles(req, ["business_owner"]);
     await ProductService.deleteProduct(req.params.id);
     return successResponse(res, 200, "Product deleted successfully");
   } catch (error) {
@@ -51,9 +60,9 @@ export const deleteProduct = asyncHandler(async (req, res) => {
 
 export const searchProduct = asyncHandler(async (req, res) => {
   const { limit, offset, page } = getPagination(req.query);
-
   try {
-    const result = await ProductService.searchProduct(req.query, { limit, offset, page });
+    authorizeRoles(req, ["business_owner"]);
+    const result = await ProductService.searchProduct(req.query, { limit, offset, page }, req.user.id);
     return successResponse(res, 200, "Products retrieved successfully", result);
   } catch (error) {
     return errorResponse(res, 400, error.message);

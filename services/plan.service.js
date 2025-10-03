@@ -1,3 +1,4 @@
+import { PlanRepository } from "../repositories/plan.repository.js";
 import { createPlanSchema, updatePlanSchema } from "../validations/plan.validation.js";
 
 export const PlanService = {
