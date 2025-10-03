@@ -8,7 +8,7 @@ router.get("/getall-products",  authenticateJWT, productController.getAllProduct
 router.get("/get-product/:id", authenticateJWT, productController.getProductById);
 router.put("/update-product/:id",  authenticateJWT, productController.updateProduct);
 router.delete("/delete-product/:id", authenticateJWT, productController.deleteProduct);
-router.get("/search", productController.searchProduct);
+router.get("/search",  authenticateJWT, productController.searchProduct);
 
 export default router;
     

@@ -1,4 +1,4 @@
-import * as model from "./model/index.js";
+import * as model from "./models/index.js";
 const { sequelize } = model;
 
 (async () => {

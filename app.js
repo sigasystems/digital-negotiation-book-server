@@ -2,9 +2,9 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import helmet from "helmet";
-// import { planRoutes, authRoutes, paymentRoutes, superadminRoutes, businessOwnersRoutes, boBuyersRoutes, offerDraftRoutes, boOfferRoutes, offerActionsRoutes } from "./routes/index.js"
+// import { planRoutes,  paymentRoutes,  businessOwnersRoutes, boBuyersRoutes, offerDraftRoutes, boOfferRoutes, offerActionsRoutes } from "./routes/index.js"
 // import productRoutes from "./routes/productRoutes/product.routes.js"
-import {locationRoutes, authRoutes ,superadminRoutes ,businessOwnerRoutes ,productRoutes} from "./routes/index.js";
+import {locationRoutes, authRoutes ,superadminRoutes ,businessOwnerRoutes ,productRoutes ,planRoutes } from "./routes/index.js";
 import { notFoundHandler, errorHandler } from "./handlers/index.js";
 import cookieParser from "cookie-parser";
 
@@ -24,7 +24,7 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 // -------------------------
 app.use("/api/auth",authRoutes)
-// app.use("/api/plans", planRoutes);
+app.use("/api/plans", planRoutes);
 // app.use("/api/payments", paymentRoutes);
 app.use("/api/superadmin", superadminRoutes);
 app.use("/api/business-owner",businessOwnerRoutes)
