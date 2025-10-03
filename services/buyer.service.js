@@ -189,53 +189,57 @@ class BuyerService {
     return buyersRepository.searchBuyers(ownerId, filters);
   }
 
-  async becomeBusinessOwner(userEmail, data, existingUser) {
-    // Check duplicate owner
-    const existingOwner = await buyersRepository.findOwnerByEmail(userEmail);
-    if (existingOwner) throw new Error("Business owner already registered for this user.");
+ async becomeBusinessOwner(userEmail, data) {
+  const existingUser = await buyersRepository.findUserByEmail(userEmail);
+  if (!existingUser) throw new Error("User not found");
 
-    // Check registration number
-    if (data.registrationNumber) {
-      const existingReg = await buyersRepository.findOwnerByEmail(data.registrationNumber);
-      if (existingReg) throw new Error("Registration number already in use");
-    }
+  const existingOwner = await buyersRepository.findOwnerByEmail(userEmail);
+  if (existingOwner) throw new Error("Business owner already registered for this user. Please login!");
 
-    // Update User info
-    if (data.first_name || data.last_name) {
-      await existingUser.update({
-        first_name: data.first_name || existingUser.first_name,
-        last_name: data.last_name || existingUser.last_name,
-        roleId: 2,
-      });
-    }
-
-    // Create Business Owner
-    const newOwner = await buyersRepository.createOwner({
-      userId: existingUser.id,
-      first_name: existingUser.first_name || data.first_name,
-      last_name: existingUser.last_name || data.last_name,
-      email: existingUser.email,
-      phoneNumber: data.phoneNumber,
-      businessName: data.businessName,
-      registrationNumber: data.registrationNumber,
-      country: data.country,
-      state: data.state,
-      city: data.city,
-      address: data.address,
-      postalCode: data.postalCode,
-      status: "active",
-      is_verified: true,
-      is_deleted: false,
-      is_approved: true,
-    });
-
-    // Generate tokens
-    const payload = { id: newOwner.id, email: newOwner.email };
-    const accessToken = accessTokenGenerator(payload);
-    refreshTokenGenerator(data.res, payload);
-
-    return { newOwner, accessToken };
+  if (data.registrationNumber) {
+    const existingReg = await buyersRepository.findByRegistrationNumber(data.registrationNumber);
+    if (existingReg) throw new Error("Registration number already in use");
   }
+
+  await existingUser.update({
+    first_name: data.first_name || existingUser.first_name,
+    last_name: data.last_name || existingUser.last_name,
+    roleId: 2, // business_owner
+  });
+
+  const newOwner = await buyersRepository.createOwner({
+    userId: existingUser.id,
+    first_name: existingUser.first_name,
+    last_name: existingUser.last_name,
+    email: existingUser.email,
+    phoneNumber: data.phoneNumber,
+    businessName: data.businessName,
+    registrationNumber: data.registrationNumber,
+    country: data.country,
+    state: data.state,
+    city: data.city,
+    address: data.address,
+    postalCode: data.postalCode,
+    status: "active",
+    is_verified: true,
+    is_deleted: false,
+    is_approved: true,
+  });
+
+  const tokenPayload = {
+    id: newOwner.id,
+    email: newOwner.email,
+    userRole: "business_owner",
+    businessName: newOwner.businessName,
+    name: `${newOwner.first_name || ""} ${newOwner.last_name || ""}`.trim(),
+  };
+
+  const accessToken = accessTokenGenerator(tokenPayload);
+  refreshTokenGenerator(data.res, tokenPayload);
+
+  return { newOwner, accessToken };
+}
+
 }
 
 export default new BuyerService();
