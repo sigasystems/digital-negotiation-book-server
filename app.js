@@ -4,7 +4,7 @@ import cors from "cors";
 import helmet from "helmet";
 // import { planRoutes, authRoutes, paymentRoutes, superadminRoutes, businessOwnersRoutes, boBuyersRoutes, offerDraftRoutes, boOfferRoutes, offerActionsRoutes } from "./routes/index.js"
 // import productRoutes from "./routes/productRoutes/product.routes.js"
-// import locationRoutes from "./routes/locationRoutes/location.routes.js"
+import {locationRoutes} from "./routes/index.js";
 
 
 import { notFoundHandler, errorHandler } from "./handlers/index.js";
@@ -33,7 +33,7 @@ app.use(express.urlencoded({ extended: true }));
 // app.use("/api/bo-buyer",boBuyersRoutes)
 // app.use("/api/offer-draft", offerDraftRoutes)
 // app.use("/api/product",productRoutes)
-// app.use("/api/location",locationRoutes)
+app.use("/api/location",locationRoutes)
 // app.use("/api/offer",boOfferRoutes)
 // app.use("/api/offer-actions",offerActionsRoutes)
 
