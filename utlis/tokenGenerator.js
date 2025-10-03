@@ -4,7 +4,6 @@ export const refreshTokenGenerator = (res, payload) => {
   const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
     expiresIn: "7d",
   });
-  console.log("payload",payload)
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true, 
     secure: false, 
