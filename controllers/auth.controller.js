@@ -1,7 +1,7 @@
 import { successResponse, errorResponse } from "../handlers/responseHandler.js";
 import { asyncHandler } from "../handlers/asyncHandler.js";
 import authService from "../services/auth.service.js";
-import {registerSchemaValidation, loginSchemaValidation } from "../validations/auth.validation.js"
+import {registerSchemaValidation, loginSchemaValidation } from "../validations/index.js"
 
 export const register = asyncHandler(async (req, res) => {
   try {

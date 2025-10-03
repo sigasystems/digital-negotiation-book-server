@@ -9,24 +9,24 @@ import {locationService} from "../services/location.service.js";
 // Create
 export const createLocations = asyncHandler(async (req, res) => {
   authorizeRoles(req, ["business_owner"]);
-
   const result = await locationService.createLocations(req.body);
   if (result.error) return errorResponse(res, 400, "Validation failed", result.error);
   if (result.conflict) {
     return errorResponse(res, 409, `Locations with codes already exist: ${result.conflict.join(", ")}`);
   }
-
   return successResponse(res, 201, "Locations created successfully", result.created);
 });
 
 // Get All
 export const getAllLocations = asyncHandler(async (req, res) => {
+  authorizeRoles(req, ["business_owner"]);
   const locations = await locationService.getAll();
   return successResponse(res, 200, "Locations retrieved successfully", locations);
 });
 
 // Get by ID
 export const getLocationById = asyncHandler(async (req, res) => {
+  authorizeRoles(req, ["business_owner"]);
   const location = await locationService.getById(req.params.id);
   if (!location) return errorResponse(res, 404, "Location not found");
   return successResponse(res, 200, "Location retrieved successfully", location);
