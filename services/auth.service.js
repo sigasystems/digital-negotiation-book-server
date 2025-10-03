@@ -6,6 +6,7 @@ import { accessTokenGenerator, refreshTokenGenerator } from "../utlis/tokenGener
 import { generateEmailTemplate, sendEmailWithRetry } from "../utlis/emailTemplate.js";
 import { emailLoginButton } from "../utlis/emailLoginButton.js";
 import transporter from "../config/nodemailer.js";
+import { checkAccountStatus } from "../utlis/helper.js";
 
 function generateOtp() {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -32,7 +33,7 @@ async function register(userData) {
   });
 }
 
-async function login({ res, email, password }) {
+export async function login({ res, email, password }) {
   let user = await userRepository.findByEmail(email);
 
   if (!user) {
@@ -43,43 +44,57 @@ async function login({ res, email, password }) {
     if (!isMatch) throw new Error("Invalid email or password");
   }
 
+  checkAccountStatus(user, "User");
+
   const roleDetails = await userRepository.findRoleById(user.roleId);
   const roleName = roleDetails?.name || "guest";
   let tokenPayload;
 
-  if (user.roleId === 2) {
-    const businessOwner = await userRepository.findBusinessOwnerByUserId(user.id);
-    if (!businessOwner) throw new Error("Business owner record not found");
-    if (businessOwner.status === "inactive") throw new Error("Your account is inactive. Contact support.");
-    tokenPayload = {
-      id: businessOwner.id,
-      email: user.email,
-      userRole: roleName,
-      businessName: businessOwner.businessName,
-      name: `${user?.first_name || ""} ${user?.last_name || ""}`.trim(),
-    };
-  } else if (user.roleId === 3) {
-    const buyer = await userRepository.findBuyerByEmail(email);
-    if (!buyer) throw new Error("Buyer not found");
-    tokenPayload = {
-      id: buyer.id,
-      email: user.email,
-      userRole: roleName,
-      businessName: buyer.buyersCompanyName,
-      name: buyer.contactName,
-      ownerId: buyer.ownerId,
-    };
-  } else {
-    tokenPayload = {
-      id: user.id,
-      email: user.email,
-      userRole: roleName,
-      businessName: "No business name in DB",
-      name: "No name in DB",
-    };
+  switch (user.roleId) {
+    case 2:
+      const businessOwner = await userRepository.findBusinessOwnerByUserId(user.id);
+      checkAccountStatus(businessOwner, "Business Owner");
+
+      tokenPayload = {
+        id: businessOwner.id,
+        email: user.email,
+        userRole: roleName,
+        businessName: businessOwner.businessName,
+        name: `${user?.first_name || ""} ${user?.last_name || ""}`.trim(),
+      };
+      break;
+
+    case 3:
+      const buyer = await userRepository.findBuyerByEmail(email);
+      checkAccountStatus(buyer, "Buyer");
+
+      tokenPayload = {
+        id: buyer.id,
+        email: user.email,
+        userRole: roleName,
+        businessName: buyer.buyersCompanyName,
+        name: buyer.contactName,
+        ownerId: buyer.ownerId,
+      };
+      break;
+
+    default:
+      if (!roleDetails?.isActive) {
+        throw new Error(`The role '${roleDetails?.name}' is inactive. Contact support.`);
+      }
+
+      tokenPayload = {
+        id: user.id,
+        email: user.email,
+        userRole: roleName,
+        businessName: "No business name in DB",
+        name: `${user?.first_name || ""} ${user?.last_name || ""}`.trim() || "No name in DB",
+      };
+      break;
   }
 
   const accessToken = accessTokenGenerator(tokenPayload);
+  refreshTokenGenerator(res, tokenPayload);
   return { accessToken, roleDetails, tokenPayload };
 }
 
