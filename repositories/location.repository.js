@@ -1,42 +1,45 @@
 import { Op } from "sequelize";
-import  {Location}  from "../models/index.js";
+import { Location } from "../models/index.js";
 
-
-export const locationRepository = {
-  createMany: async (locations) => {
+class LocationRepository {
+  async createMany(locations) {
     return await Location.bulkCreate(locations);
-  },
+  }
 
-  findByCodes: async (codes) => {
+  async findByCodes(codes) {
     return await Location.findAll({ where: { code: codes } });
-  },
+  }
 
-  findAll: async () => {
-    return await Location.findAll();
-  },
+  async findAll(ownerId) {
+    if (!ownerId) return [];
+    return await Location.findAll({ where: { ownerId } });
+  }
 
-  findById: async (id) => {
+  async findById(id) {
     return await Location.findByPk(id);
-  },
+  }
 
-  findByCode: async (code) => {
+  async findByCode(code) {
     return await Location.findOne({ where: { code } });
-  },
+  }
 
-  update: async (location, data) => {
+  async update(location, data) {
     return await location.update(data);
-  },
+  }
 
-  delete: async (location) => {
+  async delete(location) {
     return await location.destroy();
-  },
+  }
 
-  search: async ({ where, limit, offset }) => {
+  async search({ where, limit, offset }) {
     return await Location.findAndCountAll({
       where,
       limit,
       offset,
       order: [["locationName", "ASC"]],
     });
-  },
-};
+  }
+}
+
+// Export a singleton instance
+export default new LocationRepository();

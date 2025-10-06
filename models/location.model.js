@@ -7,6 +7,14 @@ const Location = sequelize.define("Location", {
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
+     ownerId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'business_owners',
+      key: 'id'
+    }
+  },
   locationName: {
     type: DataTypes.STRING,
     allowNull: false,

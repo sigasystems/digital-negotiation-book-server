@@ -1,19 +1,24 @@
-import { locationRepository } from "../repositories/location.repository.js";
-
 import { Op } from "sequelize";
-import { locationsArraySchema, locationUpdateSchema } from "../validations/location.validation.js";
-
+import { locationsArraySchema , locationUpdateSchema } from "../validations/location.validation.js";
+import  locationRepository  from "../repositories/location.repository.js";
 export const locationService = {
-  createLocations: async (data) => {
+  // CREATE locations for a specific owner
+  createLocations: async (data, ownerId) => {
     const validation = locationsArraySchema.safeParse(data);
     if (!validation.success) {
       return { error: validation.error.issues };
     }
 
-    const locationsToCreate = validation.data;
+    if (!ownerId) {
+      return { error: "ownerId is required" };
+    }
+    const locationsToCreate = validation.data.map((loc) => ({
+      ...loc,
+      ownerId,
+    }));
     const codes = locationsToCreate.map((loc) => loc.code);
+    const existing = await locationRepository.findByCodes(codes, ownerId);
 
-    const existing = await locationRepository.findByCodes(codes);
     if (existing.length > 0) {
       return { conflict: existing.map((e) => e.code) };
     }
@@ -21,18 +26,33 @@ export const locationService = {
     const created = await locationRepository.createMany(locationsToCreate);
     return { created };
   },
-
-  getAll: async () => {
-    return await locationRepository.findAll();
+  // GET all locations for specific owner
+  getAll: async (ownerId) => {
+    if (!ownerId) {
+      return { error: "ownerId is required" };
+    }
+    return await locationRepository.findAll(ownerId);
   },
-
-  getById: async (id) => {
-    return await locationRepository.findById(id);
-  },
-
-  update: async (id, data) => {
+  // GET location by id (also check owner)
+  getById: async (id, ownerId) => {
+    if (!ownerId) {
+      return { error: "ownerId is required" };
+    }
     const location = await locationRepository.findById(id);
-    if (!location) return null;
+    if (!location || location.ownerId !== ownerId) {
+      return null; // not found or unauthorized
+    }
+    return location;
+  },
+  // UPDATE location (only if it belongs to the owner)
+  update: async (id, data, ownerId) => {
+    if (!ownerId) {
+      return { error: "ownerId is required" };
+    }
+    const location = await locationRepository.findById(id);
+    if (!location || location.ownerId !== ownerId) {
+      return null;
+    }
 
     const validation = locationUpdateSchema.safeParse(data);
     if (!validation.success) {
@@ -40,23 +60,31 @@ export const locationService = {
     }
 
     if (data.code && data.code !== location.code) {
-      const existing = await locationRepository.findByCode(data.code);
+      const existing = await locationRepository.findByCode(data.code, ownerId);
       if (existing) return { conflict: data.code };
     }
 
     const updated = await locationRepository.update(location, data);
     return { updated };
   },
-
-  delete: async (id) => {
+  // DELETE location (only if it belongs to the owner)
+  delete: async (id, ownerId) => {
+    if (!ownerId) {
+      return { error: "ownerId is required" };
+    }
     const location = await locationRepository.findById(id);
-    if (!location) return null;
+    if (!location || location.ownerId !== ownerId) {
+      return null;
+    }
     await locationRepository.delete(location);
     return true;
   },
-
-  search: async ({ query, country, code, portalCode, limit, offset }) => {
-    const where = {};
+  // SEARCH locations (only within owner’s scope)
+  search: async ({ query, country, code, portalCode, limit, offset, ownerId }) => {
+    if (!ownerId) {
+      return { error: "ownerId is required" };
+    }
+    const where = { ownerId };
 
     if (query) {
       where[Op.or] = [

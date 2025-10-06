@@ -1,52 +1,47 @@
 import { Op } from "sequelize";
-import { BusinessOwner, Product } from "../models/index.js";
+import { Product } from "../models/index.js";
 
-export const ProductRepository = {
-  createMany: async (products) => {
+class ProductRepository {
+  async createMany(products) {
     return await Product.bulkCreate(products);
-  },
+  }
 
-  findAll: async (ownerid) => {
-  return await Product.findAll({
-    where: { ownerid }, // use correct column name
-    include: [
-      {
-        model: BusinessOwner,
-        as: "owner",
-        attributes: ["id", "businessName", "email"], // pick fields you want
-      },
-    ],
-  });
-},
+  async findAll(ownerId) {
+    return await Product.findAll({ where: { ownerId } });
+  }
 
-  findById: async (id) => {
+  async findById(id) {
     return await Product.findByPk(id);
-  },
+  }
 
-  findByCode: async (code) => {
-    return await Product.findOne({ where: { code } });
-  },
+  async findByCode(code, ownerId) {
+    const where = ownerId ? { code, ownerId } : { code };
+    return await Product.findOne({ where });
+  }
 
-  findByCodes: async (codes) => {
-    return await Product.findAll({ where: { code: codes } });
-  },
+  async findByCodes(codes, ownerId) {
+    const where = ownerId ? { code: codes, ownerId } : { code: codes };
+    return await Product.findAll({ where });
+  }
 
-  update: async (product, data) => {
+  async update(product, data) {
     return await product.update(data);
-  },
+  }
 
-  delete: async (product) => {
+  async delete(product) {
     return await product.destroy();
-  },
+  }
 
-  searchByOwner: async (ownerid, filters, pagination) => {
-  const { limit, offset } = pagination;
-  return await Product.findAndCountAll({
-    where: { ...filters, ownerid },
-    limit,
-    offset,
-    order: [["productName", "ASC"]],
-  });
-},
+  async search(filters, pagination) {
+    const { limit, offset } = pagination;
+    return await Product.findAndCountAll({
+      where: filters,
+      limit,
+      offset,
+      order: [["productName", "ASC"]],
+    });
+  }
+}
 
-};
+// Export a singleton instance
+export default new ProductRepository();
