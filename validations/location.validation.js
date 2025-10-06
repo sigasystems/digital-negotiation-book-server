@@ -15,3 +15,4 @@ export const locationUpdateSchema = z.object({
 });
 
 export const locationsArraySchema = z.array(locationSchema).min(1, "At least one location is required");
+

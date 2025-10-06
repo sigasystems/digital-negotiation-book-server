@@ -24,10 +24,14 @@
       type: DataTypes.ARRAY(DataTypes.STRING), // Array of sizes
       allowNull: true,
     },
-    ownerid: {
-        type: DataTypes.UUID,
-        allowNull: false,
-      },
+    ownerId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'business_owners',
+      key: 'id'
+    }
+  },
   }, {
     tableName: "products",
     timestamps: true,
