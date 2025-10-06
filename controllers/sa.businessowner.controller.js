@@ -2,7 +2,7 @@
 import { asyncHandler } from "../handlers/asyncHandler.js";
 import { errorResponse, successResponse } from "../handlers/responseHandler.js";
 import { superAdminService } from "../services/superadmin.service.js";
-import { authorizeRoles } from "../utlis/authorizeRoles.js";
+import { authorizeRoles } from "../utlis/helper.js";
 
 // ------------------ SUPER ADMIN CONTROLLERS ------------------
 

@@ -1,7 +1,7 @@
 import z from "zod";
 import { errorResponse, successResponse } from "../handlers/responseHandler.js";
 import { asyncHandler } from "../handlers/asyncHandler.js";
-import { authorizeRoles } from "../utlis/authorizeRoles.js";
+import { authorizeRoles } from "../utlis/helper.js";
 import { getPagination } from "../handlers/pagination.js";
 import { locationService } from "../services/location.service.js";
 
