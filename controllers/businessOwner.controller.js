@@ -3,7 +3,7 @@ import {businessOwnerSchema} from "../validations/business.validation.js"
 import buyerService from "../services/buyer.service.js";
 import buyersRepository from "../repositories/buyers.repository.js";
 import { successResponse, errorResponse } from "../handlers/responseHandler.js";
-import { authorizeRoles } from "../utlis/authorizeRoles.js";
+import { authorizeRoles } from "../utlis/helper.js";
 import { checkAccountStatus } from "../utlis/helper.js";
 import { asyncHandler } from "../handlers/asyncHandler.js";
 

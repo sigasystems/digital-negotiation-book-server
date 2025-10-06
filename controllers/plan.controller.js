@@ -1,6 +1,6 @@
 import { errorResponse, successResponse } from "../handlers/responseHandler.js";
 import { asyncHandler } from "../handlers/asyncHandler.js";
-import { authorizeRoles } from "../utlis/authorizeRoles.js";
+import { authorizeRoles } from "../utlis/helper.js";
 import {PlanService} from "../services/plan.service.js";
 
 export const createPlan = asyncHandler(async (req, res) => {

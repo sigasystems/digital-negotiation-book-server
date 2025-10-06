@@ -4,7 +4,7 @@ import userRepository from "../repositories/user.repository.js";
 import passwordResetRepository from "../repositories/passwordReset.repository.js";
 import { accessTokenGenerator, refreshTokenGenerator } from "../utlis/tokenGenerator.js";
 import { generateEmailTemplate, sendEmailWithRetry } from "../utlis/emailTemplate.js";
-import { emailLoginButton } from "../utlis/emailLoginButton.js";
+import { emailLoginButton } from "../utlis/emailTemplate.js";
 import transporter from "../config/nodemailer.js";
 import { checkAccountStatus } from "../utlis/helper.js";
 

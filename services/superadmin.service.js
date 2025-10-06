@@ -7,7 +7,7 @@ import formatTimestamps from "../utlis/formatTimestamps.js";
 import { superAdminRepo } from "../repositories/superadmin.repository.js";
 import generateSecurePassword from "../utlis/genarateSecurePassword.js";
 import { generateEmailTemplate } from "../utlis/emailTemplate.js";
-import {emailLoginButton} from "../utlis/emailLoginButton.js";
+import {emailLoginButton} from "../utlis/emailTemplate.js";
 
 export const superAdminService = {
   createBusinessOwner: async (data) => {

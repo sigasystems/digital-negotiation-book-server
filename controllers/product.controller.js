@@ -1,6 +1,5 @@
 import { errorResponse, successResponse } from "../handlers/responseHandler.js";
 import { asyncHandler } from "../handlers/asyncHandler.js";
-import { authorizeRoles } from "../utlis/authorizeRoles.js";
 import { getPagination } from "../handlers/pagination.js";
 import { ProductService } from "../services/product.service.js";
 
