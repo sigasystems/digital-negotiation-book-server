@@ -1,7 +1,23 @@
-import {Offer} from "../models/index.js"
-  
+import { Offer, OfferDraft, BusinessOwner } from "../models/index.js";
+
 class OfferRepository {
-async createOffer(data, transaction) {
+  // Draft
+  async findDraftById(draftId, transaction) {
+    return OfferDraft.findOne({
+      where: { draftNo: draftId },
+      include: [
+        {
+          model: BusinessOwner,
+          as: "businessOwner",
+          attributes: ["id", "first_name", "last_name"],
+        },
+      ],
+      transaction,
+    });
+  }
+
+  // Offer CRUD
+  async createOffer(data, transaction) {
     return Offer.create(data, { transaction });
   }
 
