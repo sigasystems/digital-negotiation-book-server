@@ -4,7 +4,7 @@ import transporter from "../config/nodemailer.js";
 import { businessOwnerSchema } from "../validations/business.validation.js";
 import { sendEmailWithRetry } from "../utlis/emailTemplate.js";
 import formatTimestamps from "../utlis/formatTimestamps.js";
-import { superAdminRepo } from "../repositories/superadmin.repo.js";
+import { superAdminRepo } from "../repositories/superadmin.repository.js";
 import generateSecurePassword from "../utlis/genarateSecurePassword.js";
 import { generateEmailTemplate } from "../utlis/emailTemplate.js";
 import {emailLoginButton} from "../utlis/emailLoginButton.js";

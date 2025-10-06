@@ -3,7 +3,7 @@ import {
   productsArraySchema,
   productSchema,
 } from "../validations/product.validation.js";
-import ProductRepository from "../repositories/product.repo.js";
+import ProductRepository from "../repositories/product.repository.js";
 
 export const ProductService = {
   createProducts: async (products, ownerId) => {
