@@ -2,7 +2,7 @@
   
   import * as planController from "./plan.controller.js"; // include full path + .js
   // import * as authController from "./authControllers/auth.controller.js"
-  // import * as paymentController from "./paymentController/payment.controller.js"
+  import * as paymentController from "../controllers/payment.controller.js"
   // import * as businessOwnerController from "./superadminController/sa.businessowner.controller.js"
   // import * as businessOwnerControllers from "./businessOwnerControllers/businessOwner.controllers.js"
   // import * as boBuyersControllers from "./businessOwnerControllers/bo.buyers.controllers.js"
@@ -26,7 +26,7 @@
     planController,
     // userController,
     authcontroller,
-    // paymentController,
+    paymentController,
     // businessOwnerController,
     businessOwnerController,
     // boBuyersControllers,
