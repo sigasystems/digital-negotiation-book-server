@@ -2,31 +2,38 @@ import sequelize from "../config/db.js";
 import offerRepository from "../repositories/offer.repository.js";
 import { createOfferSchema } from "../validations/offer.validation.js";
 import { validateSizeBreakups } from "../utlis/dateFormatter.js";
+import { withTransaction, validateOfferData, ensureOfferOwnership, normalizeDateFields } from "../utlis/offerHelpers.js";
 import { Op } from "sequelize";
 
-async function createOffer(draftId, offerName, user) {
-  const transaction = await sequelize.transaction();
-  try {
-    const draft = await offerRepository.findDraftById(draftId, transaction);
+const offerService = {
+  async createOffer(draftId, offerName, user) {
+    return withTransaction(sequelize, async (t) => {
+      if (!offerName || typeof offerName !== "string" || !offerName.trim()) {
+        throw new Error("Offer name is required and must be a non-empty string");
+      }
+
+    const draft = await offerRepository.findDraftById(draftId, t);
     if (!draft) throw new Error("Draft not found");
+
+    if (draft.businessOwnerId !== user.id) {
+      throw new Error("You are not authorized to create an offer for this draft");
+    }
 
     if (!user?.businessName) throw new Error("Business name not found in token");
 
-    // ✅ Step 1: Check if same business owner has same offer name
     const existingOffers = await offerRepository.findAllOffers({
       businessOwnerId: user.id,
     });
 
-    if (existingOffers && existingOffers.length > 0) {
-      const duplicate = existingOffers.find(
-        (offer) => offer.offerName?.trim().toLowerCase() === offerName.trim().toLowerCase()
-      );
+   if (existingOffers && existingOffers.length > 0) {
+      const duplicate = existingOffers.find((offer) => {
+        return offer.offerName?.toLowerCase() === offerName.toLowerCase();
+      });
       if (duplicate) {
         throw new Error("Offer name already exists for this business owner");
       }
     }
 
-    // ✅ Step 2: Continue normal flow
     const offerData = {
       businessOwnerId: draft.businessOwnerId,
       offerName,
@@ -52,207 +59,111 @@ async function createOffer(draftId, offerName, user) {
       status: "open",
     };
 
-    const parsed = createOfferSchema.safeParse(offerData);
-    if (!parsed.success) {
-      throw new Error(parsed.error.errors.map(e => e.message).join(", "));
-    }
-
-    const { sizeBreakups, total, grandTotal } = parsed.data;
-    const validationError = validateSizeBreakups(sizeBreakups, total, grandTotal);
-    if (validationError) throw new Error(validationError);
-
-    const offer = await offerRepository.createOffer(parsed.data, transaction);
-    await transaction.commit();
-    return offer;
-  } catch (err) {
-    if (!transaction.finished) await transaction.rollback();
-    throw err;
-  }
-}
-
-async function getAllOffers(status, user) {
-  const whereClause = {businessOwnerId: user.id};
-  if (status) whereClause.status = status;
-  return offerRepository.findAllOffers(whereClause);
-}
-
-async function getOfferById(id, user) {
-  const offer = await offerRepository.findOfferById(id);
-  if (!offer) throw new Error("Offer not found");
-
-  if (offer.businessOwnerId !== user.id) {
-    throw new Error("This offer does not belong to you.");
-  }
-
-  return offer;
-}
-
-async function updateOffer(id, updates, user) {
-  const transaction = await sequelize.transaction();
-  try {
-    const offer = await offerRepository.findOfferById(id, transaction);
-    if (!offer) throw new Error("Offer not found");
-    
-    if (offer.businessOwnerId !== user.id) {
-      throw new Error("You are not authorized to update this offer");
-    }
-
-    if (offer.status === "close" || offer.isDeleted) {
-      throw new Error("Cannot update a closed or deleted offer");
-    }
-
-    if (updates.offerValidityDate && typeof updates.offerValidityDate === "string") {
-      updates.offerValidityDate = new Date(updates.offerValidityDate);
-    }
-    if (updates.shipmentDate && typeof updates.shipmentDate === "string") {
-      updates.shipmentDate = new Date(updates.shipmentDate);
-    }
-
-    const schema = createOfferSchema.partial();
-    const parsed = schema.safeParse(updates);
-
-    if (!parsed.success) {
-      const messages = parsed.error?.errors?.map(e => e.message) || ["Invalid input"];
-      throw new Error(messages.join(", "));
-    }
-
-    if (parsed.data.sizeBreakups || parsed.data.total || parsed.data.grandTotal) {
-      const validationError = validateSizeBreakups(
-        parsed.data.sizeBreakups,
-        parsed.data.total,
-        parsed.data.grandTotal
+    const validData = validateOfferData(offerData, createOfferSchema);
+    const validationError = validateSizeBreakups(
+      validData.sizeBreakups,
+      validData.total,
+        validData.grandTotal
       );
       if (validationError) throw new Error(validationError);
-    }
 
-    await offerRepository.updateOffer(offer, parsed.data, transaction);
-    await transaction.commit();
-    return offer;
-  } catch (err) {
-    if (!transaction.finished) await transaction.rollback();
-    throw err;
-  }
-}
+      return offerRepository.createOffer(validData, t);
+    });
+  },
+  async getAllOffers(status, user) {
+    const where = { businessOwnerId: user.id, ...(status && { status }) };
+    return offerRepository.findAllOffers(where);
+  },
 
-async function deleteOffer(id, user) {
-  const transaction = await sequelize.transaction();
-  try {
-    const offer = await offerRepository.findOfferById(id, transaction);
+  async getOfferById(id, user) {
+    const offer = await offerRepository.findOfferById(id);
     if (!offer) throw new Error("Offer not found");
-    
-    if (offer.businessOwnerId !== user.id) {
-      throw new Error("You are not authorized to delete this offer");
-    }
-
-    if (offer.isDeleted) {
-      throw new Error("Offer already deleted");
-    }
-
-    await offerRepository.updateOffer(
-      offer,
-      { isDeleted: true, status: "close" },
-      transaction
-    );
-
-    await transaction.commit();
-    return offer.id;
-  } catch (err) {
-    if (!transaction.finished) await transaction.rollback();
-    throw err;
-  }
-}
-
-async function changeOfferStatus(id, newStatus, user) {
-  const transaction = await sequelize.transaction();
-  try {
-    const offer = await offerRepository.findOfferById(id, transaction);
-    if (!offer) throw new Error("Offer not found");
-    
-    if (offer.businessOwnerId !== user.id) {
-      throw new Error("This offer does not belong to you.");
-    }
-
-    if (offer.status.toLowerCase() === newStatus.toLowerCase()) {
-      throw new Error(`Offer is already ${newStatus.toUpperCase()}`);
-    }
-
-    if (offer.isDeleted) {
-      throw new Error("Cannot update a deleted offer");
-    }
-
-    await offerRepository.updateOffer(offer, { status: newStatus }, transaction);
-    await transaction.commit();
-
+    ensureOfferOwnership(offer, user);
     return offer;
-  } catch (err) {
-    if (!transaction.finished) await transaction.rollback();
-    throw err;
-  }
-}
+  },
 
-export async function closeOffer(id, user) {
-  return changeOfferStatus(id, "close", user);
-}
+  async updateOffer(id, updates, user) {
+    return withTransaction(sequelize, async (t) => {
+      const offer = await offerRepository.findOfferById(id, t);
+      if (!offer) throw new Error("Offer not found");
+      ensureOfferOwnership(offer, user);
+      if (offer.status === "close" || offer.isDeleted)
+        throw new Error("Cannot update a closed or deleted offer");
 
-export async function openOffer(id, user) {
-  return changeOfferStatus(id, "open", user);
-}
+      normalizeDateFields(updates);
+      const validUpdates = validateOfferData(updates, createOfferSchema.partial());
 
-export async function searchOffers(query, user) {
-  let { offerId, offerName, status, isDeleted, page = 1, limit = 20 } = query;
+      if (validUpdates.sizeBreakups || validUpdates.total || validUpdates.grandTotal) {
+        const validationError = validateSizeBreakups(
+          validUpdates.sizeBreakups,
+          validUpdates.total,
+          validUpdates.grandTotal
+        );
+        if (validationError) throw new Error(validationError);
+      }
 
-  page = parseInt(page, 10);
-  limit = parseInt(limit, 10);
-  if (isNaN(page) || page <= 0) page = 1;
-  if (isNaN(limit) || limit <= 0) limit = 20;
+      await offerRepository.updateOffer(offer, validUpdates, t);
+      return offer;
+    });
+  },
 
-  const filters = {
-    businessOwnerId: user.id,
-  };
+  async deleteOffer(id, user) {
+    return withTransaction(sequelize, async (t) => {
+      const offer = await offerRepository.findOfferById(id, t);
+      if (!offer) throw new Error("Offer not found");
+      ensureOfferOwnership(offer, user);
+      if (offer.isDeleted) throw new Error("Offer already deleted");
 
-  if (offerId) {
-    if (isNaN(offerId)) throw new Error("Invalid offerId");
-    filters.id = offerId;
-  }
+      await offerRepository.updateOffer(offer, { isDeleted: true, status: "close" }, t);
+      return offer.id;
+    });
+  },
 
-  if (offerName) {
-    if (typeof offerName !== "string") throw new Error("Invalid offerName");
-    filters.offer_name = { [Op.iLike]: `%${offerName}%` };
-  }
+  async changeOfferStatus(id, newStatus, user) {
+    return withTransaction(sequelize, async (t) => {
+      const offer = await offerRepository.findOfferById(id, t);
+      if (!offer) throw new Error("Offer not found");
+      ensureOfferOwnership(offer, user);
 
-  if (status) {
-    if (typeof status !== "string") throw new Error("Invalid status");
-    filters.status = status;
-  }
+      if (offer.isDeleted) throw new Error("Cannot update a deleted offer");
+      if (offer.status.toLowerCase() === newStatus.toLowerCase()) {
+        throw new Error(`Offer is already ${newStatus.toUpperCase()}`);
+      }
 
-  if (isDeleted !== undefined) {
-    if (typeof isDeleted === "string") {
-      isDeleted = isDeleted.toLowerCase() === "true";
-    } else if (typeof isDeleted !== "boolean") {
-      throw new Error("Invalid isDeleted value");
-    }
-    filters.isDeleted = isDeleted;
-  }
+      await offerRepository.updateOffer(offer, { status: newStatus }, t);
+      return offer;
+    });
+  },
 
-  const { rows, count } = await offerRepository.searchOffers(filters, page, limit);
+  closeOffer(id, user) {
+    return this.changeOfferStatus(id, "close", user);
+  },
 
-  return {
-    total: count,
-    page,
-    limit,
-    offers: rows,
-  };
-}
+  openOffer(id, user) {
+    return this.changeOfferStatus(id, "open", user);
+  },
 
-const offerService = {
-  createOffer,
-  getAllOffers,
-  getOfferById,
-  updateOffer,
-  deleteOffer,
-  closeOffer,
-  openOffer,
-  searchOffers,
+  async searchOffers(query, user) {
+    let { offerId, offerName, status, isDeleted, page = 1, limit = 20 } = query;
+    page = +page || 1;
+    limit = +limit || 20;
+
+    const filters = { businessOwnerId: user.id };
+    if (offerId) filters.id = +offerId;
+    if (offerName) filters.offer_name = { [Op.iLike]: `%${offerName}%` };
+    if (status) filters.status = status;
+    if (isDeleted !== undefined)
+      filters.isDeleted = String(isDeleted).toLowerCase() === "true";
+
+    const { rows, count } = await offerRepository.searchOffers(filters, page, limit);
+
+    return {
+      total: count,
+      page,
+      limit,
+      offers: rows,
+    };
+  },
 };
 
 export default offerService;
