@@ -11,7 +11,7 @@ import businessOwnerRoutes from "./businessOwner.route.js"
 import productRoutes from "./product.routes.js"
 import offerDraftRoute from "./offerDraft.route.js"
 import offerRoute from "./offer.route.js"
-import paymentRoutes from "./payment.routes.js"
+// import 
 
 // export {authRoutes, boBuyersRoutes, offerDraftRoutes, paymentRoutes, planRoutes, superadminRoutes, boOfferRoutes, offerActionsRoutes }
-export {locationRoutes, authRoutes, businessOwnerRoutes , superadminRoutes ,productRoutes, offerDraftRoute, offerRoute,planRoutes , paymentRoutes};
+export {locationRoutes, authRoutes, businessOwnerRoutes , superadminRoutes ,productRoutes, offerDraftRoute, offerRoute,planRoutes};
