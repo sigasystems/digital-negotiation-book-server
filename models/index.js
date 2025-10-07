@@ -4,7 +4,7 @@ import User from "./user.model.js";
 import BusinessOwner from "./businessOwner.model.js";
 import Buyer from "./buyers.model.js";
 import Role from "./roles.model.js";
-// import Payment from "./payment.model.js";
+import Payment from "./payment.model.js";
 // import BusinessOwner from "./businessOwner.model.js"
 // import Buyer from "./buyers.model.js";
 // import Role from "./roles.model.js";
@@ -23,7 +23,7 @@ export {
   sequelize,
   User,
   Plan,
-  // Payment,
+  Payment,
   BusinessOwner,
   Buyer,
   Role,

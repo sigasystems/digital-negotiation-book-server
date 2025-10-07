@@ -4,7 +4,7 @@ import cors from "cors";
 import helmet from "helmet";
 // import { planRoutes,  paymentRoutes,  businessOwnersRoutes, boBuyersRoutes, offerDraftRoutes, boOfferRoutes, offerActionsRoutes } from "./routes/index.js"
 // import productRoutes from "./routes/productRoutes/product.routes.js"
-import {locationRoutes, authRoutes ,superadminRoutes ,businessOwnerRoutes ,productRoutes, offerDraftRoute, offerRoute,planRoutes} from "./routes/index.js";
+import {locationRoutes, authRoutes ,superadminRoutes ,businessOwnerRoutes ,productRoutes, offerDraftRoute, offerRoute,planRoutes , paymentRoutes} from "./routes/index.js";
 import { notFoundHandler, errorHandler } from "./handlers/index.js";
 import cookieParser from "cookie-parser";
 
@@ -25,7 +25,7 @@ app.use(express.urlencoded({ extended: true }));
 // -------------------------
 app.use("/api/auth",authRoutes)
 app.use("/api/plans", planRoutes);
-// app.use("/api/payments", paymentRoutes);
+app.use("/api/payments", paymentRoutes);
 app.use("/api/superadmin", superadminRoutes);
 app.use("/api/business-owner",businessOwnerRoutes)
 app.use("/api/offer-draft", offerDraftRoute)
