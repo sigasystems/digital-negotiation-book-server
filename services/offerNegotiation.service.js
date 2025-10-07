@@ -1,86 +1,65 @@
-import sequelize from "../config/db.js";
 import { Offer, OfferBuyer, OfferVersion, OfferResult, Buyer, BusinessOwner } from "../models/index.js";
+import { withTransactionOfferNegotiation, ensureActiveOffer, ensureActiveOwner, getLastVersion } from "../utlis/offerHelpers.js";
 import { Op } from "sequelize";
 
 export const offerNegotiationService = {
   async sendOffer(user, offerId, buyerIds, data) {
-    const transaction = await sequelize.transaction();
-    try {
-      const userId = user?.id;
-      const userRole = user?.userRole;
-      const businessName = user?.businessName;
+    return withTransactionOfferNegotiation(async (t) => {
+      const { id: userId, userRole, businessName } = user;
+      if (!["business_owner", "buyer"].includes(userRole)) throw new Error("Unauthorized role");
+
+      const offer = await ensureActiveOffer(Offer, offerId, t);
+      const buyerIdsArr = Array.isArray(buyerIds) ? buyerIds : [buyerIds];
       let owner, buyers;
 
-      const offer = await Offer.findByPk(offerId, { transaction });
-      if (!offer || offer.status === "close" || offer.isDeleted) {
-        throw new Error("Offer not found or closed/deleted");
-      }
-
       if (userRole === "business_owner") {
-        buyers = await Buyer.findAll({ where: { id: buyerIds }, transaction });
-        if (buyers.length !== buyerIds.length) {
-          throw new Error("Some buyers not found");
-        }
-        for (const buyer of buyers) {
-          if (buyer.ownerId !== userId) {
-            throw new Error(`Buyer ${buyer.buyersCompanyName} is not registered under your business`);
-          }
-        }
-        owner = await BusinessOwner.findOne({ where: { id: userId, status: "active" }, transaction });
-      } else if (userRole === "buyer") {
-        const buyer = await Buyer.findByPk(userId, { transaction });
-        if (!buyer || !buyerIds?.includes(userId)) {
-          throw new Error("Unauthorized buyer");
-        }
-        buyers = [buyer];
-        owner = await BusinessOwner.findOne({ where: { id: buyer.ownerId, status: "active" }, transaction });
+        buyers = await Buyer.findAll({ where: { id: buyerIdsArr }, transaction: t });
+        if (buyers.length !== buyerIdsArr.length) throw new Error("Some buyers not found");
+        if (buyers.some(b => b.ownerId !== userId)) throw new Error("One or more buyers not under your business");
+        owner = await ensureActiveOwner(BusinessOwner, userId, t);
       } else {
-        throw new Error("Unauthorized role");
+        const buyer = await Buyer.findByPk(userId, { transaction: t });
+        if (!buyer || !buyerIdsArr.includes(userId)) throw new Error("Unauthorized buyer");
+        buyers = [buyer];
+        owner = await ensureActiveOwner(BusinessOwner, buyer.ownerId, t);
       }
 
-      // Ensure OfferBuyer mapping
-      const existingOfferBuyers = await OfferBuyer.findAll({
-        where: { offerId, buyerId: buyerIds },
-        transaction
+      const existing = await OfferBuyer.findAll({
+        where: { offerId, buyerId: buyerIdsArr },
+        transaction: t,
       });
-
-      const existingBuyerIds = existingOfferBuyers.map(b => b.buyerId);
-      const buyerIdsArray = Array.isArray(buyerIds) ? buyerIds : [buyerIds];
-
-      const newOfferBuyers = buyerIdsArray
-        .filter(id => !existingBuyerIds.includes(id))
+      const existingIds = existing.map(b => b.buyerId);
+      const newMappings = buyerIdsArr
+        .filter(id => !existingIds.includes(id))
         .map(buyerId => ({
           offerId,
           buyerId,
-          ownerId: userRole === "business_owner" ? userId : owner?.id || null,
-          status: "open"
+          ownerId: userRole === "business_owner" ? userId : owner.id,
+          status: "open",
         }));
 
-      const createdOfferBuyers = await OfferBuyer.bulkCreate(newOfferBuyers, { transaction, returning: true });
-      const allOfferBuyers = [...existingOfferBuyers, ...createdOfferBuyers];
+      const created = await OfferBuyer.bulkCreate(newMappings, { transaction: t, returning: true });
+      const allMappings = [...existing, ...created];
 
-      for (const ob of allOfferBuyers) {
-        if (ob.status !== "close") {
-          const lastVersion = await OfferVersion.findOne({
-            where: { offerBuyerId: ob.id },
-            order: [["versionNo", "DESC"]],
-            transaction
-          });
-          const nextVersionNo = lastVersion ? lastVersion.versionNo + 1 : 1;
+      for (const ob of allMappings) {
+        if (ob.status === "close") continue;
 
-          let fromParty, toParty;
-          const buyer = buyers.find(b => b.id === ob.buyerId);
-          if (userRole === "business_owner") {
-            fromParty = `${businessName} / business_owner`;
-            toParty = `${buyer?.buyersCompanyName} / buyer`;
-          } else {
-            fromParty = `${buyer?.buyersCompanyName} / buyer`;
-            toParty = `${owner?.businessName} / business_owner`;
-          }
+        const lastVersion = await getLastVersion(OfferVersion, ob.id, t);
+        const nextVersion = (lastVersion?.versionNo ?? 0) + 1;
+
+        const buyer = buyers.find(b => b.id === ob.buyerId);
+        const fromParty =
+          userRole === "business_owner"
+            ? `${businessName} / business_owner`
+            : `${buyer?.buyersCompanyName} / buyer`;
+        const toParty =
+          userRole === "business_owner"
+            ? `${buyer?.buyersCompanyName} / buyer`
+            : `${owner?.businessName} / business_owner`;
 
           await OfferVersion.create({
             offerBuyerId: ob.id,
-            versionNo: nextVersionNo,
+            versionNo: nextVersion,
             fromParty,
             toParty,
             offerName: offer.offerName,
@@ -95,56 +74,37 @@ export const offerNegotiationService = {
             grandTotal: data.grandTotal ?? offer.grandTotal,
             shipmentDate: data.shipmentDate ?? offer.shipmentDate,
             remark: data.remark ?? offer.remark,
-            status: "open"
-          }, { transaction });
-        }
+            status: "open",
+          }, { transaction: t }
+        );
       }
 
-      await transaction.commit();
       return { offerId, buyers, owner, businessName, userRole };
-    } catch (err) {
-      if (!transaction.finished) await transaction.rollback();
-      throw err;
-    }
+    });
   },
 
   async respondOffer(user, offerId, buyerId, action) {
-    const transaction = await sequelize.transaction();
-    try {
-      const userId = user?.id;
-      const userRole = user?.userRole;
-
-      const offer = await Offer.findByPk(offerId, { transaction });
-      if (!offer || offer.status === "close" || offer.isDeleted) {
-        throw new Error("Offer not found or closed/deleted");
-      }
-
-      const buyer = await Buyer.findByPk(buyerId, { transaction });
+    return withTransaction(async (t) => {
+      const { id: userId, userRole } = user;
+      const offer = await ensureActiveOffer(Offer, offerId, t);
+      const buyer = await Buyer.findByPk(buyerId, { transaction: t });
       if (!buyer) throw new Error("Buyer not found");
 
-      let owner;
-      if (userRole === "business_owner") {
-        owner = await BusinessOwner.findByPk(userId, { transaction });
-        if (!owner || owner.status !== "active") throw new Error("Inactive business owner");
-      } else {
-        owner = await BusinessOwner.findByPk(buyer.ownerId, { transaction });
-        if (!owner || owner.status !== "active") throw new Error("Inactive buyer owner");
-      }
+      const owner =
+        userRole === "business_owner"
+          ? await ensureActiveOwner(BusinessOwner, userId, t)
+          : await ensureActiveOwner(BusinessOwner, buyer.ownerId, t);
 
-      if (buyer.ownerId !== offer.businessOwnerId) {
-        throw new Error("This buyer is not registered under your business.");
-      }
+      if (buyer.ownerId !== offer.businessOwnerId)
+        throw new Error("This buyer is not registered under your business");
 
-      const offerBuyer = await OfferBuyer.findOne({ where: { offerId, buyerId }, transaction });
+      const offerBuyer = await OfferBuyer.findOne({ where: { offerId, buyerId }, transaction: t });
       if (!offerBuyer) throw new Error("OfferBuyer not found");
 
-      const lastVersion = await OfferVersion.findOne({
-        where: { offerBuyerId: offerBuyer.id },
-        order: [["versionNo", "DESC"]],
-        transaction
-      });
+      const lastVersion = await getLastVersion(OfferVersion, offerBuyer.id, t);
 
-     const offerResult = await OfferResult.create({
+      return OfferResult.create(
+        {
         offerVersionId: lastVersion?.id,
         offerId,
         ownerId: owner.id,
@@ -156,24 +116,20 @@ export const offerNegotiationService = {
         buyerName: buyer.buyersCompanyName,
         ownerCompanyName: owner.businessName,
         buyerCompanyName: buyer.buyersCompanyName
-    }, { transaction });
-
-      await transaction.commit();
-      return offerResult;
-    } catch (err) {
-      if (!transaction.finished) await transaction.rollback();
-      throw err;
-    }
+        },
+        { transaction: t }
+      );
+    });
   },
 
   async getRecentNegotiations(ownerId, buyerId) {
     const offerBuyers = await OfferBuyer.findAll({
       where: { ...(ownerId && { ownerId }), ...(buyerId && { buyerId }) },
-      include: [{ model: OfferVersion, as: "versions", order: [["versionNo", "DESC"]] }]
+      include: [{ model: OfferVersion, as: "versions", order: [["versionNo", "DESC"]] }],
     });
 
-    return offerBuyers.flatMap(ob =>
-      ob.versions.map(v => ({
+    return offerBuyers.flatMap((ob) =>
+      ob.versions.map((v) => ({
         offerId: v.offerId,
         versionNo: v.versionNo,
         fromParty: v.fromParty,
@@ -190,17 +146,13 @@ export const offerNegotiationService = {
     const offerBuyer = await OfferBuyer.findOne({ where: { ...(ownerId && { ownerId }), ...(buyerId && { buyerId }) } });
     if (!offerBuyer) return [];
 
-    const latestVersion = await OfferVersion.findOne({
-      where: { offerBuyerId: offerBuyer.id },
-      order: [["versionNo", "DESC"]]
-    });
-    if (!latestVersion) return [];
+    const latest = await getLastVersion(OfferVersion, offerBuyer.id);
+    if (!latest) return [];
 
-    const versions = await OfferVersion.findAll({
-      where: { offerBuyerId: offerBuyer.id, versionNo: { [Op.lte]: latestVersion.versionNo } },
-      order: [["versionNo", "ASC"]]
+    return OfferVersion.findAll({
+      where: { offerBuyerId: offerBuyer.id, versionNo: { [Op.lte]: latest.versionNo } },
+      order: [["versionNo", "ASC"]],
     });
 
-    return versions;
   }
 };
