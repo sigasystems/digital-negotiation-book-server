@@ -17,51 +17,32 @@ export const stripeWebhook = async (req, res) => {
   }
 
   try {
+    const handlePaymentUpdate = async (paymentId, status, extra = {}) => {
+      const payment = await Payment.findByPk(paymentId);
+      console.log("payment id from stripewebhook controllr", payment)
+      if (!payment) return;
+      payment.status = status;
+      if (status === "success") payment.paidAt = new Date();
+      if (extra.stripeSubscriptionId) payment.stripeSubscriptionId = extra.stripeSubscriptionId;
+      await payment.save();
+    };
+
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object;
         if (session.metadata.paymentId) {
-          const payment = await Payment.findByPk(session.metadata.paymentId);
-          if (payment) {
-            payment.status = "success"; 
-            payment.paidAt = new Date();
-            payment.stripeSubscriptionId = session.subscription;
-            await payment.save();
-          }
+          await handlePaymentUpdate(session.metadata.paymentId, "success", {
+            stripeSubscriptionId: session.subscription,
+          });
         }
-        // ✅ Mark payment successful
-        // await Payment.update(
-        //   { status: "succeeded", paidAt: new Date() },
-        //   { where: { stripePaymentId: session.id } }
-        // );
         break;
       }
 
       case "invoice.payment_succeeded": {
         const invoice = event.data.object;
-        const payment = await Payment.findOne({ where: { stripeSubscriptionId: invoice.subscription }, });
-        if (payment) {
-          payment.status = "success";
-          payment.paidAt = new Date();
-          await payment.save();
-        }
-        break;
-      }
-
-      case "invoice.finalized": {
-        const invoice = event.data.object;
-        const payment = await Payment.findOne({ where: { stripeSubscriptionId: invoice.subscription }, });
-        if (payment) {
-          payment.status = "success";
-          payment.paidAt = new Date();
-          await payment.save();
-        }
-        break;
-      }
-
-      case "invoice.sent": {
-        const invoice = event.data.object;
-        const payment = await Payment.findOne({ where: { stripeSubscriptionId: invoice.subscription },  });
+        const payment = await Payment.findOne({
+          where: { stripeSubscriptionId: invoice.subscription },
+        });
         if (payment) {
           payment.status = "success";
           payment.paidAt = new Date();
@@ -95,7 +76,7 @@ export const stripeWebhook = async (req, res) => {
       }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
+        console.log(`Unhandled Stripe event type: ${event.type}`);
     }
 
     res.json({ received: true });
