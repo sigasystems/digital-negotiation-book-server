@@ -32,7 +32,7 @@ export const getPaymentById = asyncHandler(async (req, res) => {
 
 export const updatePaymentStatus = asyncHandler(async (req, res) => {
   try {
-    const payment = await paymentService.updatePaymentStatus(req.params.id, req.body.status);
+    const payment = await paymentService.updatePaymentstatuscode(req.params.id, req.body.status);
     successResponse(res, 200, "Payment status updated successfully", payment);
   } catch (err) {
     errorResponse(res, err.status || 500, err.message);

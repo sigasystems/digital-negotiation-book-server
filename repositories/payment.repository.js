@@ -10,7 +10,7 @@ export const paymentRepository = {
     if (status === "success") payment.paidAt = new Date();
     return payment.save();
   },
-  
+  getPaymentByTransactionId: (transactionId) => Payment.findOne({ where: { transactionId } }), 
   deletePayment: (payment) => payment.destroy(),
   getUserById: (id) => User.findByPk(id),
   getPlanById: (id) => Plan.findByPk(id),

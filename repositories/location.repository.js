@@ -1,45 +1,51 @@
 import { Op } from "sequelize";
 import { Location } from "../models/index.js";
 
-class LocationRepository {
-  async createMany(locations) {
-    return await Location.bulkCreate(locations);
-  }
+const createMany = async (locations) => {
+  return await Location.bulkCreate(locations);
+};
 
-  async findByCodes(codes) {
-    return await Location.findAll({ where: { code: codes } });
-  }
+const findByCodes = async (codes) => {
+  return await Location.findAll({ where: { code: codes } });
+};
 
-  async findAll(ownerId) {
-    if (!ownerId) return [];
-    return await Location.findAll({ where: { ownerId } });
-  }
+const findAll = async (ownerId) => {
+  if (!ownerId) return [];
+  return await Location.findAll({ where: { ownerId } });
+};
 
-  async findById(id) {
-    return await Location.findByPk(id);
-  }
+const findById = async (id) => {
+  return await Location.findByPk(id);
+};
 
-  async findByCode(code) {
-    return await Location.findOne({ where: { code } });
-  }
+const findByCode = async (code) => {
+  return await Location.findOne({ where: { code } });
+};
 
-  async update(location, data) {
-    return await location.update(data);
-  }
+const update = async (location, data) => {
+  return await location.update(data);
+};
 
-  async delete(location) {
-    return await location.destroy();
-  }
+const remove = async (location) => {
+  return await location.destroy();
+};
 
-  async search({ where, limit, offset }) {
-    return await Location.findAndCountAll({
-      where,
-      limit,
-      offset,
-      order: [["locationName", "ASC"]],
-    });
-  }
-}
+const search = async ({ where, limit, offset }) => {
+  return await Location.findAndCountAll({
+    where,
+    limit,
+    offset,
+    order: [["locationName", "ASC"]],
+  });
+};
 
-// Export a singleton instance
-export default new LocationRepository();
+export default {
+  createMany,
+  findByCodes,
+  findAll,
+  findById,
+  findByCode,
+  update,
+  delete: remove,
+  search,
+};
