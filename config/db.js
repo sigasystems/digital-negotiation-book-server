@@ -23,8 +23,8 @@ const sequelize = new Sequelize(
         }
       : {}, // 👈 no SSL locally
     pool: {
-      max: 5,
-      min: 2,
+      max: 2,
+      min: 0,
       idle: 10000,
       acquire: 30000,
     },
