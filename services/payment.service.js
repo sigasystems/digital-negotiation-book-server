@@ -45,6 +45,8 @@ export const paymentService = {
   //   return formatTimestamps(payment.toJSON());
   // },
 
+
+  
   createPayment: async ({ isStripe, planId, userId, manualData }) => {
     planId = String(planId).trim();
     userId = String(userId).trim();
@@ -115,9 +117,45 @@ export const paymentService = {
       throw { statuscode: 400, message: "Validation Error", errors };
     }
 
+    const session = await paymentRepository.createStripeSession({
+  email: user.email,
+  priceId: stripePrice.id,
+  paymentId: payment.id,
+  planId: plan.id,
+});
+
+// ✅ Add this block right here
+try {
+  const emailHtml = `
+    <p>Hi ${user.firstName},</p>
+    <p>Thank you for starting the purchase of the ${plan.name} plan.</p>
+    <p>You can complete your payment by clicking the button below:</p>
+    ${emailLoginButton({ url: session.url, label: "Complete Payment" })}
+    <p>Best regards,<br/>Your Company Team</p>
+  `;
+
+  await emailService.sendMail({
+    to: user.email,
+    subject: `Complete your ${plan.name} subscription`,
+    html: emailHtml,
+  });
+
+  console.log("Payment email sent successfully to:", user.email);
+} catch (err) {
+  console.error("Failed to send payment email:", err);
+}
+
+return {
+  checkoutUrl: session.url,
+  statusCode: session.statusCode,
+  payment: formatTimestamps(payment.toJSON()),
+};
+
+
     const payment = await paymentRepository.createPayment(parsed.data);
     return formatTimestamps(payment.toJSON());
   },
+
   getAllPayments: async () => {
     const payments = await paymentRepository.getAllPayments();
     return payments.map((p) => {
