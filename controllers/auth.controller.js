@@ -22,10 +22,11 @@ export const login = asyncHandler(async (req, res) => {
     if (!parsed.success)
       return errorResponse(res, 400, parsed.error.issues.map(i => i.message).join(", "));
 
-    const { accessToken, roleDetails } = await authService.login({ res, ...parsed.data });
+    const { accessToken, roleDetails, tokenPayload } = await authService.login({ res, ...parsed.data });
 
     return successResponse(res, 200, "Login successful", {
       accessToken,
+      tokenPayload,
       roleCreatedAt: roleDetails?.createdAt,
       roleUpdatedAt: roleDetails?.updatedAt,
       roleIsActive: roleDetails?.isActive ?? false,
@@ -37,6 +38,7 @@ export const login = asyncHandler(async (req, res) => {
 
 export const refreshTokenRotation = asyncHandler(async (req, res) => {
   try {
+    console.log("req.cookies?.refreshToken",req.cookies?.refreshToken)
     const token = req.cookies?.refreshToken;
     if (!token) return errorResponse(res, 401, "No refresh token");
 

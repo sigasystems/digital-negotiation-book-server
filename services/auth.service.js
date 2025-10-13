@@ -7,6 +7,7 @@ import { generateEmailTemplate, sendEmailWithRetry } from "../utlis/emailTemplat
 import { emailLoginButton } from "../utlis/emailTemplate.js";
 import transporter from "../config/nodemailer.js";
 import { checkAccountStatus } from "../utlis/helper.js";
+import buyersRepository from "../repositories/buyers.repository.js";
 
 function generateOtp() {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -99,16 +100,44 @@ export async function login({ res, email, password }) {
 }
 
 async function refreshToken(oldToken, res) {
+  console.log("oldToken", oldToken)
   try {
     const decoded = jwt.verify(oldToken, process.env.REFRESH_TOKEN_SECRET);
+    console.log("decoded", decoded)
+
+    // Fetch user from DB
     const user = await userRepository.findById(decoded.id);
     if (!user) throw new Error("User not found");
+    // Fetch business owner record based on email
+    const businessOwner = await buyersRepository.findOwnerByEmail(
+      decoded.email
+    );
 
-    const payload = { id: user.id, email: user.email };
+    const roleMap = {
+      1: "super_admin",
+      2: "business_owner",
+      3: "buyer",
+      4: "manager",
+      5: "support_staff",
+      6: "guest",
+    };
+
+    const payload = {
+      id: user.id,
+      email: user.email,
+      userRole: user.userRole || roleMap[user.roleId] || null,
+      name: user.name || `${user.first_name || ""} ${user.last_name || ""}`.trim() || null,
+      businessName: businessOwner?.businessName || null,
+    };
+
+    // Generate access token and refresh token
     const accessToken = accessTokenGenerator(payload);
     refreshTokenGenerator(res, payload);
-    return accessToken;
-  } catch {
+
+    // Return token + safe info
+    return { accessToken, safeUserInfo: payload };
+  } catch (err) {
+    console.error(err);
     throw new Error("Invalid refresh token");
   }
 }

@@ -6,21 +6,21 @@ import transporter from "../config/nodemailer.js";
 import { accessTokenGenerator, refreshTokenGenerator } from "../utlis/tokenGenerator.js";
 import { Op } from "sequelize";
 
-class BuyerService {
-  async addBuyer(ownerId, buyerData, owner) {
+export const buyerService = {
+  addBuyer: async (ownerId, buyerData, owner) => {
     const { registrationNumber, contactEmail, contactName } = buyerData;
 
     // Check unique registration number
     if (registrationNumber) {
       const existingReg = await buyersRepository.findByRegistrationNumber(registrationNumber);
-      if (existingReg) throw new Error("Registration number already in use");
+      if (existingReg) return { error: "Registration number already in use" };
     }
 
     // Check unique email
     const existingUser = await buyersRepository.findUserByEmail(contactEmail);
-    if (existingUser) throw new Error("Contact email already in use");
+    if (existingUser) return { error: "Contact email already in use" };
 
-    // Generate password
+    // Generate and hash password
     const password = generateSecurePassword(12);
     const hashedPassword = await bcrypt.hash(password, 12);
 
@@ -72,10 +72,10 @@ class BuyerService {
 
     await sendEmailWithRetry(transporter, mailOptions, 2);
 
-    return newBuyer;
-  }
+    return { created: newBuyer };
+  },
 
-  async deleteBuyer(buyer, owner) {
+  deleteBuyer: async (buyer, owner) => {
     await buyersRepository.softDelete(buyer);
 
     const mailOptions = {
@@ -91,9 +91,9 @@ class BuyerService {
 
     await sendEmailWithRetry(transporter, mailOptions, 2);
     return true;
-  }
+  },
 
-  async activateBuyer(buyer, owner) {
+  activateBuyer: async (buyer, owner) => {
     await buyersRepository.activate(buyer);
 
     const mailOptions = {
@@ -108,10 +108,11 @@ class BuyerService {
     };
 
     await sendEmailWithRetry(transporter, mailOptions, 2);
-    return buyer;
-  }
 
-  async deactivateBuyer(buyer, owner) {
+    return { updated: buyer };
+  },
+
+  deactivateBuyer: async (buyer, owner) => {
     await buyersRepository.deactivate(buyer);
 
     const mailOptions = {
@@ -126,20 +127,23 @@ class BuyerService {
     };
 
     await sendEmailWithRetry(transporter, mailOptions, 2);
-    return buyer;
-  }
 
-  async editBuyer(buyer, updates, owner) {
-    // Check registration number uniqueness
+    return { updated: buyer };
+  },
+
+  editBuyer: async (buyer, updates, owner) => {
+    // Registration number uniqueness
     if (updates.registrationNumber) {
       const existing = await buyersRepository.findByRegistrationNumber(updates.registrationNumber);
-      if (existing && existing.id !== buyer.id) throw new Error("Registration number already in use");
+      if (existing && existing.id !== buyer.id)
+        return { error: "Registration number already in use" };
     }
 
     // Check contact email uniqueness
     if (updates.contactEmail) {
       const existing = await buyersRepository.findByContactEmail(updates.contactEmail);
-      if (existing && existing.id !== buyer.id) throw new Error("Contact email already in use");
+      if (existing && existing.id !== buyer.id)
+        return { error: "Contact email already in use" };
     }
 
     await buyersRepository.update(buyer, updates);
@@ -156,49 +160,44 @@ class BuyerService {
     };
 
     await sendEmailWithRetry(transporter, mailOptions, 2);
-    return buyer;
-  }
 
-   async getAllBuyers(ownerId) {
+    return { updated: buyer };
+  },
+
+  getAllBuyers: async (ownerId) => {
     const owner = await buyersRepository.findOwnerById(ownerId);
-    if (!owner) throw new Error("Business Owner not found");
+    if (!owner) return { error: "Business Owner not found" };
+    const buyers = await buyersRepository.findAllByOwner(ownerId);
+    return { buyers };
+  },
 
-    return buyersRepository.findAllByOwner(ownerId);
-  }
-
-  async getBuyerById(ownerId, buyerId) {
+  getBuyerById: async (ownerId, buyerId) => {
     const buyer = await buyersRepository.findByOwnerAndId(ownerId, buyerId);
-    if (!buyer) throw new Error("Buyer not found under this business owner");
+    if (!buyer) return { error: "Buyer not found under this business owner" };
+    return { buyer };
+  },
 
-    return buyer;
-  }
-
-  async searchBuyers(ownerId, query) {
+  searchBuyers: async (ownerId, query) => {
     const filters = {};
+    if (query.country) filters.country = { [Op.iLike]: `%${query.country}%` };
+    if (query.status) filters.status = query.status;
+    if (typeof query.isVerified !== "undefined") filters.isVerified = query.isVerified;
 
-    if (query.country) {
-      filters.country = { [Op.iLike]: `%${query.country}%` };
-    }
-    if (query.status) {
-      filters.status = query.status;
-    }
-    if (typeof query.isVerified !== "undefined") {
-      filters.isVerified = query.isVerified;
-    }
+    const buyers = await buyersRepository.searchBuyers(ownerId, filters);
+    return { buyers };
+  },
 
-    return buyersRepository.searchBuyers(ownerId, filters);
-  }
-
- async becomeBusinessOwner(userEmail, data) {
+  becomeBusinessOwner: async (userEmail, data) => {
   const existingUser = await buyersRepository.findUserByEmail(userEmail);
-  if (!existingUser) throw new Error("User not found");
+  if (!existingUser) return { error: "User not found" };
 
   const existingOwner = await buyersRepository.findOwnerByEmail(userEmail);
-  if (existingOwner) throw new Error("Business owner already registered for this user. Please login!");
+  if (existingOwner)
+    return { error: "Business owner already registered for this user. Please login!" };
 
-  if (data.registrationNumber) {
+ if (data.registrationNumber) {
     const existingReg = await buyersRepository.findByRegistrationNumber(data.registrationNumber);
-    if (existingReg) throw new Error("Registration number already in use");
+    if (existingReg) return { error: "Registration number already in use" };
   }
 
   await existingUser.update({
@@ -240,6 +239,4 @@ class BuyerService {
   return { newOwner, accessToken };
 }
 
-}
-
-export default new BuyerService();
+};

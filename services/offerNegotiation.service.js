@@ -1,5 +1,7 @@
 import { Offer, OfferBuyer, OfferVersion, OfferResult, Buyer, BusinessOwner } from "../models/index.js";
 import { withTransactionOfferNegotiation, ensureActiveOffer, ensureActiveOwner, getLastVersion } from "../utlis/offerHelpers.js";
+import { generateEmailTemplate, sendEmailWithRetry } from "../utlis/emailTemplate.js";
+import transporter from "../config/nodemailer.js";
 import { Op } from "sequelize";
 
 export const offerNegotiationService = {
@@ -40,6 +42,7 @@ export const offerNegotiationService = {
 
       const created = await OfferBuyer.bulkCreate(newMappings, { transaction: t, returning: true });
       const allMappings = [...existing, ...created];
+      const emailErrors = [];
 
       for (const ob of allMappings) {
         if (ob.status === "close") continue;
@@ -48,20 +51,22 @@ export const offerNegotiationService = {
         const nextVersion = (lastVersion?.versionNo ?? 0) + 1;
 
         const buyer = buyers.find(b => b.id === ob.buyerId);
-        const fromParty =
-          userRole === "business_owner"
+        const fromPartyDisplay = userRole === "business_owner"
             ? `${businessName} / business_owner`
             : `${buyer?.buyersCompanyName} / buyer`;
-        const toParty =
-          userRole === "business_owner"
+
+        const toPartyDisplay = userRole === "business_owner"
             ? `${buyer?.buyersCompanyName} / buyer`
             : `${owner?.businessName} / business_owner`;
 
-          await OfferVersion.create({
+        const toEmail = buyer?.contactEmail;
+        const fromEmail = process.env.EMAIL_USER || "noreply@yourapp.com";
+
+          const offerVersion = await OfferVersion.create({
             offerBuyerId: ob.id,
             versionNo: nextVersion,
-            fromParty,
-            toParty,
+            fromParty: fromPartyDisplay,
+            toParty: toPartyDisplay,
             offerName: offer.offerName,
             productName: data.productName ?? offer.productName,
             speciesName: data.speciesName ?? offer.speciesName,
@@ -75,11 +80,43 @@ export const offerNegotiationService = {
             shipmentDate: data.shipmentDate ?? offer.shipmentDate,
             remark: data.remark ?? offer.remark,
             status: "open",
-          }, { transaction: t }
-        );
-      }
+      }, { transaction: t });
 
-      return { offerId, buyers, owner, businessName, userRole };
+      const emailHtml = generateEmailTemplate({
+        title: `New Offer: ${offerVersion.offerName}`,
+        subTitle: `Hello ${toPartyDisplay},`,
+        body: `
+          <p>${fromPartyDisplay} has sent you a new offer.</p>
+          <ul>
+            <li><b>Product:</b> ${offerVersion.productName}</li>
+            <li><b>Species:</b> ${offerVersion.speciesName}</li>
+            <li><b>Brand:</b> ${offerVersion.brand}</li>
+            <li><b>Quantity:</b> ${offerVersion.quantity}</li>
+            <li><b>Grand Total:</b> ${offerVersion.grandTotal}</li>
+            <li><b>Shipment Date:</b> ${offerVersion.shipmentDate?.toISOString().split('T')[0]}</li>
+            <li><b>Remarks:</b> ${offerVersion.remark || "N/A"}</li>
+          </ul>
+        `,
+        footer: "Please review and take necessary action.",
+      });
+
+      try {
+        await sendEmailWithRetry(transporter, {
+          from: `"${fromPartyDisplay}" <${fromEmail}>`,
+          to: toEmail,
+          subject: `New Offer from ${fromPartyDisplay}`,
+          html: emailHtml,
+        });
+      } catch (err) {
+        emailErrors.push({
+          buyerId: ob.buyerId,
+          buyerName: buyer?.buyersCompanyName,
+          message: err.message || "Failed to send email",
+        });
+      }
+    }
+
+      return { offerId, buyers, owner, businessName, userRole, emailErrors };
     });
   },
 

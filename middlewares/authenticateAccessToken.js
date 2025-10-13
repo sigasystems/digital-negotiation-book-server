@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import { errorResponse } from "../handlers/responseHandler.js";
 
-export const authenticateJWT = (req, res, next) => {
+export const authenticateAccessToken = (req, res, next) => {
   try {
     const authHeader = req.headers["authorization"];
     if (!authHeader || !authHeader.startsWith("Bearer ")) {

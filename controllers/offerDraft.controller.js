@@ -1,7 +1,7 @@
 import { asyncHandler } from "../handlers/asyncHandler.js";
 import { authorizeRoles } from "../utlis/helper.js";
 import { errorResponse, successResponse } from "../handlers/responseHandler.js";
-import offerDraftService from "../services/offerDraft.service.js";
+import {offerDraftService} from "../services/offerDraft.service.js";
 
 export const createOfferDraft = asyncHandler(async (req, res) => {
   try {
