@@ -85,11 +85,29 @@ export const superAdminService = {
     }
   },
 
-  getAllBusinessOwners: async (withBuyers = false) => {
-    const options = withBuyers ? superAdminRepo.includeBuyers() : {};
-    const owners = await superAdminRepo.findAll(options);
-    return owners.map((owner) => formatTimestamps(owner.toJSON()));
-  },
+ getAllBusinessOwners: async ({ pageIndex = 0, pageSize = 10, withBuyers = false }) => {
+  const options = withBuyers ? superAdminRepo.includeBuyers() : {};
+
+  // Fetch all owners first (or you can adapt to use a DB-level pagination if supported)
+  const owners = await superAdminRepo.findAll(options);
+  const formattedOwners = owners.map((owner) => formatTimestamps(owner.toJSON()));
+
+  const totalItems = formattedOwners.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  // Calculate paginated slice
+  const start = pageIndex * pageSize;
+  const paginatedOwners = formattedOwners.slice(start, start + pageSize);
+
+  return {
+    data: paginatedOwners,
+    totalItems,
+    totalPages,
+    pageIndex,
+    pageSize,
+  };
+},
+
 
   getBusinessOwnerById: async (id) => {
     const owner = await superAdminRepo.findById(id, { paranoid: false });

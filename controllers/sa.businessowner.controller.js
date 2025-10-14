@@ -22,8 +22,16 @@ export const getAllBusinessOwners = asyncHandler(async (req, res) => {
   try {
     authorizeRoles(req, ["super_admin"]);
     const withBuyers = req.query.withBuyers === "true";
-    const owners = await superAdminService.getAllBusinessOwners(withBuyers);
-    return successResponse(res, 200, "Business owners fetched successfully", { totalOwners: owners.length, owners });
+    const pageIndex = parseInt(req.query.pageIndex) || 0;
+    const pageSize = parseInt(req.query.pageSize) || 10;
+
+    const ownersPaginated = await superAdminService.getAllBusinessOwners({
+      withBuyers,
+      pageIndex,
+      pageSize,
+    });
+
+    return successResponse(res, 200, "Business owners fetched successfully", ownersPaginated);
   } catch (err) {
     return errorResponse(res, err.statusCode || 500, err.message);
   }
