@@ -6,9 +6,14 @@ class BuyerRepository {
     return Buyer.findByPk(id);
   }
 
-  async findByRegistrationNumber(registrationNumber) {
-    return Buyer.findOne({ where: { registrationNumber } });
-  }
+  // Check if registration number exists in either table
+async  findRegistrationNumber(registrationNumber) {
+  const owner = await BusinessOwner.findOne({ where: { registrationNumber } });
+  if (owner) return true;
+  const buyer = await Buyer.findOne({ where: { registrationNumber } });
+  if (buyer) return true;
+  return false;
+}
 
   async findByContactEmail(contactEmail) {
     return Buyer.findOne({ where: { contactEmail } });

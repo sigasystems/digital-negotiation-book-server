@@ -4,48 +4,10 @@ import { paymentSchema } from "../validations/payment.validation.js";
 import formatTimestamps from "../utlis/formatTimestamps.js";
 import { PlanRepository } from "../repositories/plan.repository.js";
 import userRepository from "../repositories/user.repository.js";
+import { Pool } from "pg";
+import buyersRepository from "../repositories/buyers.repository.js";
 
 export const paymentService = {
-  // createPayment: async ({ isStripe, planId, userId, manualData }) => {
-  //   if (isStripe) {
-  //     if (!planId || !userId) throw { statuscode: 400, message: "planId and userId are required for Stripe payment" };
-
-  //     const user = await paymentRepository.getUserById(userId);
-  //     const plan = await paymentRepository.getPlanById(planId);
-  //     if (!user || !plan) throw { statuscode: 404, message: "User or Plan not found" };
-
-  //     const amount = plan.billingCycle === "monthly" ? plan.priceMonthly : plan.priceYearly;
-  //     if (!amount || amount <= 0) throw { statuscode: 400, message: "Plan price must be greater than zero" };
-
-  //     const stripeInterval = plan.billingCycle === "monthly" ? "month" : "year";
-
-  //     const payment = await paymentRepository.createPayment({
-  //       userId: user.id,
-  //       planId: plan.id,
-  //       amount,
-  //       statuscode: "pending",
-  //       transactionId: `pending_${Date.now()}`,
-  //       paymentMethod: "card",
-  //     });
-
-  //     const stripeProduct = await paymentRepository.createStripeProduct(plan.name, { planId: plan.id, userId: user.id });
-  //     const stripePrice = await paymentRepository.createStripePrice(amount, plan.currency || "usd", stripeInterval, stripeProduct.id);
-  //     const session = await paymentRepository.createStripeSession({ email: user.email, priceId: stripePrice.id, paymentId: payment.id, planId: plan.id });
-
-  //     return { checkoutUrl: session.url, payment: formatTimestamps(payment.toJSON()) };
-  //   }
-
-  //   const parsed = paymentSchema.safeParse(manualData);
-  //   if (!parsed.success) {
-  //     const errors = parsed.error.issues.map(e => ({ field: e.path.join("."), message: e.message }));
-  //     throw { statuscode: 400, message: "Validation Error", errors };
-  //   }
-
-  //   const payment = await paymentRepository.createPayment(parsed.data);
-  //   return formatTimestamps(payment.toJSON());
-  // },
-
-
   
   createPayment: async ({ isStripe, planId, userId, manualData }) => {
     planId = String(planId).trim();

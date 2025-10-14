@@ -1,9 +1,15 @@
 import bcrypt from "bcrypt";
 import buyersRepository from "../repositories/buyers.repository.js";
 import generateSecurePassword from "../utlis/genarateSecurePassword.js";
-import { generateEmailTemplate,  sendEmailWithRetry } from "../utlis/emailTemplate.js";
+import {
+  generateEmailTemplate,
+  sendEmailWithRetry,
+} from "../utlis/emailTemplate.js";
 import transporter from "../config/nodemailer.js";
-import { accessTokenGenerator, refreshTokenGenerator } from "../utlis/tokenGenerator.js";
+import {
+  accessTokenGenerator,
+  refreshTokenGenerator,
+} from "../utlis/tokenGenerator.js";
 import { Op } from "sequelize";
 
 export const buyerService = {
@@ -12,7 +18,9 @@ export const buyerService = {
 
     // Check unique registration number
     if (registrationNumber) {
-      const existingReg = await buyersRepository.findByRegistrationNumber(registrationNumber);
+      const existingReg = await buyersRepository.findByRegistrationNumber(
+        registrationNumber
+      );
       if (existingReg) return { error: "Registration number already in use" };
     }
 
@@ -85,7 +93,9 @@ export const buyerService = {
       html: generateEmailTemplate({
         title: `Account Deleted from ${owner.businessName}`,
         subTitle: "Your buyer account is no longer active.",
-        body: `<p>Hello <b>${buyer.contactName || buyer.contactEmail}</b>, your buyer account has been deleted.</p>`,
+        body: `<p>Hello <b>${
+          buyer.contactName || buyer.contactEmail
+        }</b>, your buyer account has been deleted.</p>`,
       }),
     };
 
@@ -103,7 +113,9 @@ export const buyerService = {
       html: generateEmailTemplate({
         title: `Buyer activated for ${owner.businessName} 🎉`,
         subTitle: "Your account is active again!",
-        body: `<p>Hello <b>${buyer.contactName || buyer.contactEmail}</b>, your account is now active.</p>`,
+        body: `<p>Hello <b>${
+          buyer.contactName || buyer.contactEmail
+        }</b>, your account is now active.</p>`,
       }),
     };
 
@@ -122,7 +134,9 @@ export const buyerService = {
       html: generateEmailTemplate({
         title: `Your account has been deactivated`,
         subTitle: "Your buyer account is now inactive.",
-        body: `<p>Hello <b>${buyer.contactName || buyer.contactEmail}</b>, your account has been deactivated.</p>`,
+        body: `<p>Hello <b>${
+          buyer.contactName || buyer.contactEmail
+        }</b>, your account has been deactivated.</p>`,
       }),
     };
 
@@ -134,14 +148,18 @@ export const buyerService = {
   editBuyer: async (buyer, updates, owner) => {
     // Registration number uniqueness
     if (updates.registrationNumber) {
-      const existing = await buyersRepository.findByRegistrationNumber(updates.registrationNumber);
+      const existing = await buyersRepository.findByRegistrationNumber(
+        updates.registrationNumber
+      );
       if (existing && existing.id !== buyer.id)
         return { error: "Registration number already in use" };
     }
 
     // Check contact email uniqueness
     if (updates.contactEmail) {
-      const existing = await buyersRepository.findByContactEmail(updates.contactEmail);
+      const existing = await buyersRepository.findByContactEmail(
+        updates.contactEmail
+      );
       if (existing && existing.id !== buyer.id)
         return { error: "Contact email already in use" };
     }
@@ -155,7 +173,9 @@ export const buyerService = {
       html: generateEmailTemplate({
         title: `Your account at ${owner.businessName} was updated`,
         subTitle: "Your details were updated successfully.",
-        body: `<p>Hello <b>${buyer.contactName || buyer.contactEmail}</b>, your buyer details were updated.</p>`,
+        body: `<p>Hello <b>${
+          buyer.contactName || buyer.contactEmail
+        }</b>, your buyer details were updated.</p>`,
       }),
     };
 
@@ -181,62 +201,72 @@ export const buyerService = {
     const filters = {};
     if (query.country) filters.country = { [Op.iLike]: `%${query.country}%` };
     if (query.status) filters.status = query.status;
-    if (typeof query.isVerified !== "undefined") filters.isVerified = query.isVerified;
+    if (typeof query.isVerified !== "undefined")
+      filters.isVerified = query.isVerified;
 
     const buyers = await buyersRepository.searchBuyers(ownerId, filters);
     return { buyers };
   },
 
   becomeBusinessOwner: async (userEmail, data) => {
-  const existingUser = await buyersRepository.findUserByEmail(userEmail);
-  if (!existingUser) return { error: "User not found" };
+    const existingUser = await buyersRepository.findUserByEmail(userEmail);
+    if (!existingUser) return { error: "User not found" };
 
-  const existingOwner = await buyersRepository.findOwnerByEmail(userEmail);
-  if (existingOwner)
-    return { error: "Business owner already registered for this user. Please login!" };
+    const existingOwner = await buyersRepository.findOwnerByEmail(userEmail);
+    if (existingOwner)
+      throw new Error("Business owner already registered for this user.");
 
- if (data.registrationNumber) {
-    const existingReg = await buyersRepository.findByRegistrationNumber(data.registrationNumber);
+    // if (data.registrationNumber) {
+    //   const existingReg = await buyersRepository.findByRegistrationNumber(
+    //     data.registrationNumber
+    //   );
+    //   if (existingReg) return { error: "Registration number already in use" };
+    // }
+
+    await existingUser.update({
+      first_name: data.first_name || existingUser.first_name,
+      last_name: data.last_name || existingUser.last_name,
+      roleId: 2, // business_owner
+    });
+
+    const newOwner = await buyersRepository.createOwner({
+      userId: existingUser.id,
+      first_name: existingUser.first_name,
+      last_name: existingUser.last_name,
+      email: existingUser.email,
+      phoneNumber: data.phoneNumber,
+      businessName: data.businessName,
+      registrationNumber: data.registrationNumber,
+      country: data.country,
+      state: data.state,
+      city: data.city,
+      address: data.address,
+      postalCode: data.postalCode,
+      status: "active",
+      is_verified: true,
+      is_deleted: false,
+      is_approved: true,
+    });
+
+    const tokenPayload = {
+      id: newOwner.id,
+      email: newOwner.email,
+      userRole: "business_owner",
+      businessName: newOwner.businessName,
+      name: `${newOwner.first_name || ""} ${newOwner.last_name || ""}`.trim(),
+    };
+
+    const accessToken = accessTokenGenerator(tokenPayload);
+    refreshTokenGenerator(data.res, tokenPayload);
+
+    return { newOwner, accessToken };
+  },
+
+  checkRegistrationNumber: async (registrationNumber) => {
+    const existingReg = await buyersRepository.findRegistrationNumber(
+      registrationNumber
+    );
     if (existingReg) return { error: "Registration number already in use" };
-  }
-
-  await existingUser.update({
-    first_name: data.first_name || existingUser.first_name,
-    last_name: data.last_name || existingUser.last_name,
-    roleId: 2, // business_owner
-  });
-
-  const newOwner = await buyersRepository.createOwner({
-    userId: existingUser.id,
-    first_name: existingUser.first_name,
-    last_name: existingUser.last_name,
-    email: existingUser.email,
-    phoneNumber: data.phoneNumber,
-    businessName: data.businessName,
-    registrationNumber: data.registrationNumber,
-    country: data.country,
-    state: data.state,
-    city: data.city,
-    address: data.address,
-    postalCode: data.postalCode,
-    status: "active",
-    is_verified: true,
-    is_deleted: false,
-    is_approved: true,
-  });
-
-  const tokenPayload = {
-    id: newOwner.id,
-    email: newOwner.email,
-    userRole: "business_owner",
-    businessName: newOwner.businessName,
-    name: `${newOwner.first_name || ""} ${newOwner.last_name || ""}`.trim(),
-  };
-
-  const accessToken = accessTokenGenerator(tokenPayload);
-  refreshTokenGenerator(data.res, tokenPayload);
-
-  return { newOwner, accessToken };
-}
-
+    return { success: "Registration number is available" };
+  },
 };

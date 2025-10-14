@@ -7,6 +7,7 @@ import helmet from "helmet";
 import {locationRoutes, authRoutes ,superadminRoutes ,businessOwnerRoutes ,productRoutes, offerDraftRoute, offerRoute,planRoutes , paymentRoutes} from "./routes/index.js";
 import { notFoundHandler, errorHandler } from "./handlers/index.js";
 import cookieParser from "cookie-parser";
+import { stripeWebhook } from "./controllers/stripeWebhook.controller.js";
 
 dotenv.config();
 const app = express();
@@ -15,6 +16,7 @@ const app = express();
 // Middleware
 // -------------------------
 // app.use(cors());
+// app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 app.use(
   cors({
     origin: [
@@ -25,6 +27,7 @@ app.use(
   })
 );
 app.use(helmet())
+app.post("/api/payment/webhook", express.raw({ type: "application/json" }), stripeWebhook);
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
