@@ -1,11 +1,12 @@
 import express from "express";
 import { authenticateJWT } from "../middlewares/authenticateJWT.js";
 import {businessOwnerController} from "../controllers/index.js"
+import { check } from "zod";
 
 const router = express.Router();
 
 // ================== Buyer Routes ==================
-const { addBuyer, deleteBuyer, activateBuyer, deactivateBuyer, editBuyer, becomeBusinessOwner, searchBuyers, getAllBuyers, getBuyerById } = businessOwnerController;
+const { addBuyer,checkRegistrationNumber,  deleteBuyer, activateBuyer, deactivateBuyer, editBuyer, becomeBusinessOwner, searchBuyers, getAllBuyers, getBuyerById } = businessOwnerController;
 
 router.post("/add-buyer", authenticateJWT, addBuyer);
 router.delete("/delete-buyer/:id", authenticateJWT, deleteBuyer);
@@ -18,5 +19,6 @@ router.post("/become-business-owner", becomeBusinessOwner);
 router.get("/:ownerId/buyers/search", authenticateJWT, searchBuyers);
 router.get("/get-all-buyers", authenticateJWT, getAllBuyers);
 router.get("/get-buyer/:id", authenticateJWT, getBuyerById);
+router.get("/check-registration/:registrationNumber",  checkRegistrationNumber);
 
 export default router;

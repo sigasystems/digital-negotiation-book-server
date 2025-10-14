@@ -11,7 +11,7 @@ router.get("/:id", paymentController.getPaymentById);
 router.patch("/:id/status", paymentController.updatePaymentStatus);
 router.delete("/:id", paymentController.deletePayment);
 // Webhook → needs raw body
-router.post("/webhook", express.raw({ type: "application/json" }), stripeWebhook );
+// router.post("/webhook", express.raw({ type: "application/json" }), stripeWebhook );
 //----stripe
 router.get("/stripe/all", paymentController.getAllStripePayments);
 router.get("/payments/search", paymentController.searchStripePayments);      // filter by email/status

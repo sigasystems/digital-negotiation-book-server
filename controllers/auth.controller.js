@@ -38,7 +38,6 @@ export const login = asyncHandler(async (req, res) => {
 
 export const refreshTokenRotation = asyncHandler(async (req, res) => {
   try {
-    console.log("req.cookies?.refreshToken",req.cookies?.refreshToken)
     const token = req.cookies?.refreshToken;
     if (!token) return errorResponse(res, 401, "No refresh token");
 

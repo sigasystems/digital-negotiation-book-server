@@ -31,8 +31,8 @@ export const paymentRepository = {
       payment_method_types: ["card"],
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `https://example.com/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `https://example.com/cancel`,
+      success_url: `http://localhost:5173/paymentsuccess`,
+      cancel_url: `https://localhost:5173/`,
       metadata: { paymentId, planId },
     }),
 };

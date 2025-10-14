@@ -1,5 +1,5 @@
-import {buyerSchema} from "../validations/buyer.validation.js"
-import {businessOwnerSchema} from "../validations/business.validation.js"
+import { buyerSchema } from "../validations/buyer.validation.js";
+import { businessOwnerSchema } from "../validations/business.validation.js";
 import {buyerService} from "../services/buyer.service.js";
 import buyersRepository from "../repositories/buyers.repository.js";
 import { successResponse, errorResponse } from "../handlers/responseHandler.js";
@@ -13,15 +13,23 @@ export const becomeBusinessOwner = asyncHandler(async (req, res) => {
     const { email } = req.body;
 
     const existingUser = await buyersRepository.findUserByEmail(email);
-    if (!existingUser) return errorResponse(res, 404, "User not found in the system");
+    if (!existingUser)
+      return errorResponse(res, 404, "User not found in the system");
 
     const parsed = businessOwnerSchema.safeParse(req.body);
     if (!parsed.success) {
-      return errorResponse(res, 400, parsed.error.issues.map(i => i.message).join(", "));
+      return errorResponse(
+        res,
+        400,
+        parsed.error.issues.map((i) => i.message).join(", ")
+      );
     }
 
-    const { newOwner, accessToken } = await buyerService.becomeBusinessOwner(email, { ...parsed.data, res }, existingUser);
-
+    const { newOwner, accessToken } = await buyerService.becomeBusinessOwner(
+      email,
+      { ...parsed.data, res },
+      existingUser
+    );
     return successResponse(res, 201, "Business owner created successfully!", {
       accessToken,
       id: newOwner.id,
@@ -34,7 +42,11 @@ export const becomeBusinessOwner = asyncHandler(async (req, res) => {
       createdAt: newOwner.createdAt,
     });
   } catch (err) {
-    return errorResponse(res, 500, err.message || "Failed to create business owner");
+    return errorResponse(
+      res,
+      500,
+      err.message || "Failed to create business owner"
+    );
   }
 });
 
@@ -44,7 +56,10 @@ export const getAllBuyers = asyncHandler(async (req, res) => {
     authorizeRoles(req, ["business_owner"]);
     const buyers = await buyerService.getAllBuyers(req.user.id);
     const total = buyers.length;
-    return successResponse(res, 200, "Buyers fetched successfully", {total ,buyers});
+    return successResponse(res, 200, "Buyers fetched successfully", {
+      total,
+      buyers,
+    });
   } catch (err) {
     return errorResponse(res, 500, err.message || "Failed to fetch buyers");
   }
@@ -69,14 +84,27 @@ export const searchBuyers = asyncHandler(async (req, res) => {
     const { country, status, isVerified } = req.query;
     const parsed = buyerSearchSchemaValidation
       .pick({ country: true, status: true, isVerified: true })
-      .safeParse({ country, status, isVerified: isVerified ? isVerified === "true" : undefined });
+      .safeParse({
+        country,
+        status,
+        isVerified: isVerified ? isVerified === "true" : undefined,
+      });
 
     if (!parsed.success) {
-      return errorResponse(res, 400, parsed.error.issues.map(i => i.message).join(", "));
+      return errorResponse(
+        res,
+        400,
+        parsed.error.issues.map((i) => i.message).join(", ")
+      );
     }
 
     const buyers = await buyerService.searchBuyers(req.user.id, parsed.data);
-    return successResponse(res, 200, buyers.length ? "Buyers filtered successfully" : "No buyers found", buyers);
+    return successResponse(
+      res,
+      200,
+      buyers.length ? "Buyers filtered successfully" : "No buyers found",
+      buyers
+    );
   } catch (err) {
     return errorResponse(res, 500, err.message || "Failed to search buyers");
   }
@@ -89,13 +117,21 @@ export const addBuyer = asyncHandler(async (req, res) => {
 
     const parsed = buyerSchema.safeParse(req.body);
     if (!parsed.success) {
-      return errorResponse(res, 400, parsed.error.issues.map(i => i.message).join(", "));
+      return errorResponse(
+        res,
+        400,
+        parsed.error.issues.map((i) => i.message).join(", ")
+      );
     }
 
     const owner = await buyersRepository.findOwnerById(req.user.id);
-    checkAccountStatus(owner , "Business owner")
+    checkAccountStatus(owner, "Business owner");
 
-    const newBuyer = await buyerService.addBuyer(req.user.id, parsed.data, owner);
+    const newBuyer = await buyerService.addBuyer(
+      req.user.id,
+      parsed.data,
+      owner
+    );
     return successResponse(res, 201, "Buyer added successfully", newBuyer);
   } catch (err) {
     return errorResponse(res, 500, err.message || "Failed to add buyer");
@@ -108,7 +144,7 @@ export const deleteBuyer = asyncHandler(async (req, res) => {
     authorizeRoles(req, ["business_owner"]);
 
     const buyer = await buyersRepository.findById(req.params.id);
-    checkAccountStatus(buyer , "Buyer")
+    checkAccountStatus(buyer, "Buyer");
 
     const owner = await buyersRepository.findOwnerById(buyer.ownerId);
     await buyerService.deleteBuyer(buyer, owner);
@@ -125,7 +161,7 @@ export const activateBuyer = asyncHandler(async (req, res) => {
     authorizeRoles(req, ["business_owner"]);
 
     const buyer = await buyersRepository.findById(req.params.id);
-    checkAccountStatus(buyer , "Buyer")
+    checkAccountStatus(buyer, "Buyer");
 
     const owner = await buyersRepository.findOwnerById(buyer.ownerId);
     const updated = await buyerService.activateBuyer(buyer, owner);
@@ -142,7 +178,7 @@ export const deactivateBuyer = asyncHandler(async (req, res) => {
     authorizeRoles(req, ["business_owner"]);
 
     const buyer = await buyersRepository.findById(req.params.id);
-    checkAccountStatus(buyer , "Buyer")
+    checkAccountStatus(buyer, "Buyer");
     const owner = await buyersRepository.findOwnerById(buyer.ownerId);
     const updated = await buyerService.deactivateBuyer(buyer, owner);
 
@@ -159,11 +195,11 @@ export const editBuyer = asyncHandler(async (req, res) => {
 
     const parsed = buyerSchema.safeParse(req.body);
     if (!parsed.success) {
-      return errorResponse(res, 400, parsed.error.issues.map(i => i.message).join(", "));
+      return errorResponse(res,400,parsed.error.issues.map((i) => i.message).join(", ") );
     }
 
     const buyer = await buyersRepository.findById(req.params.id);
-    checkAccountStatus(buyer , "Buyer")
+    checkAccountStatus(buyer, "Buyer");
 
     const owner = await buyersRepository.findOwnerById(buyer.ownerId);
     const updated = await buyerService.editBuyer(buyer, parsed.data, owner);
@@ -171,5 +207,22 @@ export const editBuyer = asyncHandler(async (req, res) => {
     return successResponse(res, 200, "Buyer updated successfully", updated);
   } catch (err) {
     return errorResponse(res, 500, err.message || "Failed to edit buyer");
+  }
+});
+
+// Check registration number uniqueness
+export const checkRegistrationNumber = asyncHandler(async (req, res) => {
+  const { registrationNumber } = req.params;
+
+  if (!registrationNumber) {
+    return errorResponse(res, 400, "Registration number is required");
+  }
+
+  try {
+    const exists = await buyerService.checkRegistrationNumber(registrationNumber);
+    return successResponse(res, 200, "Check completed", { exists });
+  } catch (err) {
+    console.error(err);
+    return errorResponse(res, 500, err.message || "Server error");
   }
 });
