@@ -149,11 +149,17 @@ export const superAdminService = {
     return formatTimestamps(owner.toJSON());
   },
 
-  activateBusinessOwner: async (owner) => superAdminRepo.activateOwner(owner),
+  activateBusinessOwner: async (ownerId) => {
+    return await superAdminRepo.activateOwner(ownerId);
+  },
 
-  deactivateBusinessOwner: async (owner) => superAdminRepo.deactivateOwner(owner),
+  deactivateBusinessOwner: async (ownerId) => {
+  return await superAdminRepo.deactivateOwner(ownerId);
+},
 
-  softDeleteBusinessOwner: async (owner) => superAdminRepo.softDelete(owner),
+  softDeleteBusinessOwner: async (ownerId) => {
+    return await superAdminRepo.softDeleteOwner(ownerId);
+  },
 
   reviewBusinessOwner: async (owner, action) => {
     const isApproved = action === "approve";

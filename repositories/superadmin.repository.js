@@ -29,22 +29,37 @@ export const superAdminRepo = {
 
   updateOwner: (owner, data) => owner.update(data),
 
-  softDelete: (owner) => {
+   softDeleteOwner: async (ownerId) => {
+    const owner = await BusinessOwner.findByPk(ownerId);
+    if (!owner) throw new Error("Owner not found");
+
     owner.is_deleted = true;
-    owner.status = "inactive";
-    return owner.save();
+    owner.status = "inactive"
+    await owner.save();
+
+    return owner;
   },
 
-  activateOwner: (owner) => {
+  activateOwner: async (ownerId) => {
+    const owner = await BusinessOwner.findByPk(ownerId);
+    if (!owner) throw new Error("Owner not found");
+
     owner.status = "active";
     owner.is_approved = true;
-    return owner.save();
+
+    await owner.save();
+    return owner;
   },
 
-  deactivateOwner: (owner) => {
-    owner.status = "inactive";
-    return owner.save();
-  },
+  deactivateOwner: async (ownerId) => {
+  const owner = await BusinessOwner.findByPk(ownerId);
+  if (!owner) throw new Error("Owner not found");
+
+  owner.status = "inactive";
+  await owner.save();
+
+  return owner;
+},
 
  reviewOwner: async (ownerId, isApproved) => {
   const owner = await BusinessOwner.findByPk(ownerId); // or findOne({ where: { id: ownerId }})

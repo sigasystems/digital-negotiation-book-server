@@ -86,7 +86,7 @@ export const softDeleteBusinessOwner = asyncHandler(async (req, res) => {
   try {
     authorizeRoles(req, ["super_admin"]);
     const owner = await superAdminService.softDeleteBusinessOwner(req.params.id);
-    return successResponse(res, 200, "Business owner soft-deleted successfully", owner);
+    return successResponse(res, 200, "Business owner deleted successfully", owner);
   } catch (err) {
     return errorResponse(res, err.statusCode || 500, err.message);
   }
