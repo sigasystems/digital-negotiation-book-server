@@ -4,35 +4,45 @@ import Payment from "../models/payment.model.js";
 export const stripeWebhook = async (req, res) => {
   const sig = req.headers["stripe-signature"];
   let event;
+  const body = req.body || null;
+
+  console.log("Hello");
+  if (!body) {
+    return res.status(400).send("Missing body");
+  }
 
   try {
     event = stripe.webhooks.constructEvent(
-      req.body,
+      body,
       sig,
       process.env.STRIPE_WEBHOOK_SECRET
     );
   } catch (err) {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
-
   try {
     const handlePaymentUpdate = async (paymentId, status, extra = {}) => {
       const payment = await Payment.findByPk(paymentId);
       if (!payment) return;
       payment.status = status;
       if (status === "success") payment.paidAt = new Date();
-      if (extra.stripeSubscriptionId) payment.stripeSubscriptionId = extra.stripeSubscriptionId;
+      if (extra.stripeSubscriptionId)
+        payment.stripeSubscriptionId = extra.stripeSubscriptionId;
       await payment.save();
     };
 
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object;
-        if (session.metadata.paymentId) {
-          await handlePaymentUpdate(session.metadata.paymentId, "success", {
+        const transactionId = session.metadata.transactionId;
+        if (session.metadata.transactionId) {
+          await handlePaymentUpdate(transactionId, "success", {
             stripeSubscriptionId: session.subscription,
           });
         }
+        console.log('event type.......',event.type)
+        console.log('session ..........',session);
+        console.log('transactionId ...........',transactionId);
         break;
       }
 

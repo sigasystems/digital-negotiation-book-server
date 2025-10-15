@@ -19,20 +19,35 @@ export const paymentRepository = {
   listStripeCharges: (limit = 100) => stripe.charges.list({ limit }),
   createStripeProduct: (name, metadata) => stripe.products.create({ name, metadata }),
   createStripePrice: (amount, currency, interval, productId) =>
+    // stripe.prices.create({
+    //   unit_amount: Math.round(amount * 100),
+    //   currency,
+    //   recurring: { interval },
+    //   product: productId,
+    // }),
     stripe.prices.create({
-      unit_amount: Math.round(amount * 100),
-      currency,
-      recurring: { interval },
-      product: productId,
-    }),
-  createStripeSession: ({ email, priceId, paymentId, planId }) =>
+  unit_amount: amount * 100,
+  currency: "inr",
+  recurring: { interval: "month" }, // or "year"
+  product: productId,
+}) ,
+  createStripeSession: ({ email, priceId , userId, paymentId, planId }) =>
     stripe.checkout.sessions.create({
-      customer_email: email,
-      payment_method_types: ["card"],
+      // customer_email: email,
+      // payment_method_types: ["card"],
+      // mode: "subscription",
+      // line_items: [{ price: priceId, quantity: 1 }],
+      // success_url: `http://localhost:5173/paymentsuccess`,
+      // cancel_url: `https://localhost:5173/`,
+      // metadata: { paymentId, planId },
+
+
+
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `http://localhost:5173/paymentsuccess`,
+       success_url: `http://localhost:5173/paymentsuccess`,
       cancel_url: `https://localhost:5173/`,
       metadata: { paymentId, planId },
+      metadata: { paymentId, planId, userId },  
     }),
 };

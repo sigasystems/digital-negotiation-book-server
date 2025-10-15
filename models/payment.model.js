@@ -39,6 +39,11 @@ const Payment = sequelize.define("Payment", {
       allowNull: false,
       unique: true,
     },
+    stripeSubscriptionId: {
+  type: DataTypes.STRING,
+  allowNull: true,
+  unique: true,
+},
     // paidAt: {
     //   type: DataTypes.DATE,
     // },
