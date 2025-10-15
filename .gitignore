@@ -93,7 +93,7 @@ docker-compose.override.yml
 *.gz
 *.rar
 
-
+stripe.exe
 
 
 
