@@ -4,7 +4,6 @@ import { errorResponse } from "../handlers/responseHandler.js";
 export const authenticateRefreshToken = (req, res, next) => {
   try {
     const refreshToken = req.cookies?.refreshToken || req.cookies?.refreshtoken;
-    console.log("refreshToken",refreshToken)
 
     if (!refreshToken) {
       return errorResponse(res, 401, "Unauthorized: No refresh token provided");

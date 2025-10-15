@@ -100,10 +100,8 @@ export async function login({ res, email, password }) {
 }
 
 async function refreshToken(oldToken, res) {
-  console.log("oldToken", oldToken)
   try {
     const decoded = jwt.verify(oldToken, process.env.REFRESH_TOKEN_SECRET);
-    console.log("decoded", decoded)
 
     // Fetch user from DB
     const user = await userRepository.findById(decoded.id);

@@ -102,7 +102,6 @@ try {
     html: emailHtml,
   });
 
-  console.log("Payment email sent successfully to:", user.email);
 } catch (err) {
   console.error("Failed to send payment email:", err);
 }

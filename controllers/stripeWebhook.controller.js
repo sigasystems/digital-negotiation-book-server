@@ -12,14 +12,12 @@ export const stripeWebhook = async (req, res) => {
       process.env.STRIPE_WEBHOOK_SECRET
     );
   } catch (err) {
-    console.log("Webhook Error:", err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
   try {
     const handlePaymentUpdate = async (paymentId, status, extra = {}) => {
       const payment = await Payment.findByPk(paymentId);
-      console.log("payment id from stripewebhook controllr", payment)
       if (!payment) return;
       payment.status = status;
       if (status === "success") payment.paidAt = new Date();
@@ -81,7 +79,6 @@ export const stripeWebhook = async (req, res) => {
 
     res.json({ received: true });
   } catch (error) {
-    console.log("Webhook Handler Error:", error.message);
     res.status(500).send("Webhook handler failed");
   }
 };
