@@ -2,93 +2,54 @@ import stripe from "../config/stripe.js";
 import Payment from "../models/payment.model.js";
 
 export const stripeWebhook = async (req, res) => {
+   console.log("comes in webhook.....")
   const sig = req.headers["stripe-signature"];
-  let event;
-  const body = req.body || null;
-
-  console.log("Hello");
-  if (!body) {
-    return res.status(400).send("Missing body");
-  }
-
+  var event;
+  console.log("req body........", req.body)
+  console.log("log sig ............", sig );
+  console.log("stripe webhook..........",process.env.STRIPE_WEBHOOK_SECRET)
   try {
-    event = stripe.webhooks.constructEvent(
-      body,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET
-    );
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    console.log("event log", event)
   } catch (err) {
-    return res.status(400).send(`Webhook Error: ${err.message}`);
+    console.log("error in catch blcok",err);
+        return res.status(400).send(`Webhook Error: ${err.message}`);
   }
-  try {
-    const handlePaymentUpdate = async (paymentId, status, extra = {}) => {
-      const payment = await Payment.findByPk(paymentId);
-      if (!payment) return;
-      payment.status = status;
-      if (status === "success") payment.paidAt = new Date();
-      if (extra.stripeSubscriptionId)
-        payment.stripeSubscriptionId = extra.stripeSubscriptionId;
+
+
+  console.log("event type..........", event.type)
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object;
+
+    console.log("Incoming webhook session id:", session.id);
+const payment = await Payment.findOne({ where: { transactionId: session.id } });
+console.log("Payment found:", payment);
+
+    if (payment) {
+      payment.status = "success";
+      payment.stripeSubscriptionId = session.subscription;
       await payment.save();
-    };
 
-    switch (event.type) {
-      case "checkout.session.completed": {
-        const session = event.data.object;
-        const transactionId = session.metadata.transactionId;
-        if (session.metadata.transactionId) {
-          await handlePaymentUpdate(transactionId, "success", {
-            stripeSubscriptionId: session.subscription,
-          });
-        }
-        console.log('event type.......',event.type)
-        console.log('session ..........',session);
-        console.log('transactionId ...........',transactionId);
-        break;
+      const user = await User.findByPk(payment.userId);
+      if (user) {
+        user.subscriptionStatus = "active";
+        await user.save();
       }
-
-      case "invoice.payment_succeeded": {
-        const invoice = event.data.object;
-        const payment = await Payment.findOne({
-          where: { stripeSubscriptionId: invoice.subscription },
-        });
-        if (payment) {
-          payment.status = "success";
-          payment.paidAt = new Date();
-          await payment.save();
-        }
-        break;
-      }
-
-      case "invoice.payment_failed": {
-        const invoice = event.data.object;
-        const payment = await Payment.findOne({
-          where: { stripeSubscriptionId: invoice.subscription },
-        });
-        if (payment) {
-          payment.status = "failed";
-          await payment.save();
-        }
-        break;
-      }
-
-      case "customer.subscription.deleted": {
-        const subscription = event.data.object;
-        const payment = await Payment.findOne({
-          where: { stripeSubscriptionId: subscription.id },
-        });
-        if (payment) {
-          payment.status = "canceled";
-          await payment.save();
-        }
-        break;
-      }
-
-      default:
-        console.log(`Unhandled Stripe event type: ${event.type}`);
     }
-
-    res.json({ received: true });
-  } catch (error) {
-    res.status(500).send("Webhook handler failed");
   }
-};
+  if (event.type === "invoice.payment_failed") {
+    const invoice = event.data.object;
+    const payment = await Payment.findOne({ where: { stripeSubscriptionId: invoice.subscription } });
+    if (payment) {
+      payment.status = "failed";
+      await payment.save();
+
+      const user = await User.findByPk(payment.userId);
+      if (user) {
+        user.subscriptionStatus = "inactive";
+        await user.save();
+      }
+    }
+  }
+  res.json({ received: true });
+}

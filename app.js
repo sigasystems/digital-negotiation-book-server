@@ -14,6 +14,7 @@ import {
   offerRoute,
   planRoutes,
   paymentRoutes,
+  subscriptionRoutes
 } from "./routes/index.js";
 import { notFoundHandler, errorHandler } from "./handlers/index.js";
 import cookieParser from "cookie-parser";
@@ -22,11 +23,6 @@ import { stripeWebhook } from "./controllers/stripeWebhook.controller.js";
 dotenv.config();
 const app = express();
 
-// -------------------------
-// Middleware
-// -------------------------
-// app.use(cors());
-// app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 app.use(
   cors({
     origin: [
@@ -36,7 +32,7 @@ app.use(
     credentials: true,
   })
 );
-app.post("/webhook", express.raw({ type: "application/json" }), stripeWebhook);
+app.post("/api/subscription/webhook", express.raw({ type: "application/json" }), stripeWebhook);
 app.use(helmet());
 app.use(express.json());
 app.use(cookieParser());
@@ -45,6 +41,7 @@ app.use(express.urlencoded({ extended: true }));
 // -------------------------
 // Routes
 // -------------------------
+app.use("/api/subscription", subscriptionRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/plans", planRoutes);
 app.use("/api/payments", paymentRoutes);
