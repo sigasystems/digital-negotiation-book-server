@@ -4,6 +4,7 @@ import generateSecurePassword from "../utlis/genarateSecurePassword.js";
 import {
   generateEmailTemplate,
   sendEmailWithRetry,
+  emailLoginButton
 } from "../utlis/emailTemplate.js";
 import transporter from "../config/nodemailer.js";
 import {
@@ -228,56 +229,77 @@ export const buyerService = {
 
   becomeBusinessOwner: async (userEmail, data) => {
     const existingUser = await buyersRepository.findUserByEmail(userEmail);
-    if (!existingUser) return { error: "User not found" };
+  if (!existingUser) return { error: "User not found" };
 
-    const existingOwner = await buyersRepository.findOwnerByEmail(userEmail);
-    if (existingOwner)
-      throw new Error("Business owner already registered for this user.");
+  const existingOwner = await buyersRepository.findOwnerByEmail(userEmail);
+  if (existingOwner)
+    throw new Error("Business owner already registered for this user.");
 
-    // if (data.registrationNumber) {
-    //   const existingReg = await buyersRepository.findByRegistrationNumber(
-    //     data.registrationNumber
-    //   );
-    //   if (existingReg) return { error: "Registration number already in use" };
-    // }
+  // Update user role and names
+  await existingUser.update({
+    first_name: data.first_name || existingUser.first_name,
+    last_name: data.last_name || existingUser.last_name,
+    roleId: 2, // business_owner
+  });
 
-    await existingUser.update({
-      first_name: data.first_name || existingUser.first_name,
-      last_name: data.last_name || existingUser.last_name,
-      roleId: 2, // business_owner
+  // Create new business owner
+  const newOwner = await buyersRepository.createOwner({
+    userId: existingUser.id,
+    first_name: existingUser.first_name,
+    last_name: existingUser.last_name,
+    email: existingUser.email,
+    phoneNumber: data.phoneNumber,
+    businessName: data.businessName,
+    registrationNumber: data.registrationNumber,
+    country: data.country,
+    state: data.state,
+    city: data.city,
+    address: data.address,
+    postalCode: data.postalCode,
+    status: "active",
+    is_verified: true,
+    is_deleted: false,
+    is_approved: true,
+  });
+
+  // Generate access token
+  const tokenPayload = {
+    id: newOwner.id,
+    email: newOwner.email,
+    userRole: "business_owner",
+    businessName: newOwner.businessName,
+    name: `${newOwner.first_name || ""} ${newOwner.last_name || ""}`.trim(),
+  };
+  const accessToken = accessTokenGenerator(tokenPayload);
+  refreshTokenGenerator(data.res, tokenPayload);
+  // -------------------------------
+  // Send welcome email
+  // -------------------------------
+  try {
+    const loginUrl = `${process.env.FRONTEND_URL || "https://localhost:5173"}/login`;
+
+    const emailHtml = generateEmailTemplate({
+      title: "Welcome to the Business Network!",
+      subTitle: `Hi ${newOwner.first_name}, your business is now active.`,
+      body: `
+        <p>We’re excited to have your business <strong>${newOwner.businessName}</strong> on board.</p>
+        <p>You can now manage buyers, track performance, and grow your network from your dashboard.</p>
+        ${emailLoginButton({ url: loginUrl, label: "Go to Dashboard" })}
+      `,
+      footer: "If you didn’t request this registration, please ignore this email.",
     });
 
-    const newOwner = await buyersRepository.createOwner({
-      userId: existingUser.id,
-      first_name: existingUser.first_name,
-      last_name: existingUser.last_name,
-      email: existingUser.email,
-      phoneNumber: data.phoneNumber,
-      businessName: data.businessName,
-      registrationNumber: data.registrationNumber,
-      country: data.country,
-      state: data.state,
-      city: data.city,
-      address: data.address,
-      postalCode: data.postalCode,
-      status: "active",
-      is_verified: true,
-      is_deleted: false,
-      is_approved: true,
+    await sendEmailWithRetry(transporter, {
+      from: `"Business Platform" <${process.env.EMAIL_USER}>`,
+      to: newOwner.email,
+      subject: "Your Business Owner Account is Live",
+      html: emailHtml,
     });
+  } catch (err) {
+    console.error("Failed to send welcome email:", err.message);
+  }
 
-    const tokenPayload = {
-      id: newOwner.id,
-      email: newOwner.email,
-      userRole: "business_owner",
-      businessName: newOwner.businessName,
-      name: `${newOwner.first_name || ""} ${newOwner.last_name || ""}`.trim(),
-    };
-
-    const accessToken = accessTokenGenerator(tokenPayload);
-    refreshTokenGenerator(data.res, tokenPayload);
-
-    return { newOwner, accessToken };
+  return { newOwner, accessToken };
   },
 
   checkRegistrationNumber: async (registrationNumber) => {
