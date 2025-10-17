@@ -54,14 +54,19 @@ export const becomeBusinessOwner = asyncHandler(async (req, res) => {
 export const getAllBuyers = asyncHandler(async (req, res) => {
   try {
     authorizeRoles(req, ["business_owner"]);
-    const buyers = await buyerService.getAllBuyers(req.user.id);
-    const total = buyers.length;
-    return successResponse(res, 200, "Buyers fetched successfully", {
-      total,
-      buyers,
+    const pageIndex = parseInt(req.query.pageIndex) || 0;
+    const pageSize = parseInt(req.query.pageSize) || 10;
+
+    const buyersPaginated = await buyerService.getAllBuyers(req.user.businessOwnerId,
+ {
+      pageIndex,
+      pageSize,
     });
+
+    return successResponse(res, 200, "Buyers fetched successfully", buyersPaginated
+    );
   } catch (err) {
-    return errorResponse(res, 500, err.message || "Failed to fetch buyers");
+    return errorResponse(res, err.statusCode || 500, err.message);
   }
 });
 

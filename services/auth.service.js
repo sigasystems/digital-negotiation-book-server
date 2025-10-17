@@ -57,7 +57,8 @@ export async function login({ res, email, password }) {
       checkAccountStatus(businessOwner, "Business Owner");
 
       tokenPayload = {
-        id: businessOwner.id,
+        id: user.id,
+        businessOwnerId: businessOwner.id,
         email: user.email,
         userRole: roleName,
         businessName: businessOwner.businessName,

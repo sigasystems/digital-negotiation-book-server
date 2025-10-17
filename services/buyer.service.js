@@ -11,6 +11,7 @@ import {
   refreshTokenGenerator,
 } from "../utlis/tokenGenerator.js";
 import { Op } from "sequelize";
+import formatTimestamps from "../utlis/formatTimestamps.js";
 
 export const buyerService = {
   addBuyer: async (ownerId, buyerData, owner) => {
@@ -18,7 +19,7 @@ export const buyerService = {
 
     // Check unique registration number
     if (registrationNumber) {
-      const existingReg = await buyersRepository.findByRegistrationNumber(
+      const existingReg = await buyersRepository.findRegistrationNumber(
         registrationNumber
       );
       if (existingReg) return { error: "Registration number already in use" };
@@ -184,12 +185,29 @@ export const buyerService = {
     return { updated: buyer };
   },
 
-  getAllBuyers: async (ownerId) => {
-    const owner = await buyersRepository.findOwnerById(ownerId);
-    if (!owner) return { error: "Business Owner not found" };
-    const buyers = await buyersRepository.findAllByOwner(ownerId);
-    return { buyers };
-  },
+  getAllBuyers: async (ownerId, { pageIndex = 0, pageSize = 10 } = {}) => {
+  const owner = await buyersRepository.findOwnerById(ownerId);
+  if (!owner) throw new Error("Business Owner not found");
+
+  const buyers = await buyersRepository.findAllByOwner(ownerId);
+
+  // Format timestamps or any transformations if needed
+  const formattedBuyers = buyers.map((b) => formatTimestamps(b.toJSON()));
+
+  const totalItems = formattedBuyers.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  const start = pageIndex * pageSize;
+  const paginatedBuyers = formattedBuyers.slice(start, start + pageSize);
+
+  return {
+    data: paginatedBuyers,
+    totalItems,
+    totalPages,
+    pageIndex,
+    pageSize,
+  };
+},
 
   getBuyerById: async (ownerId, buyerId) => {
     const buyer = await buyersRepository.findByOwnerAndId(ownerId, buyerId);
