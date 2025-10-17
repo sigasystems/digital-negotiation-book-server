@@ -74,7 +74,8 @@ export const getAllBuyers = asyncHandler(async (req, res) => {
 export const getBuyerById = asyncHandler(async (req, res) => {
   try {
     authorizeRoles(req, ["business_owner"]);
-    const buyer = await buyerService.getBuyerById(req.user.id, req.params.id);
+    console.log("controller",req.user, req.params.id)
+    const buyer = await buyerService.getBuyerById(req.user.businessOwnerId, req.params.id);
     return successResponse(res, 200, "Buyer fetched successfully", buyer);
   } catch (err) {
     return errorResponse(res, 500, err.message || "Failed to fetch buyer");

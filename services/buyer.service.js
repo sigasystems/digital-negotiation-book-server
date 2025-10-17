@@ -211,6 +211,7 @@ export const buyerService = {
 },
 
   getBuyerById: async (ownerId, buyerId) => {
+    console.log("services",ownerId, buyerId)
     const buyer = await buyersRepository.findByOwnerAndId(ownerId, buyerId);
     if (!buyer) return { error: "Buyer not found under this business owner" };
     return { buyer };
