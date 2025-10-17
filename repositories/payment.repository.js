@@ -33,15 +33,6 @@ export const paymentRepository = {
 }) ,
   createStripeSession: ({ email, priceId , userId, paymentId, planId }) =>
     stripe.checkout.sessions.create({
-      // customer_email: email,
-      // payment_method_types: ["card"],
-      // mode: "subscription",
-      // line_items: [{ price: priceId, quantity: 1 }],
-      // success_url: `http://localhost:5173/paymentsuccess`,
-      // cancel_url: `https://localhost:5173/`,
-      // metadata: { paymentId, planId },
-
-
 
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
