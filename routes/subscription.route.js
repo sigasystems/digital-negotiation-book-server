@@ -11,7 +11,6 @@ const router = express.Router();
 router.post("/create-checkout-session", async (req, res) => {
   try {
     const { userId, planId, billingCycle } = req.body;
-    console.log("Payload received:", req.body);
 
     // 1️⃣ Fetch user
     const user = await User.findByPk(userId);
@@ -55,7 +54,6 @@ router.post("/create-checkout-session", async (req, res) => {
       cancel_url: `${process.env.CLIENT_URL}/cancel`,
     });
 
-    console.log("Stripe session created:", session.id);
 
     // 7️⃣ Save Payment
     await Payment.create({

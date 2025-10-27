@@ -8,6 +8,7 @@ router.post("/create-payment", paymentController.createPayment);
 router.get("/getallpayments", paymentController.getPayments);
 router.get("/:id", paymentController.getPaymentById);
 // Route
+router.get("/session/:sessionId", paymentController.getSessionInfo);
 router.patch("/:id/status", paymentController.updatePaymentStatus);
 router.delete("/:id", paymentController.deletePayment);
 // Webhook → needs raw body
