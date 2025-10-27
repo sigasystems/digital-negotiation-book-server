@@ -112,7 +112,6 @@ export const superAdminService = {
   getBusinessOwnerById: async (id) => {
     const owner = await superAdminRepo.findById(id, { paranoid: false });
     if (!owner) throw { statusCode: 404, message: "Business owner not found" };
-    if (owner.is_deleted) throw { statusCode: 400, message: "Business owner has been deleted." };
     return formatTimestamps(owner.toJSON());
   },
 
@@ -150,6 +149,8 @@ export const superAdminService = {
   },
 
   activateBusinessOwner: async (ownerId) => {
+    const owner = await superAdminRepo.findById(ownerId, {paranoid: false})
+    if (!owner) throw { statusCode: 404, message: "Business owner not found" };
     return await superAdminRepo.activateOwner(ownerId);
   },
 
@@ -158,6 +159,8 @@ export const superAdminService = {
 },
 
   softDeleteBusinessOwner: async (ownerId) => {
+    const owner = await superAdminRepo.findById(ownerId, {paranoid: false})
+    if (owner.is_deleted) throw { statusCode: 400, message: "Can not delete already deleted business owner." };
     return await superAdminRepo.softDeleteOwner(ownerId);
   },
 
