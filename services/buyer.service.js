@@ -247,6 +247,7 @@ export const buyerService = {
   const newOwner = await buyersRepository.createOwner({
     userId: existingUser.id,
     first_name: existingUser.first_name,
+    planId: data.planId,
     last_name: existingUser.last_name,
     email: existingUser.email,
     phoneNumber: data.phoneNumber,

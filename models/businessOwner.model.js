@@ -1,6 +1,7 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/db.js";
 import User from "./user.model.js";
+import Plan from "./plan.model.js";
 
 const BusinessOwner = sequelize.define(
   "BusinessOwner",
@@ -72,6 +73,14 @@ const BusinessOwner = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    planId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: "plans",
+        key: "id",
+      },
+    },
 
     status: {
       type: DataTypes.ENUM("active", "inactive"),
@@ -106,6 +115,7 @@ const BusinessOwner = sequelize.define(
 
 // Associations
 User.hasOne(BusinessOwner, { foreignKey: "userId", as: "businessOwner" });
+Plan.hasMany(BusinessOwner, { foreignKey: "planId", as: "businessOwners" });
 BusinessOwner.belongsTo(User, { foreignKey: "userId", as: "user" });
 
 export default BusinessOwner;

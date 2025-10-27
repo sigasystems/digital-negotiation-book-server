@@ -6,16 +6,29 @@ import { successResponse, errorResponse } from "../handlers/responseHandler.js";
 import { authorizeRoles } from "../utlis/helper.js";
 import { checkAccountStatus } from "../utlis/helper.js";
 import { asyncHandler } from "../handlers/asyncHandler.js";
+import { PlanRepository } from "../repositories/plan.repository.js";
 
 // Become Business Owner
 export const becomeBusinessOwner = asyncHandler(async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, planId, billingCycle } = req.body;
 
+    // Validate billingCycle
+    if (!["monthly", "yearly"].includes(billingCycle)) {
+      return errorResponse(res, 400, "Invalid billingCycle. Must be 'monthly' or 'yearly'.");
+    }
+
+    // Check user exists
     const existingUser = await buyersRepository.findUserByEmail(email);
-    if (!existingUser)
+    if (!existingUser) {
       return errorResponse(res, 404, "User not found in the system");
-
+    }
+    // Check plan exists
+    const plan = await PlanRepository.findById(planId);
+    if (!plan) {
+      return errorResponse(res, 404, "Plan not found in the system");
+    }
+    // Validate business owner schema
     const parsed = businessOwnerSchema.safeParse(req.body);
     if (!parsed.success) {
       return errorResponse(
@@ -25,17 +38,27 @@ export const becomeBusinessOwner = asyncHandler(async (req, res) => {
       );
     }
 
+    // Calculate price based on billing cycle
+    const planPrice =
+      billingCycle === "monthly" ? plan.priceMonthly : plan.priceYearly;
     const { newOwner, accessToken } = await buyerService.becomeBusinessOwner(
       email,
-      { ...parsed.data, res },
+      { ...parsed.data, planId: plan.id, billingCycle, res },
       existingUser
     );
+
     return successResponse(res, 201, "Business owner created successfully!", {
       accessToken,
       id: newOwner.id,
       first_name: newOwner.first_name,
       last_name: newOwner.last_name,
       email: newOwner.email,
+      plan: {
+        id: plan.id,
+        name: plan.name,
+        billingCycle,
+        price: planPrice,
+      },
       businessName: newOwner.businessName,
       registrationNumber: newOwner.registrationNumber,
       status: newOwner.status,
