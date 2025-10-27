@@ -19,6 +19,10 @@ async  findRegistrationNumber(registrationNumber) {
     return Buyer.findOne({ where: { contactEmail } });
   }
 
+  async findByContactPhone(contactPhone) {
+    return Buyer.findOne({ where: { contactPhone } });
+  }
+
   async create(buyerData) {
     return Buyer.create(buyerData);
   }

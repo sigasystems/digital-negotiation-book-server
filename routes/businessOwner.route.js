@@ -1,7 +1,6 @@
 import express from "express";
 import { authenticateJWT } from "../middlewares/authenticateJWT.js";
 import {businessOwnerController} from "../controllers/index.js"
-import { check } from "zod";
 
 const router = express.Router();
 

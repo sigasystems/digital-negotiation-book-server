@@ -107,10 +107,6 @@ async function refreshToken(oldToken, res) {
     // Fetch user from DB
     const user = await userRepository.findById(decoded.id);
     if (!user) throw new Error("User not found");
-    // Fetch business owner record based on email
-    const businessOwner = await buyersRepository.findOwnerByEmail(
-      decoded.email
-    );
 
     const roleMap = {
       1: "super_admin",
@@ -121,12 +117,23 @@ async function refreshToken(oldToken, res) {
       6: "guest",
     };
 
+    let businessOwner = null;
+    let businessOwnerId = null;
+
+    if (user.roleId === 2) {
+      businessOwner = await buyersRepository.findOwnerByEmail(user.email);
+      if (businessOwner) {
+        businessOwnerId = businessOwner.id; // or businessOwner.businessOwnerId depending on schema
+      }
+    }
+
     const payload = {
       id: user.id,
       email: user.email,
       userRole: user.userRole || roleMap[user.roleId] || null,
       name: user.name || `${user.first_name || ""} ${user.last_name || ""}`.trim() || null,
       businessName: businessOwner?.businessName || null,
+      ...(businessOwnerId ? { businessOwnerId } : {}),
     };
 
     // Generate access token and refresh token
@@ -136,7 +143,7 @@ async function refreshToken(oldToken, res) {
     // Return token + safe info
     return { accessToken, safeUserInfo: payload };
   } catch (err) {
-    console.error(err);
+    console.error("Refresh token failed:", err);
     throw new Error("Invalid refresh token");
   }
 }
