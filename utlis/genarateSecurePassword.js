@@ -1,28 +1,42 @@
 import crypto from "crypto";
 
 export default function generateSecurePassword(length = 12) {
+  if (length < 8) {
+    throw new Error("Password length must be at least 8 characters.");
+  }
+
   const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const lower = "abcdefghijklmnopqrstuvwxyz";
   const numbers = "0123456789";
-  const symbols = "!@#$%^&*()[]{}<>?/|~`"; // exclude - _ =
+  const symbols = "!@#$%^&*()[]{}<>?/|~`";
 
-  // ensure at least one from each required category
+  const allChars = upper + lower + numbers + symbols;
+
   const mustInclude = [
-    upper[Math.floor(Math.random() * upper.length)],
-    numbers[Math.floor(Math.random() * numbers.length)],
-    symbols[Math.floor(Math.random() * symbols.length)],
+    upper[randomIndex(upper.length)],
+    lower[randomIndex(lower.length)],
+    numbers[randomIndex(numbers.length)],
+    symbols[randomIndex(symbols.length)],
   ];
 
-  // fill the rest randomly
-  const allChars = upper + lower + numbers + symbols;
-  const remainingLength = Math.max(length - mustInclude.length, 5);
+  const remainingLength = length - mustInclude.length;
+  const remaining = Array.from({ length: remainingLength }, () => {
+    return allChars[randomIndex(allChars.length)];
+  });
 
-  let passwordChars = mustInclude;
-  for (let i = 0; i < remainingLength; i++) {
-    const byte = crypto.randomBytes(1)[0];
-    passwordChars.push(allChars[byte % allChars.length]);
+  const passwordArray = [...mustInclude, ...remaining];
+  return secureShuffle(passwordArray).join("");
+}
+
+function randomIndex(max) {
+  return crypto.randomBytes(1)[0] % max;
+}
+
+function secureShuffle(array) {
+  const buf = crypto.randomBytes(array.length);
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = buf[i] % (i + 1);
+    [array[i], array[j]] = [array[j], array[i]];
   }
-
-  // shuffle characters
-  return passwordChars.sort(() => 0.5 - Math.random()).join("");
+  return array;
 }

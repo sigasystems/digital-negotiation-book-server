@@ -1,4 +1,4 @@
-import { buyerSchema } from "../validations/buyer.validation.js";
+import { buyerSchema, buyerSchemaValidation } from "../validations/buyer.validation.js";
 import { businessOwnerSchema } from "../validations/business.validation.js";
 import {buyerService} from "../services/buyer.service.js";
 import buyersRepository from "../repositories/buyers.repository.js";
@@ -152,11 +152,11 @@ export const addBuyer = asyncHandler(async (req, res) => {
       );
     }
 
-    const owner = await buyersRepository.findOwnerById(req.user.id);
+    const owner = await buyersRepository.findOwnerById(req.user.businessOwnerId);
     checkAccountStatus(owner, "Business owner");
 
     const newBuyer = await buyerService.addBuyer(
-      req.user.id,
+      req.user.businessOwnerId,
       parsed.data,
       owner
     );
@@ -172,7 +172,6 @@ export const deleteBuyer = asyncHandler(async (req, res) => {
     authorizeRoles(req, ["business_owner"]);
 
     const buyer = await buyersRepository.findById(req.params.id);
-    checkAccountStatus(buyer, "Buyer");
 
     const owner = await buyersRepository.findOwnerById(buyer.ownerId);
     await buyerService.deleteBuyer(buyer, owner);
@@ -189,7 +188,6 @@ export const activateBuyer = asyncHandler(async (req, res) => {
     authorizeRoles(req, ["business_owner"]);
 
     const buyer = await buyersRepository.findById(req.params.id);
-    checkAccountStatus(buyer, "Buyer");
 
     const owner = await buyersRepository.findOwnerById(buyer.ownerId);
     const updated = await buyerService.activateBuyer(buyer, owner);
@@ -220,8 +218,8 @@ export const deactivateBuyer = asyncHandler(async (req, res) => {
 export const editBuyer = asyncHandler(async (req, res) => {
   try {
     authorizeRoles(req, ["business_owner"]);
+    const parsed = buyerSchemaValidation.safeParse(req.body);
 
-    const parsed = buyerSchema.safeParse(req.body);
     if (!parsed.success) {
       return errorResponse(res,400,parsed.error.issues.map((i) => i.message).join(", ") );
     }
@@ -234,6 +232,15 @@ export const editBuyer = asyncHandler(async (req, res) => {
 
     return successResponse(res, 200, "Buyer updated successfully", updated);
   } catch (err) {
+    if (
+      err.message.includes("already in use") ||
+      err.message.includes("Invalid") ||
+      err.message.includes("not found")
+    ) {
+      return errorResponse(res, 400, err.message);
+    }
+
+    console.error("Edit buyer failed:", err);
     return errorResponse(res, 500, err.message || "Failed to edit buyer");
   }
 });

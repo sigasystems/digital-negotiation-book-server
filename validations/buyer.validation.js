@@ -50,11 +50,10 @@ export const buyerSchema = z.object({
 
   // System fields
  status: z
-  .enum(["active", "inactive"], { message: "Status must be active or inactive" })
-  .default("active"),
+  .enum(["active", "inactive"], { message: "Status must be active or inactive" }).optional(),
 
-  isVerified: z.boolean().default(false),
-  isDeleted: z.boolean().default(false),
+  isVerified: z.boolean().optional(),
+  isDeleted: z.boolean().optional(),
 
   // Timestamp fields
   createdAt: z.coerce.date().optional(),

@@ -16,19 +16,31 @@ import formatTimestamps from "../utlis/formatTimestamps.js";
 
 export const buyerService = {
   addBuyer: async (ownerId, buyerData, owner) => {
-    const { registrationNumber, contactEmail, contactName } = buyerData;
+    const { registrationNumber, contactEmail, contactName, contactPhone } = buyerData;
+
+    const existingUser = await buyersRepository.findUserByEmail(contactEmail);
+    if (existingUser) {
+      const error = new Error("Buyer already added.  Please use different email!");
+      error.statusCode = 400;
+      throw error;
+    }
 
     // Check unique registration number
     if (registrationNumber) {
-      const existingReg = await buyersRepository.findRegistrationNumber(
-        registrationNumber
-      );
-      if (existingReg) return { error: "Registration number already in use" };
+      const existingReg = await buyersRepository.findRegistrationNumber(registrationNumber);
+      if (existingReg) {
+        const error = new Error("Registration number already in use");
+        error.statusCode = 400;
+        throw error;
+      }
     }
 
-    // Check unique email
-    const existingUser = await buyersRepository.findUserByEmail(contactEmail);
-    if (existingUser) return { error: "Contact email already in use" };
+    const contactPhoneVerifivation = await buyersRepository.findByContactPhone(contactPhone)
+      if (contactPhoneVerifivation) {
+      const error = new Error("Contact phone number already in use");
+      error.statusCode = 400;
+      throw error;
+    }
 
     // Generate and hash password
     const password = generateSecurePassword(12);
@@ -61,7 +73,7 @@ export const buyerService = {
     });
 
     // Send welcome email
-    const loginUrl = `${process.env.FRONTEND_URL}/login`;
+    const loginUrl = `${process.env.LOCAL_URL}/login`;
     const mailOptions = {
       from: `"${owner.businessName}" <${process.env.EMAIL_USER}>`,
       to: newBuyer.contactEmail,
@@ -148,25 +160,33 @@ export const buyerService = {
   },
 
   editBuyer: async (buyer, updates, owner) => {
+
     // Registration number uniqueness
     if (updates.registrationNumber) {
-      const existing = await buyersRepository.findByRegistrationNumber(
-        updates.registrationNumber
-      );
-      if (existing && existing.id !== buyer.id)
-        return { error: "Registration number already in use" };
+      const existing = await buyersRepository.findRegistrationNumber(updates.registrationNumber);
+      if (existing && existing.id !== buyer.id) {
+        throw new Error("Registration number already in use");
+      }
     }
 
-    // Check contact email uniqueness
+    // Contact email uniqueness
     if (updates.contactEmail) {
-      const existing = await buyersRepository.findByContactEmail(
-        updates.contactEmail
-      );
-      if (existing && existing.id !== buyer.id)
-        return { error: "Contact email already in use" };
+      const existing = await buyersRepository.findByContactEmail(updates.contactEmail);
+      if (existing && existing.id !== buyer.id) {
+        throw new Error("Contact email already in use");
+      }
     }
 
-    await buyersRepository.update(buyer, updates);
+    const changedFields = Object.keys(updates).reduce((acc, key) => {
+      if (updates[key] !== buyer[key]) acc[key] = updates[key];
+      return acc;
+    }, {});
+
+    if (Object.keys(changedFields).length === 0) {
+      return buyer; // Nothing changed
+    }
+    console.log("changedFields",changedFields)
+    await buyersRepository.update(buyer, changedFields);
 
     const mailOptions = {
       from: `"${owner.businessName}" <${process.env.EMAIL_USER}>`,
@@ -183,8 +203,8 @@ export const buyerService = {
 
     await sendEmailWithRetry(transporter, mailOptions, 2);
 
-    return { updated: buyer };
-  },
+    return buyer;
+},
 
   getAllBuyers: async (ownerId, { pageIndex = 0, pageSize = 10 } = {}) => {
   const owner = await buyersRepository.findOwnerById(ownerId);
@@ -278,7 +298,7 @@ export const buyerService = {
   // Send welcome email
   // -------------------------------
   try {
-    const loginUrl = `${process.env.FRONTEND_URL || "https://localhost:5173"}/login`;
+    const loginUrl = `${process.env.LOCAL_URL}/login`;
 
     const emailHtml = generateEmailTemplate({
       title: "Welcome to the Business Network!",
