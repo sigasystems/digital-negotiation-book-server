@@ -45,7 +45,6 @@ async  findRegistrationNumber(registrationNumber) {
   }
 
   async findByOwnerAndId(ownerId, buyerId) {
-    console.log("repo",ownerId, buyerId)
     return Buyer.findOne({ where: { id: buyerId, ownerId } });
   }
 
