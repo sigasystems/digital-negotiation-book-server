@@ -66,7 +66,7 @@ export const superAdminService = {
             <p><b>Business Name:</b> ${businessName}</p>
             <p><b>Email:</b> ${email}</p>
             <p><b>Password:</b> ${plainPassword}</p>
-            <p>${emailLoginButton({ url: `${process.env.LOCAL_URL}/login`, label: "Log in" })}</p>
+            <p>${emailLoginButton({ url: `${process.env.CLIENT_URL}/login`, label: "Log in" })}</p>
           `,
           footer: "If you did not make this request, please contact support immediately.",
         }),
