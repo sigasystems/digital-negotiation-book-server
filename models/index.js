@@ -10,12 +10,12 @@ import Payment from "./payment.model.js";
 // import Role from "./roles.model.js";
 import Product from "./product.model.js";
 import Location from "./location.model.js";
-import  Offer  from "./Offer.model.js";
-import OfferResult from "./OfferResult.model.js";
-import Subscription from "./subscription.model.js";
-import OfferBuyer from "./OfferBuyer.model.js";
-import OfferVersion from "./OfferVersion.model.js";
-import OfferDraft from "./OfferDraft.model.js";
+import  Offer  from "../models/Offer.model.js";
+import OfferResult from "../models/OfferResult.model.js";
+import Subscription from "../models/subscription.model.js";
+import OfferBuyer from "../models/OfferBuyer.model.js";
+import OfferVersion from "../models/OfferVersion.model.js";
+import OfferDraft from "../models/OfferDraft.model.js";
 // import PasswordResetOtp from "./passwordReset.model.js";
 // (If you want associations later, you can add here)
 // Example: Plan.hasMany(Subscription);
