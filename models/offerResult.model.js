@@ -1,6 +1,9 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/db.js";
-import {OfferVersion, Offer, Buyer, BusinessOwner} from "./index.js";
+import OfferVersion from "./OfferVersion.model.js";
+import Offer from "./Offer.model.js";
+import Buyer from "./buyers.model.js";
+import BusinessOwner from "./businessOwner.model.js";
 
 const OfferResult = sequelize.define(
   "OfferResult",
@@ -103,7 +106,7 @@ const OfferResult = sequelize.define(
 );
 
 // Associations
-OfferVersion.hasMany(OfferResult, { foreignKey: "offerVersionId", as: "results" });
-OfferResult.belongsTo(OfferVersion, { foreignKey: "offerVersionId", as: "offerVersion" });
+OfferVersion.hasMany(OfferResult, { foreignKey: "OfferVersionId", as: "results" });
+OfferResult.belongsTo(OfferVersion, { foreignKey: "OfferVersionId", as: "OfferVersion" });
 
 export default OfferResult;
