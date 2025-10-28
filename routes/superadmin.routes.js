@@ -9,7 +9,7 @@ const router = express.Router();
 router.post("/create-business-owner",authenticateJWT, superadminController.createBusinessOwner);  // Create
 router.get("/business-owners",authenticateJWT, superadminController.getAllBusinessOwners);       // Get all
 router.get("/business-owner/:id",authenticateJWT, superadminController.getBusinessOwnerById);    // Get by ID
-router.put("/business-owner/:id",authenticateJWT, superadminController.updateBusinessOwner);     // Update
+router.patch("/business-owner/:id",authenticateJWT, superadminController.updateBusinessOwner);     // Update
 
 //deactivate & activate
 router.patch("/business-owner/:id/deactivate",authenticateJWT, superadminController.deactivateBusinessOwner); // sets isDeleted = true, status = inactive
