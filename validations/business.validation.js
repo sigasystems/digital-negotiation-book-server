@@ -1,17 +1,30 @@
 import { z } from "zod";
 
-export const businessOwnerSchema = z.object({
-  first_name: z.union([z.string().min(2, "First name must be at least 2 chars"), z.null()]).optional(),
-  last_name: z.union([z.string().min(2, "Last name must be at least 2 chars"), z.null()]).optional(),
-  email: z.string().email(),
-  phoneNumber: z.union([z.string().min(10).max(20), z.null()]).optional(),
-  businessName: z.string(),
-  registrationNumber: z.union([z.string(), z.null()]).optional(),
-  country: z.string(),
-  state: z.union([z.string(), z.null()]).optional(),
-  city: z.union([z.string(), z.null()]).optional(),
-  address: z.union([z.string(), z.null()]).optional(),
-  postalCode: z.union([z.string(), z.null()]).optional(),
-});
-
-
+export const businessOwnerSchema = z
+  .object({
+    first_name: z
+      .string()
+      .min(2, "First name must be at least 2 characters")
+      .optional()
+      .nullable(),
+    last_name: z
+      .string()
+      .min(2, "Last name must be at least 2 characters")
+      .optional()
+      .nullable(),
+    email: z.string().email("Invalid email format").optional(),
+    phoneNumber: z
+      .string()
+      .min(10, "Phone number must be at least 10 digits")
+      .max(20, "Phone number must be at most 20 digits")
+      .optional()
+      .nullable(),
+    businessName: z.string().optional(),
+    registrationNumber: z.string().optional().nullable(),
+    country: z.string().optional(),
+    state: z.string().optional().nullable(),
+    city: z.string().optional().nullable(),
+    address: z.string().optional().nullable(),
+    postalCode: z.string().optional().nullable(),
+  })
+  .partial();
