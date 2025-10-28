@@ -10,7 +10,7 @@ import Payment from "./payment.model.js";
 // import Role from "./roles.model.js";
 import Product from "./product.model.js";
 import Location from "./location.model.js";
-import Offer from "./Offer.model.js";
+import  Offer  from "./Offer.model.js";
 import OfferResult from "./OfferResult.model.js";
 import Subscription from "./subscription.model.js";
 import OfferBuyer from "./OfferBuyer.model.js";

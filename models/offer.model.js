@@ -172,4 +172,5 @@ const Offer = sequelize.define(
 BusinessOwner.hasMany(Offer, { foreignKey: "businessOwnerId", as: "activeOffers" });
 Offer.belongsTo(BusinessOwner, { foreignKey: "businessOwnerId", as: "businessOwner" });
 
-export default Offer;
+
+export default Offer ;
