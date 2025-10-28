@@ -295,29 +295,56 @@ export const buyerService = {
   };
   const accessToken = accessTokenGenerator(tokenPayload);
   refreshTokenGenerator(data.res, tokenPayload);
+  // try {
+  //   const loginUrl = `${process.env.LOCAL_URL}/login`;
+  //   const invoiceUrl = payment?.invoicePdf || null;
+
+  //   // Generate professional HTML email
+  //   const emailHtml = generateBusinessOwnerEmail({
+  //     name: newOwner.first_name,
+  //     businessName: newOwner.businessName,
+  //     loginUrl,
+  //     invoiceUrl,
+  //   });
+  //   // Setup email payload
+  //   const mailOptions = {
+  //     from: `"Business Platform" <${process.env.EMAIL_USER}>`,
+  //     to: newOwner.email,
+  //     subject: "🎉 Your Business Owner Account is Live",
+  //     html: emailHtml,
+  //   };
+  //   await sendEmailWithRetry(transporter, mailOptions);
+  //   console.log(`✅ Welcome email sent to ${newOwner.email}`);
+  // } catch (err) {
+  //   console.error("❌ Failed to send welcome email:", err.message);
+  // }
+
+  setTimeout(async () => {
   try {
     const loginUrl = `${process.env.LOCAL_URL}/login`;
     const invoiceUrl = payment?.invoicePdf || null;
 
-    // Generate professional HTML email
     const emailHtml = generateBusinessOwnerEmail({
       name: newOwner.first_name,
       businessName: newOwner.businessName,
       loginUrl,
       invoiceUrl,
     });
-    // Setup email payload
+
     const mailOptions = {
       from: `"Business Platform" <${process.env.EMAIL_USER}>`,
       to: newOwner.email,
       subject: "🎉 Your Business Owner Account is Live",
       html: emailHtml,
     };
+
     await sendEmailWithRetry(transporter, mailOptions);
     console.log(`✅ Welcome email sent to ${newOwner.email}`);
   } catch (err) {
     console.error("❌ Failed to send welcome email:", err.message);
   }
+}, 1 * 60 * 1000); // 1 minutes
+
 
   return { newOwner, accessToken };
 },

@@ -12,10 +12,10 @@ import OfferDraft from "./offerDraft.model.js";
 import Product from "./product.model.js";
 import Location from "./location.model.js";
 import Offer from "./offer.model.js";
-import OfferBuyer from "./OfferBuyer.model.js";
 import OfferVersion from "./offerVersion.model.js";
 import OfferResult from "./OfferResult.model.js";
 import Subscription from "./subscription.model.js";
+import OfferBuyer from "./OfferBuyer.model.js";
 // import PasswordResetOtp from "./passwordReset.model.js";
 // (If you want associations later, you can add here)
 // Example: Plan.hasMany(Subscription);

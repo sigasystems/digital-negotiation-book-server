@@ -1,6 +1,6 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/db.js";
-import {OfferBuyer} from "./index.js"; 
+import OfferBuyer from "./OfferBuyer.model.js";
 
 const OfferVersion = sequelize.define(
   "OfferVersion",

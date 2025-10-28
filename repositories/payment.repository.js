@@ -36,8 +36,10 @@ export const paymentRepository = {
 
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `http://localhost:5173/paymentsuccess`,
-      cancel_url: `https://localhost:5173/`,
+      // success_url: `http://localhost:5173/paymentsuccess`,
+      success_url:'https://digital-negotiation-book-client.vercel.app/paymentsuccess',
+      // cancel_url: `https://localhost:5173/`,
+      cancel_url:'https://digital-negotiation-book-client.vercel.app/',
       customer_email: email,
       metadata: { paymentId, planId },
       metadata: { paymentId, planId, userId },  
