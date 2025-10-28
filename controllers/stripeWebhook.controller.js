@@ -43,5 +43,36 @@ const payment = await Payment.findOne({ where: { transactionId: session.id } });
       }
     }
   }
+
+  if (event.type === "invoice.payment_succeeded") {
+  const invoice = event.data.object;
+  const subscriptionId =
+    invoice.subscription ||
+    invoice?.parent?.subscription_details?.subscription ||
+    invoice?.lines?.data?.[0]?.parent?.subscription_item_details?.subscription ||
+    null;
+
+  console.log("subscription id from event:", subscriptionId);
+
+  if (!subscriptionId) {
+    console.warn("⚠️ No subscriptionId found for invoice:", invoice.id);
+    return res.json({ received: true });
+  }
+
+  const invoicePdf = invoice.invoice_pdf;
+  const customerEmail = invoice.customer_email;
+
+  const payment = await Payment.findOne({
+    where: { stripeSubscriptionId: subscriptionId },
+  });
+
+  if (payment && subscriptionId === payment.stripeSubscriptionId) {
+    console.log("✅ Payment found for subscription:", subscriptionId);
+    await payment.update({ invoicePdf });
+    console.log("✅ Payment updated with invoice PDF for:", customerEmail);
+  } else {
+    console.warn("⚠️ No matching payment for subscription:", subscriptionId);
+  }
+}
   res.json({ received: true });
 }

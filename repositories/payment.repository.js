@@ -36,8 +36,9 @@ export const paymentRepository = {
 
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
-       success_url: `http://localhost:5173/paymentsuccess`,
+      success_url: `http://localhost:5173/paymentsuccess`,
       cancel_url: `https://localhost:5173/`,
+      customer_email: email,
       metadata: { paymentId, planId },
       metadata: { paymentId, planId, userId },  
     }),
