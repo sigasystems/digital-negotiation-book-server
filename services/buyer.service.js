@@ -182,7 +182,6 @@ export const buyerService = {
     if (Object.keys(changedFields).length === 0) {
       return buyer; // Nothing changed
     }
-    console.log("changedFields",changedFields)
     await buyersRepository.update(buyer, changedFields);
 
     const mailOptions = {
@@ -209,11 +208,14 @@ export const buyerService = {
 
   const buyers = await buyersRepository.findAllByOwner(ownerId);
 
-  // Format timestamps or any transformations if needed
   const formattedBuyers = buyers.map((b) => formatTimestamps(b.toJSON()));
 
   const totalItems = formattedBuyers.length;
   const totalPages = Math.ceil(totalItems / pageSize);
+
+  const totalActive = formattedBuyers.filter((b) => b.status === "active" && !b.isDeleted).length;
+  const totalInactive = formattedBuyers.filter((b) => b.status === "inactive" && !b.isDeleted).length;
+  const totalDeleted = formattedBuyers.filter((b) => b.isDeleted === true).length;
 
   const start = pageIndex * pageSize;
   const paginatedBuyers = formattedBuyers.slice(start, start + pageSize);
@@ -222,13 +224,15 @@ export const buyerService = {
     data: paginatedBuyers,
     totalItems,
     totalPages,
+    totalActive,
+    totalInactive,
+    totalDeleted,
     pageIndex,
     pageSize,
   };
 },
 
   getBuyerById: async (ownerId, buyerId) => {
-    console.log("services",ownerId, buyerId)
     const buyer = await buyersRepository.findByOwnerAndId(ownerId, buyerId);
     if (!buyer) return { error: "Buyer not found under this business owner" };
     return { buyer };
@@ -314,7 +318,6 @@ export const buyerService = {
       html: emailHtml,
     };
     await sendEmailWithRetry(transporter, mailOptions);
-    console.log(`✅ Welcome email sent to ${newOwner.email}`);
   } catch (err) {
     console.error("❌ Failed to send welcome email:", err.message);
   }

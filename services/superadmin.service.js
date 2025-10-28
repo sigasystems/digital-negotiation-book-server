@@ -94,15 +94,20 @@ export const superAdminService = {
 
   const totalItems = formattedOwners.length;
   const totalPages = Math.ceil(totalItems / pageSize);
-
-  // Calculate paginated slice
   const start = pageIndex * pageSize;
   const paginatedOwners = formattedOwners.slice(start, start + pageSize);
+
+  const totalActive = formattedOwners.filter((o) => o.status === "active" && !o.isDeleted).length;
+  const totalInactive = formattedOwners.filter((o) => o.status === "inactive" && !o.isDeleted).length;
+  const totalDeleted = formattedOwners.filter((o) => o.isDeleted === true).length;
 
   return {
     data: paginatedOwners,
     totalItems,
     totalPages,
+    totalActive,
+    totalInactive,
+    totalDeleted,
     pageIndex,
     pageSize,
   };
