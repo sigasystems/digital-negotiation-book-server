@@ -177,6 +177,7 @@ return {
     );
 
     return filtered.map((c) => ({
+      customer_name: c.billing_details.name,
       id: c.id,
       amount: c.amount / 100,
       currency: c.currency,

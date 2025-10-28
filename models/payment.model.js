@@ -3,7 +3,6 @@ import sequelize from "../config/db.js";
 import User from "./user.model.js";
 import { Plan } from "./index.js";
 
-
 const Payment = sequelize.define("Payment", {
     id: {
       type: DataTypes.UUID,
@@ -40,10 +39,13 @@ const Payment = sequelize.define("Payment", {
       unique: true,
     },
     stripeSubscriptionId: {
-  type: DataTypes.STRING,
-  allowNull: true,
-  unique: true,
-},
+      type: DataTypes.STRING,
+      allowNull: true,
+      unique: true,
+    },
+    invoicePdf: {
+      type: DataTypes.STRING,
+    },
     // paidAt: {
     //   type: DataTypes.DATE,
     // },

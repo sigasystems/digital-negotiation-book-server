@@ -4,6 +4,7 @@ import { asyncHandler } from "../handlers/asyncHandler.js";
 import { paymentService } from "../services/payment.service.js";
 import Payment from "../models/payment.model.js";
 import User from "../models/user.model.js";
+import stripe from "../config/stripe.js";
 
 export const createPayment = asyncHandler(async (req, res) => {
   try {
@@ -117,7 +118,8 @@ export const getSessionInfo = async (req, res) => {
 export const getAllStripePayments = asyncHandler(async (req, res) => {
   try {
     const payments = await paymentService.searchStripePayments({}); // pass empty object to get all
-    successResponse(res, 200, "All Stripe payments fetched successfully", payments);
+    const total = payments.length;
+    successResponse(res, 200, "All Stripe payments fetched successfully", {total ,payments } );
   } catch (err) {
     errorResponse(res, 500, err.message);
   }
