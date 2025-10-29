@@ -19,6 +19,7 @@ import OfferDraft from "./OfferDraft.model.js";
 // import PasswordResetOtp from "./passwordReset.model.js";
 // (If you want associations later, you can add here)
 // Example: Plan.hasMany(Subscription);
+console.log("Loading models/index.js from:", import.meta.url);
 
 export {
   sequelize,
