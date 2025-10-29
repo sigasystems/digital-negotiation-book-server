@@ -30,7 +30,8 @@
     references: {
       model: 'business_owners',
       key: 'id'
-    }
+    },
+    field: "ownerId",
   },
   }, {
     tableName: "products",
@@ -38,7 +39,7 @@
   });
 
 // Association with BusinessOwner
-Product.belongsTo(BusinessOwner, { foreignKey: "ownerid", as: "owner" });
-BusinessOwner.hasMany(Product, { foreignKey: "ownerid", as: "products" });
+Product.belongsTo(BusinessOwner, { foreignKey: "ownerId", as: "owner" });
+BusinessOwner.hasMany(Product, { foreignKey: "ownerId", as: "products" });
 
   export default Product;
