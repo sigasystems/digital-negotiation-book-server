@@ -56,7 +56,7 @@ export const buyerService = {
 
     const user = await buyersRepository.createUser({
       email: contactEmail,
-      password: hashedPassword,
+      password_hash: hashedPassword,
       roleId: 3,
       first_name: firstName,
       last_name: lastName || null,
