@@ -22,7 +22,7 @@ async function register(userData) {
   const existingPhone = await userRepository.findByPhone(country_code, phone_number);
   if (existingPhone) throw new Error("Phone number already registered.");
 
-  const password_hash = await bcrypt.hash(password, 12);
+  const password_hash= await bcrypt.hash(password, 12);
   return await userRepository.createUser({
     first_name,
     last_name,
@@ -30,7 +30,7 @@ async function register(userData) {
     email,
     country_code,
     phone_number,
-    password_hash,
+    password: password_hash,
   });
 }
 
@@ -39,9 +39,9 @@ export async function login({ res, email, password }) {
 
   if (!user) {
     const hashedPassword = await bcrypt.hash(password, 10);
-    user = await userRepository.createUser({ email, password_hash: hashedPassword, roleId: 6 });
+    user = await userRepository.createUser({ email, password: hashedPassword, roleId: 6 });
   } else {
-    const isMatch = await bcrypt.compare(password, user.password_hash);
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) throw new Error("Invalid email or password");
   }
 
@@ -101,8 +101,10 @@ export async function login({ res, email, password }) {
 }
 
 async function refreshToken(oldToken, res) {
+  console.log("oldToken",oldToken)
   try {
     const decoded = jwt.verify(oldToken, process.env.REFRESH_TOKEN_SECRET);
+    console.log("desoded",decoded)
 
     // Fetch user from DB
     const user = await userRepository.findById(decoded.id);
@@ -184,7 +186,7 @@ async function resetPasswordWithOtp({ email, otp, password }) {
   const user = await userRepository.findByEmail(email);
   if (!user) throw new Error("User not found");
 
-  user.password_hash = await bcrypt.hash(password, 10);
+  user.password = await bcrypt.hash(password, 10);
   await user.save();
   await passwordResetRepository.markUsed(record);
 

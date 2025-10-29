@@ -44,7 +44,7 @@ export const superAdminService = {
 
       // 1️⃣ Create User
       const user = await superAdminRepo.createUser(
-        { email, first_name, last_name, password_hash: passwordHash, roleId: 2 },
+        { email, first_name, last_name, password: passwordHash, roleId: 2 },
         transaction
       );
 

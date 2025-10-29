@@ -26,7 +26,7 @@ const User = sequelize.define(
       unique: true,
       validate: { isEmail: true },
     },
-    password_hash: {
+    password: {
       type: DataTypes.TEXT,
       allowNull: false,
       validate: { len: [60, 255] },
