@@ -31,10 +31,10 @@ export const ProductService = {
     return await ProductRepository.createMany(productsToCreate);
   },
 
-  getAllProducts: async (ownerId) => {
-    if (!ownerId) throw new Error("ownerId is required");
-    return await ProductRepository.findAll(ownerId);
-  },
+  getAllProducts: async (ownerId, { page, limit }) => {
+  if (!ownerId) throw new Error("ownerId is required");
+  return await ProductRepository.findAll(ownerId, { page, limit });
+},
 
   getProductById: async (id, ownerId) => {
     if (!ownerId) throw new Error("ownerId is required");

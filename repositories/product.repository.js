@@ -5,9 +5,19 @@ const createMany = async (products) => {
   return await Product.bulkCreate(products);
 };
 
-const findAll = async (ownerId) => {
-  return await Product.findAll({ where: { ownerId } });
+const findAll = async (ownerId, { page, limit }) => {
+  const offset = (page - 1) * limit;
+
+  const { rows: products, count: total } = await Product.findAndCountAll({
+    where: { ownerId },
+    limit,
+    offset,
+    order: [["createdAt", "DESC"]],
+  });
+
+  return { products, total };
 };
+
 
 const findById = async (id) => {
   return await Product.findByPk(id);
