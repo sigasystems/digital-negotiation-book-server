@@ -9,10 +9,11 @@ const Payment = sequelize.define("Payment", {
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
-    userId: {
-      type: DataTypes.UUID,
-      allowNull: false,
-    },
+    businessOwnerId: {
+  type: DataTypes.UUID,
+  allowNull: true,
+  defaultValue: null,
+},
     planId: {
       type: DataTypes.UUID,
       allowNull: false,
