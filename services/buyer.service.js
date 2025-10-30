@@ -70,7 +70,7 @@ export const buyerService = {
     });
 
     // Send welcome email
-    const loginUrl = `${process.env.LOCAL_URL}/login`;
+    const loginUrl = `${process.env.CLIENT_URL}/login`;
     const mailOptions = {
       from: `"${owner.businessName}" <${process.env.EMAIL_USER}>`,
       to: newBuyer.contactEmail,
@@ -273,15 +273,14 @@ export const buyerService = {
     first_name: data.first_name || existingUser.first_name,
     last_name: data.last_name || existingUser.last_name,
     roleId: 2, // business_owner
+    paymentId: data.paymentId,
   });
 
   const payment = await Payment.findOne({
     where: { userId: existingUser.id },
     order: [["createdAt", "DESC"]],
   });
-  if (payment) {
-    await payment.update({ sendInvoice: true });
-  }
+  
   const newOwner = await buyersRepository.createOwner({
     userId: existingUser.id,
     first_name: existingUser.first_name,
@@ -295,12 +294,29 @@ export const buyerService = {
     state: data.state,
     city: data.city,
     address: data.address,
+    paymentId: data.paymentId,   // ✅ add this
     postalCode: data.postalCode,
     status: "active",
     is_verified: true,
     is_deleted: false,
     is_approved: true,
   });
+  // ✅ only update if payment exists
+if (payment) {
+  await payment.update({
+    sendInvoice: true,
+    businessOwnerId: newOwner.id,
+  });
+
+  await newOwner.update({
+    paymentId: payment.id,
+  });
+}
+
+  
+
+  console.log("businessownerId :.....",newOwner.id)
+  console.log("payment info....",payment.id)
 
   const tokenPayload = {
     id: newOwner.id,
@@ -311,30 +327,6 @@ export const buyerService = {
   };
   const accessToken = accessTokenGenerator(tokenPayload);
   refreshTokenGenerator(data.res, tokenPayload);
-  // try {
-  //   const loginUrl = `${process.env.LOCAL_URL}/login`;
-  //   const invoiceUrl = payment?.invoicePdf || null;
-
-  //   // Generate professional HTML email
-  //   const emailHtml = generateBusinessOwnerEmail({
-  //     name: newOwner.first_name,
-  //     businessName: newOwner.businessName,
-  //     loginUrl,
-  //     invoiceUrl,
-  //   });
-  //   // Setup email payload
-  //   const mailOptions = {
-  //     from: `"Business Platform" <${process.env.EMAIL_USER}>`,
-  //     to: newOwner.email,
-  //     subject: "🎉 Your Business Owner Account is Live",
-  //     html: emailHtml,
-  //   };
-  //   await sendEmailWithRetry(transporter, mailOptions);
-  //   console.log(`✅ Welcome email sent to ${newOwner.email}`);
-  // } catch (err) {
-  //   console.error("❌ Failed to send welcome email:", err.message);
-  // }
-
   setTimeout(async () => {
   try {
     const loginUrl = `${process.env.LOCAL_URL}/login`;
@@ -361,7 +353,7 @@ export const buyerService = {
 }, 1 * 60 * 1000); // 1 minutes
 
 
-  return { newOwner, accessToken };
+  return { newOwner, accessToken ,payment };
 },
 
   checkRegistrationNumber: async (registrationNumber) => {

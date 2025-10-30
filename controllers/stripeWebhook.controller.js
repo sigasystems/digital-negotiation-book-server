@@ -76,6 +76,7 @@ export const stripeWebhook = async (req, res) => {
       console.log("✅ Payment found for subscription:", subscriptionId);
       await payment.update({ invoicePdf });
       console.log("✅ Payment updated with invoice PDF for:", customerEmail);
+      console.log("✅ Payment id iws....:", payment.id);
     } else {
       console.warn("⚠️ No matching payment for subscription:", subscriptionId);
     }
