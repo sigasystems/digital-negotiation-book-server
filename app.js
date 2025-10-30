@@ -25,7 +25,7 @@ dotenv.config();
 const app = express();
 
 // -----------------------------
-// ✅ CORS Configuration
+// ✅ Dynamic CORS Configuration
 // -----------------------------
 const allowedOrigins = [
   "https://dnb.sigasystems.com",
@@ -34,29 +34,27 @@ const allowedOrigins = [
   "https://digital-negotiation-book-server.vercel.app",
 ];
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps or curl)
-      if (!origin) return callback(null, true);
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`❌ CORS blocked for origin: ${origin}`);
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  credentials: true,
+};
 
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.warn(`❌ CORS blocked for origin: ${origin}`);
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    credentials: true,
-  })
-);
+// ✅ Apply CORS before all routes
+app.use(cors(corsOptions));
 
-// ✅ Remove app.options("*", cors()) — NOT needed in Express 5
-// Express 5’s router no longer allows "*" or "(.*)" path syntax
+// ✅ Explicitly handle preflight OPTIONS requests
+app.options("*", cors(corsOptions));
 
 // -----------------------------
-// ✅ Webhook route (must come before body parser)
+// ✅ Webhook route (before body parser)
 // -----------------------------
 app.post(
   "/api/subscription/webhook",
