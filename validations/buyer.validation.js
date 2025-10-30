@@ -1,6 +1,18 @@
 import { z } from "zod";
 
-export const buyerSchema = z.object({
+const toCamelCaseKeys = (obj) => {
+  if (Array.isArray(obj)) return obj.map(toCamelCaseKeys);
+  if (obj && typeof obj === "object") {
+    return Object.entries(obj).reduce((acc, [key, val]) => {
+      const camelKey = key.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+      acc[camelKey] = toCamelCaseKeys(val);
+      return acc;
+    }, {});
+  }
+  return obj;
+};
+
+const baseBuyerSchema = z.object({
   ownerId: z.string().uuid({ message: "Owner ID must be a valid UUID" }),
 
   // Company Identity
@@ -68,5 +80,11 @@ export const buyerSearchSchemaValidation = z.object({
   isVerified: z.boolean().optional(),
 });
 
-//  For updates (partial fields allowed)
-export const buyerSchemaValidation = buyerSchema.partial();
+export const buyerSchema = baseBuyerSchema;
+
+export const buyerSchemaValidation = baseBuyerSchema
+  .partial()
+  .transform((data, ctx) => {
+    const normalized = toCamelCaseKeys(data);
+    return normalized;
+  });

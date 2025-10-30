@@ -56,7 +56,7 @@ export const buyerService = {
 
     const user = await buyersRepository.createUser({
       email: contactEmail,
-      password_hash: hashedPassword,
+      password: hashedPassword,
       roleId: 3,
       first_name: firstName,
       last_name: lastName || null,
@@ -83,8 +83,20 @@ export const buyerService = {
           <p>You have been added as a buyer to <b>${owner.businessName}</b>.</p>
           <p><b>Email:</b> ${newBuyer.contactEmail}</p>
           <p><b>Password:</b> ${password}</p>
-          <p>Please login and change your password immediately.</p>
-          <a href="${loginUrl}" style="background:#4CAF50;color:white;padding:12px 24px;text-decoration:none;border-radius:6px;">Login</a>
+
+            <div style="margin: 20px 0; padding: 10px; background-color: #fff8e1; border-left: 4px solid #fbc02d; border-radius: 4px;">
+              <p style="margin: 0; font-weight: bold; color: #795548; font-size: 15px;">
+                ⚠️ Please log in and change your password immediately.
+              </p>
+            </div>
+
+            <p>
+              <a href="${loginUrl}" 
+                style="display:inline-block; background:#4CAF50; color:white; padding:12px 24px; 
+                      text-decoration:none; border-radius:6px; font-weight:bold;">
+                Login
+              </a>
+            </p>
         `,
       }),
     };
