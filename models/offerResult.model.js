@@ -1,7 +1,7 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/db.js";
-import OfferVersion from "./OfferVersion.model.js";
-import Offer from "./Offer.model.js";
+import OfferVersion from "./offerVersion.model.js";
+import Offer from "./offer.model.js";
 import Buyer from "./buyers.model.js";
 import BusinessOwner from "./businessOwner.model.js";
 
