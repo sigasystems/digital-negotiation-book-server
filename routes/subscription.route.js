@@ -4,7 +4,6 @@ import Payment from "../models/payment.model.js";
 import User from "../models/user.model.js";
 import Plan from "../models/plan.model.js";
 
-
 const router = express.Router();
 
 // Create Stripe Checkout Session
@@ -64,6 +63,8 @@ router.post("/create-checkout-session", async (req, res) => {
       transactionId: session.id,
       stripeSubscriptionId: session.subscription,
     });
+
+   
 
     res.json({ url: session.url });
   } catch (err) {

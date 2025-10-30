@@ -13,8 +13,9 @@ import {
 } from "../utlis/tokenGenerator.js";
 import { Op } from "sequelize";
 import formatTimestamps from "../utlis/formatTimestamps.js";
-import {Payment} from "../models/index.js";
+import {Payment, Subscription} from "../models/index.js";
 import { generateBusinessOwnerEmail } from "../utlis/generateBusinessOwnerEmail .js";
+import stripe from "../config/stripe.js";
 
 export const buyerService = {
   addBuyer: async (ownerId, buyerData, owner) => {
@@ -312,6 +313,41 @@ if (payment) {
     paymentId: payment.id,
   });
 }
+
+// ✅ determine endDate using Stripe if subscriptionId is available
+let endDate = new Date(); // fallback
+if (data.stripeSubscriptionId) {
+  try {
+    const stripeSub = await stripe.subscriptions.retrieve(data.stripeSubscriptionId);
+    if (stripeSub?.current_period_end) {
+      endDate = new Date(stripeSub.current_period_end * 1000); // Stripe returns seconds, JS needs ms
+    }
+  } catch (err) {
+    console.error("⚠️ Failed to fetch Stripe subscription period:", err.message);
+  }
+} else {
+  // fallback if no stripeSubscriptionId passed — manual calc
+  if (data.billingCycle === "monthly") {
+    endDate.setMonth(endDate.getMonth() + 1);
+  } else if (data.billingCycle === "yearly") {
+    endDate.setFullYear(endDate.getFullYear() + 1);
+  }
+}
+
+// 🔥 Create Subscription entry
+await Subscription.create({
+   userId: existingUser.id,
+  stripeSubscriptionId: data.stripeSubscriptionId || "manual_" + Date.now(),
+  planName: data.planName || "Unknown Plan",
+  status: "active",
+  startDate: new Date(),
+  endDate, 
+  trialEnd: null,
+  maxUsers: data.maxUsers || 5,
+  maxProducts: data.maxProducts || 100,
+  maxOffers: data.maxOffers || 50,
+  maxBuyers: data.maxBuyers || 100,
+});
 
   
 

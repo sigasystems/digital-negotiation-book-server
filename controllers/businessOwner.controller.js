@@ -1,6 +1,9 @@
-import { buyerSchema, buyerSchemaValidation } from "../validations/buyer.validation.js";
+import {
+  buyerSchema,
+  buyerSchemaValidation,
+} from "../validations/buyer.validation.js";
 import { businessOwnerSchema } from "../validations/business.validation.js";
-import {buyerService} from "../services/buyer.service.js";
+import { buyerService } from "../services/buyer.service.js";
 import { successResponse, errorResponse } from "../handlers/responseHandler.js";
 import { authorizeRoles } from "../utlis/helper.js";
 import { checkAccountStatus } from "../utlis/helper.js";
@@ -16,7 +19,11 @@ export const becomeBusinessOwner = asyncHandler(async (req, res) => {
 
     // Validate billingCycle
     if (!["monthly", "yearly"].includes(billingCycle)) {
-      return errorResponse(res, 400, "Invalid billingCycle. Must be 'monthly' or 'yearly'.");
+      return errorResponse(
+        res,
+        400,
+        "Invalid billingCycle. Must be 'monthly' or 'yearly'."
+      );
     }
 
     // Check user exists
@@ -39,12 +46,19 @@ export const becomeBusinessOwner = asyncHandler(async (req, res) => {
       );
     }
 
-    const existingBusinessOwner = await buyersRepository.findBusinessOwnerByUserId(existingUser.id);
+    const existingBusinessOwner =
+      await buyersRepository.findBusinessOwnerByUserId(existingUser.id);
     if (!existingBusinessOwner) {
       // Only now check if business name is already taken
-      const existingBusiness = await buyersRepository.findBusinessOwnerByName(businessName);
+      const existingBusiness = await buyersRepository.findBusinessOwnerByName(
+        businessName
+      );
       if (existingBusiness) {
-        return errorResponse(res, 400, `Business name '${businessName}' is already taken.`);
+        return errorResponse(
+          res,
+          400,
+          `Business name '${businessName}' is already taken.`
+        );
       }
     }
 
@@ -52,11 +66,25 @@ export const becomeBusinessOwner = asyncHandler(async (req, res) => {
     const planPrice =
       billingCycle === "monthly" ? plan.priceMonthly : plan.priceYearly;
 
-    const { newOwner, accessToken, payment } = await buyerService.becomeBusinessOwner(
-      email,
-      { ...parsed.data, planId: plan.id, paymentId, billingCycle, res },
-      existingUser
-    );
+    const { newOwner, accessToken, payment } =
+      await buyerService.becomeBusinessOwner(
+        email,
+        {
+          ...parsed.data,
+          planId: plan.id,
+          planName: plan.name,
+          paymentId,
+          billingCycle,
+          res,
+          maxUsers: plan.maxUsers || 5,
+          maxProducts: plan.maxProducts || 100,
+          maxOffers: plan.maxOffers || 50,
+          maxBuyers: plan.maxBuyers || 100,
+        },
+        existingUser
+      );
+
+    console.log("paymentid from bus controller..", paymentId);
 
     return successResponse(res, 201, "Business owner created successfully!", {
       accessToken,
@@ -92,13 +120,19 @@ export const getAllBuyers = asyncHandler(async (req, res) => {
     const pageIndex = parseInt(req.query.pageIndex) || 0;
     const pageSize = parseInt(req.query.pageSize) || 10;
 
-    const buyersPaginated = await buyerService.getAllBuyers(req.user.businessOwnerId,
- {
-      pageIndex,
-      pageSize,
-    });
+    const buyersPaginated = await buyerService.getAllBuyers(
+      req.user.businessOwnerId,
+      {
+        pageIndex,
+        pageSize,
+      }
+    );
 
-    return successResponse(res, 200, "Buyers fetched successfully", buyersPaginated
+    return successResponse(
+      res,
+      200,
+      "Buyers fetched successfully",
+      buyersPaginated
     );
   } catch (err) {
     return errorResponse(res, err.statusCode || 500, err.message);
@@ -109,7 +143,10 @@ export const getAllBuyers = asyncHandler(async (req, res) => {
 export const getBuyerById = asyncHandler(async (req, res) => {
   try {
     authorizeRoles(req, ["business_owner"]);
-    const buyer = await buyerService.getBuyerById(req.user.businessOwnerId, req.params.id);
+    const buyer = await buyerService.getBuyerById(
+      req.user.businessOwnerId,
+      req.params.id
+    );
     return successResponse(res, 200, "Buyer fetched successfully", buyer);
   } catch (err) {
     return errorResponse(res, 500, err.message || "Failed to fetch buyer");
@@ -164,7 +201,9 @@ export const addBuyer = asyncHandler(async (req, res) => {
       );
     }
 
-    const owner = await buyersRepository.findOwnerById(req.user.businessOwnerId);
+    const owner = await buyersRepository.findOwnerById(
+      req.user.businessOwnerId
+    );
     checkAccountStatus(owner, "Business owner");
 
     const newBuyer = await buyerService.addBuyer(
@@ -231,12 +270,16 @@ export const editBuyer = asyncHandler(async (req, res) => {
   try {
     authorizeRoles(req, ["business_owner"]);
 
-    const normalizedBody = normalizeKeysToCamelCase(req.body)
+    const normalizedBody = normalizeKeysToCamelCase(req.body);
 
     const parsed = buyerSchemaValidation.safeParse(normalizedBody);
 
     if (!parsed.success) {
-      return errorResponse(res,400,parsed.error.issues.map((i) => i.message).join(", ") );
+      return errorResponse(
+        res,
+        400,
+        parsed.error.issues.map((i) => i.message).join(", ")
+      );
     }
 
     const buyer = await buyersRepository.findById(req.params.id);
@@ -269,7 +312,9 @@ export const checkRegistrationNumber = asyncHandler(async (req, res) => {
   }
 
   try {
-    const exists = await buyerService.checkRegistrationNumber(registrationNumber);
+    const exists = await buyerService.checkRegistrationNumber(
+      registrationNumber
+    );
     return successResponse(res, 200, "Check completed", { exists });
   } catch (err) {
     console.error(err);
