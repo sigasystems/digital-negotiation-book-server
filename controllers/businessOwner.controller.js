@@ -12,7 +12,7 @@ import { normalizeKeysToCamelCase } from "../utlis/normalizeKeys.js";
 // Become Business Owner
 export const becomeBusinessOwner = asyncHandler(async (req, res) => {
   try {
-    const { email, planId, billingCycle } = req.body;
+    const { email, planId, paymentId, billingCycle } = req.body;
 
     // Validate billingCycle
     if (!["monthly", "yearly"].includes(billingCycle)) {
@@ -42,11 +42,12 @@ export const becomeBusinessOwner = asyncHandler(async (req, res) => {
     // Calculate price based on billing cycle
     const planPrice =
       billingCycle === "monthly" ? plan.priceMonthly : plan.priceYearly;
-    const { newOwner, accessToken } = await buyerService.becomeBusinessOwner(
+    const { newOwner, accessToken ,payment } = await buyerService.becomeBusinessOwner(
       email,
-      { ...parsed.data, planId: plan.id, billingCycle, res },
+      { ...parsed.data, planId: plan.id, paymentId, billingCycle, res },
       existingUser
     );
+    console.log("paymentid from bus controller..",paymentId)
 
     return successResponse(res, 201, "Business owner created successfully!", {
       accessToken,
@@ -61,6 +62,7 @@ export const becomeBusinessOwner = asyncHandler(async (req, res) => {
         price: planPrice,
       },
       businessName: newOwner.businessName,
+      paymentId: paymentId || payment?.id || null, 
       registrationNumber: newOwner.registrationNumber,
       status: newOwner.status,
       createdAt: newOwner.createdAt,

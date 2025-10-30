@@ -10,10 +10,10 @@ const Payment = sequelize.define("Payment", {
       primaryKey: true,
     },
     businessOwnerId: {
-  type: DataTypes.UUID,
-  allowNull: true,
-  defaultValue: null,
-},
+      type: DataTypes.UUID,
+      allowNull: true,
+      defaultValue: null,
+    },
     planId: {
       type: DataTypes.UUID,
       allowNull: false,
@@ -53,6 +53,9 @@ const Payment = sequelize.define("Payment", {
   }, {
     timestamps: true,
   });
+
+// Payment.belongsTo(User, { foreignKey: "userId" });
+// Payment.belongsTo(Plan, { foreignKey: "planId" });
 
 Payment.belongsTo(User, { foreignKey: "userId" });
 Payment.belongsTo(Plan, { foreignKey: "planId" });

@@ -61,6 +61,7 @@ export async function login({ res, email, password }) {
         businessOwnerId: businessOwner.id,
         email: user.email,
         userRole: roleName,
+        paymentId: businessOwner.paymentId,
         businessName: businessOwner.businessName,
         name: `${user?.first_name || ""} ${user?.last_name || ""}`.trim(),
       };
@@ -78,6 +79,7 @@ export async function login({ res, email, password }) {
         name: buyer.contactName,
         ownerId: buyer.ownerId,
       };
+      console.log("tokeen payload",tokenPayload)
       break;
 
     default:
