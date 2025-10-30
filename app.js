@@ -32,7 +32,7 @@ const allowedOrigins = [
   // "http://localhost:3000",
   // "http://localhost:5173",
   // "https://digital-negotiation-book-server.vercel.app",
-  "/*",
+  "*",
 ];
 
 const corsOptions = {
@@ -48,12 +48,14 @@ const corsOptions = {
   credentials: true,
 };
 
-// ✅ Apply CORS before all routes
-app.use(cors(corsOptions));
 
 // ✅ Explicitly handle preflight OPTIONS requests
 // app.options("*", cors(corsOptions));
-app.options("/*", cors(corsOptions));
+// ✅ Apply CORS before all routes
+app.use(cors(corsOptions));
+
+// ✅ Explicitly handle preflight OPTIONS requests (no path)
+app.options(cors(corsOptions));
 
 
 // -----------------------------
