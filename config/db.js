@@ -5,30 +5,37 @@ dotenv.config();
 
 const isProduction = process.env.NODE_ENV === "production";
 
-const sequelize = new Sequelize(
-  process.env.DB_NAME,
-  process.env.DB_USER,
-  process.env.DB_PASSWORD,
-  {
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    dialect: "postgres",
-    logging: false,
-    dialectOptions: isProduction
-      ? {
-          ssl: {
-            require: true,
-            rejectUnauthorized: false, // useful for Render/Heroku/Supabase
-          },
-        }
-      : {}, // 👈 no SSL locally
-    pool: {
-      max: 2,
-      min: 0,
-      idle: 10000,
-      acquire: 30000,
-    },
-  }
-);
+let sequelize;
+
+if (!global.sequelize) {
+  console.log("🔗 Initializing new Sequelize instance...");
+  global.sequelize = new Sequelize(
+    process.env.DB_NAME,
+    process.env.DB_USER,
+    process.env.DB_PASSWORD,
+    {
+      host: process.env.DB_HOST,
+      port: process.env.DB_PORT,
+      dialect: "postgres",
+      logging: false,
+      dialectOptions: isProduction
+        ? {
+            ssl: {
+              require: true,
+              rejectUnauthorized: false,
+            },
+          }
+        : {},
+      pool: {
+        max: 5, // smaller pool
+        min: 1,
+        idle: 10000,
+        acquire: 30000,
+      },
+    }
+  );
+}
+
+sequelize = global.sequelize;
 
 export default sequelize;
