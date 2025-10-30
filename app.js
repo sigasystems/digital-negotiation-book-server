@@ -28,11 +28,10 @@ const app = express();
 // ✅ Dynamic CORS Configuration
 // -----------------------------
 const allowedOrigins = [
-  // "https://dnb.sigasystems.com",
-  // "http://localhost:3000",
-  // "http://localhost:5173",
-  // "https://digital-negotiation-book-server.vercel.app",
-  "*",
+  "https://dnb.sigasystems.com",                 // your frontend (production)
+  "https://digital-negotiation-book.vercel.app", // if you preview frontend on vercel
+  "http://localhost:5173",                       // local dev
+  "http://localhost:3000",                       // local dev alt
 ];
 
 const corsOptions = {
