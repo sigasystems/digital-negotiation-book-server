@@ -1,18 +1,18 @@
 import { buyerSchema, buyerSchemaValidation } from "../validations/buyer.validation.js";
 import { businessOwnerSchema } from "../validations/business.validation.js";
 import {buyerService} from "../services/buyer.service.js";
-import buyersRepository from "../repositories/buyers.repository.js";
 import { successResponse, errorResponse } from "../handlers/responseHandler.js";
 import { authorizeRoles } from "../utlis/helper.js";
 import { checkAccountStatus } from "../utlis/helper.js";
 import { asyncHandler } from "../handlers/asyncHandler.js";
 import { PlanRepository } from "../repositories/plan.repository.js";
 import { normalizeKeysToCamelCase } from "../utlis/normalizeKeys.js";
+import buyersRepository from "../repositories/buyers.repository.js";
 
 // Become Business Owner
 export const becomeBusinessOwner = asyncHandler(async (req, res) => {
   try {
-    const { email, planId, paymentId, billingCycle } = req.body;
+    const { email, planId, paymentId, billingCycle, businessName } = req.body;
 
     // Validate billingCycle
     if (!["monthly", "yearly"].includes(billingCycle)) {
@@ -39,15 +39,24 @@ export const becomeBusinessOwner = asyncHandler(async (req, res) => {
       );
     }
 
+    const existingBusinessOwner = await buyersRepository.findBusinessOwnerByUserId(existingUser.id);
+    if (!existingBusinessOwner) {
+      // Only now check if business name is already taken
+      const existingBusiness = await buyersRepository.findBusinessOwnerByName(businessName);
+      if (existingBusiness) {
+        return errorResponse(res, 400, `Business name '${businessName}' is already taken.`);
+      }
+    }
+
     // Calculate price based on billing cycle
     const planPrice =
       billingCycle === "monthly" ? plan.priceMonthly : plan.priceYearly;
-    const { newOwner, accessToken ,payment } = await buyerService.becomeBusinessOwner(
+
+    const { newOwner, accessToken, payment } = await buyerService.becomeBusinessOwner(
       email,
       { ...parsed.data, planId: plan.id, paymentId, billingCycle, res },
       existingUser
     );
-    console.log("paymentid from bus controller..",paymentId)
 
     return successResponse(res, 201, "Business owner created successfully!", {
       accessToken,
@@ -62,7 +71,7 @@ export const becomeBusinessOwner = asyncHandler(async (req, res) => {
         price: planPrice,
       },
       businessName: newOwner.businessName,
-      paymentId: paymentId || payment?.id || null, 
+      paymentId: paymentId || payment?.id || null,
       registrationNumber: newOwner.registrationNumber,
       status: newOwner.status,
       createdAt: newOwner.createdAt,

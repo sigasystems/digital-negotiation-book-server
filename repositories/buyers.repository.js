@@ -77,6 +77,19 @@ async  findRegistrationNumber(registrationNumber) {
   async createUser(userData) {
     return User.create(userData);
   }
+
+  async findBusinessOwnerByName(businessName) {
+    return BusinessOwner.findOne({
+      where: { businessName: businessName.trim() },
+    });
+  }
+
+  async findBusinessOwnerByUserId(userId) {
+    return prisma.businessOwner.findUnique({
+      where: { userId },
+    });
+  }
+
 }
 
 export default new BuyerRepository();

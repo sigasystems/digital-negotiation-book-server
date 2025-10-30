@@ -34,15 +34,49 @@ async function register(userData) {
   });
 }
 
-export async function login({ res, email, password }) {
+export async function login({ res, email, password, businessName }) {
   let user = await userRepository.findByEmail(email);
-
   if (!user) {
     const hashedPassword = await bcrypt.hash(password, 10);
-    user = await userRepository.createUser({ email, password: hashedPassword, roleId: 6 });
+
+    const newUserData = {
+      email,
+      password: hashedPassword,
+      roleId: 6,
+    };
+
+    if (businessName && businessName.trim() !== "") {
+      newUserData.businessName = businessName.trim();
+    }
+
+  user = await userRepository.createUser(newUserData);
   } else {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) throw new Error("Invalid email or password");
+  }
+
+// Get associated business owner info (tenant-level relationship)
+  const businessOwner = await userRepository.findBusinessOwnerByUserId(user.id);
+
+  // ✅ Enforce business name rule
+  if (user.roleId !== 1) {
+    // Require business name if not admin
+    if (!businessName || businessName.trim() === "") {
+      throw new Error("Business name is required to log in");
+    }
+
+    // ✅ Check if provided business name matches the stored one
+    if (!businessName || businessName.trim() === "") {
+      throw new Error("Business name is required to log in");
+    }
+
+    const inputBusiness = businessName.trim().toLowerCase();
+    const storedBusiness =
+      (businessOwner?.businessName || businessName || "").trim().toLowerCase();
+
+    if (inputBusiness !== storedBusiness) {
+      throw new Error("Wrong business name");
+    }
   }
 
   checkAccountStatus(user, "User");
@@ -53,7 +87,6 @@ export async function login({ res, email, password }) {
 
   switch (user.roleId) {
     case 2:
-      const businessOwner = await userRepository.findBusinessOwnerByUserId(user.id);
       checkAccountStatus(businessOwner, "Business Owner");
 
       tokenPayload = {
@@ -79,7 +112,6 @@ export async function login({ res, email, password }) {
         name: buyer.contactName,
         ownerId: buyer.ownerId,
       };
-      console.log("tokeen payload",tokenPayload)
       break;
 
     default:

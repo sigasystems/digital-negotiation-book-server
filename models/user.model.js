@@ -32,15 +32,26 @@ const User = sequelize.define(
       validate: { len: [60, 255] },
     },
     roleId: {
-  type: DataTypes.INTEGER,
-  allowNull: false,
-  references: {
-    model: 'roles', // PostgreSQL table name
-    key: 'id',
-  },
-  onUpdate: 'CASCADE',
-  onDelete: 'CASCADE',
-},
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: "roles", // PostgreSQL table name
+        key: "id",
+      },
+      onUpdate: "CASCADE",
+      onDelete: "CASCADE",
+    },
+
+    // ✅ New Field: Business Name
+    businessName: {
+      type: DataTypes.STRING(100),
+      allowNull: true, // optional
+      defaultValue: null, // explicit default
+      validate: {
+        is: /^[A-Za-z0-9\s&',.-]{2,100}$/i, // allows names like "Ocean Fresh & Co."
+      },
+    },
+
     created_at: {
       type: DataTypes.DATE,
       defaultValue: sequelize.literal("now()"),
