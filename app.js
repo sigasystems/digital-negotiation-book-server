@@ -55,7 +55,9 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // ✅ Explicitly handle preflight OPTIONS requests (no path)
-app.options(cors(corsOptions));
+// ✅ Explicitly handle preflight OPTIONS requests (all routes)
+app.options("*", cors(corsOptions));
+
 
 
 // -----------------------------
