@@ -71,6 +71,13 @@ export const superAdminRepo = {
   return owner; // return updated object
 },
 
+findBusinessOwnerByName: async (businessName) => {
+  return await BusinessOwner.findOne({
+    where: { businessName: businessName.trim() },
+  });
+},
+
+
 
   includeBuyers: () => ({
     include: [

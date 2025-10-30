@@ -38,6 +38,12 @@ export const superAdminService = {
         throw { statusCode: 400, message: "Email already exists." };
       }
 
+      // 🔍 NEW: Check for duplicate business name
+      const existingBusiness = await superAdminRepo.findBusinessOwnerByName(businessName);
+      if (existingBusiness) {
+        throw { statusCode: 400, message: `Business name '${businessName}' already exists.` };
+      }
+
       // Generate password and hash
       const plainPassword = generateSecurePassword(12);
       const passwordHash = await bcrypt.hash(plainPassword, 10);

@@ -10,6 +10,14 @@ export const loginSchemaValidation = z.object({
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s])/,
       "Password must include uppercase, lowercase, number, and special character"
     ),
+
+  businessName: z
+    .string()
+    .trim()
+    .min(2, "Business name must be at least 2 characters")
+    .max(100, "Business name cannot exceed 100 characters")
+    .optional()
+    .or(z.literal("")),
 });
 
 export const registerSchemaValidation = loginSchemaValidation.extend({
