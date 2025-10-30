@@ -6,7 +6,7 @@ import { authenticateJWT } from "../middlewares/authenticateJWT.js";
 const router = express.Router();
 
 // Public routes
-router.get("/", planController.getPlans);        
+router.get("/getall-plans", planController.getPlans);        
 router.get("/:id", planController.getPlanById);  
 
 // Admin routes
