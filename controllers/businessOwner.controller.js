@@ -7,6 +7,7 @@ import { authorizeRoles } from "../utlis/helper.js";
 import { checkAccountStatus } from "../utlis/helper.js";
 import { asyncHandler } from "../handlers/asyncHandler.js";
 import { PlanRepository } from "../repositories/plan.repository.js";
+import { normalizeKeysToCamelCase } from "../utlis/normalizeKeys.js";
 
 // Become Business Owner
 export const becomeBusinessOwner = asyncHandler(async (req, res) => {
@@ -218,7 +219,10 @@ export const deactivateBuyer = asyncHandler(async (req, res) => {
 export const editBuyer = asyncHandler(async (req, res) => {
   try {
     authorizeRoles(req, ["business_owner"]);
-    const parsed = buyerSchemaValidation.safeParse(req.body);
+
+    const normalizedBody = normalizeKeysToCamelCase(req.body)
+
+    const parsed = buyerSchemaValidation.safeParse(normalizedBody);
 
     if (!parsed.success) {
       return errorResponse(res,400,parsed.error.issues.map((i) => i.message).join(", ") );

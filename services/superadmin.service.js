@@ -66,6 +66,11 @@ export const superAdminService = {
             <p><b>Business Name:</b> ${businessName}</p>
             <p><b>Email:</b> ${email}</p>
             <p><b>Password:</b> ${plainPassword}</p>
+            <div style="margin: 20px 0; padding: 10px; background-color: #fff8e1; border-left: 4px solid #fbc02d; border-radius: 4px;">
+              <p style="margin: 0; font-weight: bold; color: #795548; font-size: 15px;">
+                ⚠️ Make sure to change your password immediately!
+              </p>
+            </div>
             <p>${emailLoginButton({ url: `${process.env.CLIENT_URL}/login`, label: "Log in" })}</p>
           `,
           footer: "If you did not make this request, please contact support immediately.",
