@@ -32,7 +32,7 @@ const allowedOrigins = [
   // "http://localhost:3000",
   // "http://localhost:5173",
   // "https://digital-negotiation-book-server.vercel.app",
-  "*",
+  "/*",
 ];
 
 const corsOptions = {
