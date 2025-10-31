@@ -36,49 +36,47 @@ async function register(userData) {
 
 export async function login({ res, email, password, businessName }) {
   let user = await userRepository.findByEmail(email);
+
+  // If user doesn't exist, create them
   if (!user) {
     const hashedPassword = await bcrypt.hash(password, 10);
-
     const newUserData = {
       email,
       password: hashedPassword,
-      roleId: 6,
+      roleId: 6, // default role for new users
     };
 
     if (businessName && businessName.trim() !== "") {
       newUserData.businessName = businessName.trim();
     }
 
-  user = await userRepository.createUser(newUserData);
+    user = await userRepository.createUser(newUserData);
   } else {
+    // Validate password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) throw new Error("Invalid email or password");
   }
 
-// Get associated business owner info (tenant-level relationship)
+  // Get associated business owner info (tenant-level relationship)
   const businessOwner = await userRepository.findBusinessOwnerByUserId(user.id);
 
-  // ✅ Enforce business name rule
-  if (user.roleId !== 1) {
-    // Require business name if not admin
-    if (!businessName || businessName.trim() === "") {
-      throw new Error("Business name is required to log in");
-    }
-
-    // ✅ Check if provided business name matches the stored one
+  // ✅ Enforce business name rules
+  if (user.roleId !== 1 && user.roleId !== 6) {
+    // Require business name if user exists and role is not admin/user
     if (!businessName || businessName.trim() === "") {
       throw new Error("Business name is required to log in");
     }
 
     const inputBusiness = businessName.trim().toLowerCase();
     const storedBusiness =
-      (businessOwner?.businessName || businessName || "").trim().toLowerCase();
+      (businessOwner?.businessName || user?.businessName || "").trim().toLowerCase();
 
-    if (inputBusiness !== storedBusiness) {
+    if (storedBusiness && inputBusiness !== storedBusiness) {
       throw new Error("Wrong business name");
     }
   }
 
+  // Validate user & business owner account status
   checkAccountStatus(user, "User");
 
   const roleDetails = await userRepository.findRoleById(user.roleId);
@@ -88,7 +86,6 @@ export async function login({ res, email, password, businessName }) {
   switch (user.roleId) {
     case 2:
       checkAccountStatus(businessOwner, "Business Owner");
-
       tokenPayload = {
         id: user.id,
         businessOwnerId: businessOwner.id,
@@ -103,7 +100,6 @@ export async function login({ res, email, password, businessName }) {
     case 3:
       const buyer = await userRepository.findBuyerByEmail(email);
       checkAccountStatus(buyer, "Buyer");
-
       tokenPayload = {
         id: buyer.id,
         email: user.email,
@@ -118,12 +114,11 @@ export async function login({ res, email, password, businessName }) {
       if (!roleDetails?.isActive) {
         throw new Error(`The role '${roleDetails?.name}' is inactive. Contact support.`);
       }
-
       tokenPayload = {
         id: user.id,
         email: user.email,
         userRole: roleName,
-        businessName: "No business name in DB",
+        businessName: user.businessName || "No business name in DB",
         name: `${user?.first_name || ""} ${user?.last_name || ""}`.trim() || "No name in DB",
       };
       break;
