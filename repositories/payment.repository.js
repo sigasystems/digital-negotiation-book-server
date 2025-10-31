@@ -37,7 +37,7 @@ export const paymentRepository = {
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
       // success_url: `http://localhost:5173/paymentsuccess`,
-      success_url:`https://dnb.sigasystems.com/`,
+      success_url:`https://dnb.sigasystems.com/paymentsuccess`,
       // success_url:'https://digital-negotiation-book-client.vercel.app/paymentsuccess',
       // cancel_url: `https://localhost:5173/`,
       cancel_url: `https://dnb.sigasystems.com/`,
