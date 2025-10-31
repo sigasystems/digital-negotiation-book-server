@@ -17,10 +17,21 @@ export const createPayment = asyncHandler(async (req, res) => {
 
 export const getPayments = asyncHandler(async (req, res) => {
   try {
-    const payments = await paymentService.getAllPayments();
-    successResponse(res, 200, "Payments fetched successfully", { total: payments.length, payments });
+    const pageIndex = parseInt(req.query.pageIndex) || 1;
+    const pageSize = parseInt(req.query.pageSize) || 10;
+
+    const { payments, totalCount } = await paymentService.getAllPayments(pageIndex, pageSize);
+
+    return successResponse(res, 200, "Payments fetched successfully", {
+      pageIndex,
+      pageSize,
+      totalCount,
+      totalPages: Math.ceil(totalCount / pageSize),
+      payments,
+    });
   } catch (err) {
-    errorResponse(res, 500, err.message);
+    console.error("Error fetching payments:", err);
+    return errorResponse(res, 500, err.message || "Internal Server Error");
   }
 });
 
