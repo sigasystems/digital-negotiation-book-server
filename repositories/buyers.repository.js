@@ -85,8 +85,8 @@ async  findRegistrationNumber(registrationNumber) {
   }
 
   async findBusinessOwnerByUserId(userId) {
-  return prisma.businessOwner.findFirst({
-    where: { userId },
+  return BusinessOwner.findOne({
+    where: { userId: userId },
   });
 }
 
