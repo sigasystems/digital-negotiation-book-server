@@ -16,8 +16,28 @@ export const createOfferDraft = asyncHandler(async (req, res) => {
 export const getAllOfferDrafts = asyncHandler(async (req, res) => {
   try {
     authorizeRoles(req, ["business_owner"]);
-    const drafts = await offerDraftService.getAllOfferDrafts();
-    return successResponse(res, 200, "Offer drafts fetched successfully", drafts);
+    const businessOwnerId = req.user?.businessOwnerId;
+    if (!businessOwnerId) throw new Error("businessOwnerId is required");
+
+    const pageIndex = parseInt(req.query.pageIndex) || 0;
+    const pageSize = parseInt(req.query.pageSize) || 10;
+    const offset = pageIndex * pageSize;
+
+    const { drafts, totalItems } = await offerDraftService.getAllOfferDrafts(businessOwnerId, {
+      pageIndex,
+      pageSize,
+      offset,
+    });
+
+    const totalPages = Math.ceil(totalItems / pageSize);
+
+    return successResponse(res, 200, "Offer drafts fetched successfully", {
+      totalItems,
+      totalPages,
+      pageIndex,
+      pageSize,
+      drafts,
+    });
   } catch (err) {
     return errorResponse(res, 400, err.message);
   }

@@ -5,8 +5,15 @@ class OfferDraftRepository {
     return OfferDraft.create(data);
   }
 
-  async findAll(includeDeleted = false) {
-    return OfferDraft.findAll({ paranoid: !includeDeleted });
+  async findAll(businessOwnerId, { pageIndex, pageSize, offset }) {
+    const { rows: drafts, count: total } = await OfferDraft.findAndCountAll({
+      where: { businessOwnerId },
+      limit: pageSize,
+      offset,
+      order: [["createdAt", "DESC"]],
+    });
+
+    return { drafts, total };
   }
 
   async findDraftById(draftId, transaction) {

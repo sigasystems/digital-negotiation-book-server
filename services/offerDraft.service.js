@@ -21,10 +21,20 @@ export const offerDraftService = {
   },
 
   // GET all offer drafts
-  getAllOfferDrafts: async () => {
-    const drafts = await offerDraftRepository.findAll();
-    return { drafts: drafts.map(formatOfferDates) };
-  },
+ getAllOfferDrafts: async (businessOwnerId, { pageIndex, pageSize, offset }) => {
+  if (!businessOwnerId) throw new Error("businessOwnerId is required");
+
+  const { drafts, total } = await offerDraftRepository.findAll(businessOwnerId, {
+    pageIndex,
+    pageSize,
+    offset,
+  });
+
+  return {
+    drafts: drafts.map(formatOfferDates),
+    totalItems: total,
+  };
+},
 
   // GET offer draft by ID
   getOfferDraftById: async (id) => {
@@ -47,6 +57,37 @@ export const offerDraftService = {
     }
 
     const { sizeBreakups, total, grandTotal } = parsed.data;
+
+    // Merge with existing record for validation
+    const finalOfferValidityDate =
+      parsed.data.offerValidityDate ?? draft.offerValidityDate;
+    const finalShipmentDate =
+      parsed.data.shipmentDate ?? draft.shipmentDate;
+
+    const toLocalDateOnly = (date) => {
+      const d = new Date(date);
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    };
+
+    const today = toLocalDateOnly(new Date());
+    const validityDay = finalOfferValidityDate
+      ? toLocalDateOnly(finalOfferValidityDate)
+      : null;
+    const shipmentDay = finalShipmentDate
+      ? toLocalDateOnly(finalShipmentDate)
+      : null;
+
+    // --- Validations ---
+    if (validityDay && validityDay < today)
+      return { error: "Offer validity date cannot be earlier than today." };
+
+    if (shipmentDay && validityDay && shipmentDay < validityDay)
+      return { error: "Shipment date cannot be earlier than the offer validity date." };
+
+    if (shipmentDay && !validityDay && shipmentDay < today)
+      return { error: "Shipment date cannot be earlier than today." };
+
+    // --- Size breakup validation ---
     if (sizeBreakups && total && grandTotal) {
       const validationError = validateSizeBreakups(sizeBreakups, total, grandTotal);
       if (validationError) return { error: validationError };
