@@ -66,7 +66,8 @@ export const updateOfferDraft = asyncHandler(async (req, res) => {
 export const deleteOfferDraft = asyncHandler(async (req, res) => {
   try {
     authorizeRoles(req, ["business_owner"]);
-    const deleted = await offerDraftService.deleteOfferDraft(req.params.id);
+    const draftId = parseInt(req.params.id, 10);
+    const deleted = await offerDraftService.deleteOfferDraft(draftId);
     return successResponse(res, 200, "Offer draft deleted successfully", deleted);
   } catch (err) {
     return errorResponse(res, 400, err.message);
@@ -87,8 +88,16 @@ export const updateOfferStatus = asyncHandler(async (req, res) => {
 export const searchOfferDrafts = asyncHandler(async (req, res) => {
   try {
     authorizeRoles(req, ["business_owner"]);
-    const drafts = await offerDraftService.searchOfferDrafts(req.query);
-    return successResponse(res, 200, "Offer drafts fetched successfully", drafts);
+
+    const { pageIndex = 0, pageSize = 10, ...filters } = req.query;
+
+    const result = await offerDraftService.searchOfferDrafts({
+      filters,
+      pageIndex: Number(pageIndex),
+      pageSize: Number(pageSize),
+    });
+
+    return successResponse(res, 200, "Offer drafts fetched successfully", result);
   } catch (err) {
     return errorResponse(res, 400, err.message);
   }
