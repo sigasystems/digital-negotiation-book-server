@@ -4,7 +4,7 @@ import { paymentController } from "../controllers/index.js";
 const router = express.Router();
 
 router.post("/create-payment", paymentController.createPayment);
-router.get("/getallpayments", paymentController.getPayments);
+router.get("/getallpayments", paymentController.getAllPayments);
 router.get("/:id", paymentController.getPaymentById);
 // Route
 router.get("/session/:sessionId", paymentController.getSessionInfo);

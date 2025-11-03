@@ -39,3 +39,7 @@ export {
   Subscription,
   // PasswordResetOtp
 };
+Payment.belongsTo(User, { foreignKey: "userId" });
+Payment.belongsTo(Plan, { foreignKey: "planId" });
+User.hasMany(Payment, { foreignKey: "userId" });
+Plan.hasMany(Payment, { foreignKey: "planId" });
