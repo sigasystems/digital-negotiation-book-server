@@ -5,6 +5,7 @@ import { paymentService } from "../services/payment.service.js";
 import Payment from "../models/payment.model.js";
 import User from "../models/user.model.js";
 import stripe from "../config/stripe.js";
+import Plan from "../models/plan.model.js";
 
 export const createPayment = asyncHandler(async (req, res) => {
   try {
@@ -15,25 +16,61 @@ export const createPayment = asyncHandler(async (req, res) => {
   }
 });
 
-export const getPayments = asyncHandler(async (req, res) => {
+export const getAllPayments = async (req, res) => {
   try {
     const pageIndex = parseInt(req.query.pageIndex) || 1;
     const pageSize = parseInt(req.query.pageSize) || 10;
 
-    const { payments, totalCount } = await paymentService.getAllPayments(pageIndex, pageSize);
-
-    return successResponse(res, 200, "Payments fetched successfully", {
-      pageIndex,
-      pageSize,
-      totalCount,
-      totalPages: Math.ceil(totalCount / pageSize),
-      payments,
+    // Fetch payments + related user + plan
+    const { count, rows: payments } = await Payment.findAndCountAll({
+      limit: pageSize,
+      include: [
+        {
+          model: User,
+          attributes: ["id", "first_name", "last_name", "email"],
+        },
+        {
+          model: Plan,
+          attributes: [
+            "id",
+            "key",
+            "name",
+            "description",
+            "priceMonthly",
+            "currency",
+            "billingCycle",
+            "maxUsers",
+            "maxProducts",
+            "maxOffers",
+            "maxBuyers",
+            "features",
+          ],
+        },
+      ],
+      order: [["createdAt", "DESC"]],
     });
-  } catch (err) {
-    console.error("Error fetching payments:", err);
-    return errorResponse(res, 500, err.message || "Internal Server Error");
+
+
+    res.status(200).json({
+      statusCode: 200,
+      success: true,
+      message: "Payments fetched successfully",
+      data: {
+        payments, // ✅ now included
+        pageIndex,
+        pageSize,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching payments:", error);
+    res.status(500).json({
+      statusCode: 500,
+      success: false,
+      message: "Error fetching payments",
+      error: error.message
+    });
   }
-});
+};
 
 export const getPaymentById = asyncHandler(async (req, res) => {
   try {
