@@ -36,14 +36,37 @@ class OfferDraftRepository {
     return draft;
   }
 
-  async softDelete(draft) {
-    await draft.update({ isDeleted: true, deletedAt: new Date() });
-    await draft.reload({ paranoid: false });
-    return draft;
+  async delete(draftId) {
+    const draft = await OfferDraft.findOne({ where: { draftNo: draftId } });
+
+    if (!draft) {
+      console.error("Offer draft not found with draftNo:", draftId);
+      throw new Error("Offer draft not found");
+    }
+
+    await draft.destroy({ force: true });
+    return { draftNo: draft.draftNo, deletedAt: new Date() };
   }
 
-  async search(filters) {
-    return OfferDraft.findAll({ where: filters, paranoid: false });
+    async search({ whereClause, offset = 0, limit = 10 }) {
+
+    const rows = await OfferDraft.findAll({
+      where: whereClause,
+      offset,
+      limit,
+      paranoid: false,
+      order: [["createdAt", "DESC"]],
+    });
+
+    const count = await OfferDraft.count({
+      where: whereClause,
+      paranoid: false,
+    });
+
+    return {
+      drafts: rows,
+      totalItems: count,
+    };
   }
 }
 

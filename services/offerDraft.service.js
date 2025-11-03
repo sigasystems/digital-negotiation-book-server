@@ -103,11 +103,11 @@ export const offerDraftService = {
     if (!draft) return { error: "Offer draft not found" };
     if (draft.isDeleted || draft.deletedAt) return { error: "Offer draft already deleted" };
 
-    const deletedDraft = await offerDraftRepository.softDelete(draft);
+    const deletedDraft = await offerDraftRepository.delete(id);
     return {
       deleted: {
         draftNo: deletedDraft.draftNo,
-        deletedAt: formatOfferDates(deletedDraft).deletedAt,
+        deletedAt: deletedDraft.deletedAt,
       },
     };
   },
@@ -131,15 +131,30 @@ export const offerDraftService = {
   },
 
   // SEARCH offer drafts
-  searchOfferDrafts: async (query) => {
-    const whereClause = {};
-    if (query.draftNo) whereClause.draftNo = Number(query.draftNo);
-    if (query.draftName) whereClause.draftName = { [Op.like]: `%${query.draftName}%` };
-    if (query.status) whereClause.status = query.status;
-    if (query.isDeleted !== undefined)
-      whereClause.isDeleted = query.isDeleted === "true";
+searchOfferDrafts: async ({ filters, pageIndex, pageSize }) => {
+  console.log("filters", filters);
 
-    const drafts = await offerDraftRepository.search(whereClause);
-    return { drafts: drafts.map(formatOfferDates) };
-  },
-};;
+    const whereClause = {};
+    if (filters.draftNo) whereClause.draftNo = Number(filters.draftNo);
+    if (filters.draftName) whereClause.draftName = { [Op.like]: `%${filters.draftName}%` };
+    if (filters.status) whereClause.status = filters.status;
+    if (filters.isDeleted !== undefined)
+      whereClause.isDeleted = filters.isDeleted === "true";
+
+  const offset = pageIndex * pageSize;
+  const limit = pageSize;
+
+  const { drafts, totalItems } = await offerDraftRepository.search({
+    whereClause,
+    offset,
+    limit,
+  });
+
+  return {
+    drafts: drafts.map(formatOfferDates),
+    totalItems,
+    pageIndex,
+    pageSize,
+  };
+},
+};
