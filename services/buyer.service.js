@@ -349,11 +349,6 @@ await Subscription.create({
   maxBuyers: data.maxBuyers || 100,
 });
 
-  
-
-  console.log("businessownerId :.....",newOwner.id)
-  console.log("payment info....",payment.id)
-
   const tokenPayload = {
     id: newOwner.id,
     email: newOwner.email,

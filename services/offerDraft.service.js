@@ -132,8 +132,6 @@ export const offerDraftService = {
 
   // SEARCH offer drafts
 searchOfferDrafts: async ({ filters, pageIndex, pageSize }) => {
-  console.log("filters", filters);
-
     const whereClause = {};
     if (filters.draftNo) whereClause.draftNo = Number(filters.draftNo);
     if (filters.draftName) whereClause.draftName = { [Op.like]: `%${filters.draftName}%` };
