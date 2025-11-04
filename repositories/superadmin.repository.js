@@ -2,14 +2,6 @@ import { Op } from "sequelize";
 import {User , Buyer , BusinessOwner} from "../models/index.js";
 import sequelize from "../config/db.js";
 
-const createUser = async () => {
-  try {
-    return User.create(data, { transaction });
-  } catch (error) {}
-};
-
-export default { createUser };
-
 export const superAdminRepo = {
   transaction: () => sequelize.transaction(),
 
@@ -26,6 +18,8 @@ export const superAdminRepo = {
     BusinessOwner.findOne({ where: { phoneNumber: phone } }),
 
   findByEmail: (email) => User.findOne({ where: { email } }),
+  findBusinessOwnerByName: (businessName) =>
+    BusinessOwner.findOne({ where: { businessName: businessName.trim() } }),
 
   updateOwner: (owner, data) => owner.update(data),
 
@@ -33,9 +27,7 @@ export const superAdminRepo = {
     const owner = await BusinessOwner.findByPk(ownerId);
     if (!owner) throw new Error("Owner not found");
 
-    owner.is_deleted = true;
-    owner.status = "inactive"
-    await owner.save();
+    await owner.update({ is_deleted: true, status: "inactive" });
 
     return owner;
   },
@@ -44,10 +36,7 @@ export const superAdminRepo = {
     const owner = await BusinessOwner.findByPk(ownerId);
     if (!owner) throw new Error("Owner not found");
 
-    owner.status = "active";
-    owner.is_approved = true;
-
-    await owner.save();
+    await owner.update({ status: "active", is_approved: true });
     return owner;
   },
 
@@ -55,25 +44,44 @@ export const superAdminRepo = {
   const owner = await BusinessOwner.findByPk(ownerId);
   if (!owner) throw new Error("Owner not found");
 
-  owner.status = "inactive";
-  await owner.save();
+    await owner.update({ status: "inactive" });
 
   return owner;
 },
 
  reviewOwner: async (ownerId, isApproved) => {
-  const owner = await BusinessOwner.findByPk(ownerId); // or findOne({ where: { id: ownerId }})
-  if (!owner) {
-    throw new Error("Business owner not found");
-  }
-  owner.is_approved = isApproved;
-  await owner.save();
-  return owner; // return updated object
-},
+  const owner = await BusinessOwner.findByPk(ownerId);
+  if (!owner) throw new Error("Business owner not found");
 
-findBusinessOwnerByName: async (businessName) => {
-  return await BusinessOwner.findOne({
-    where: { businessName: businessName.trim() },
+    await owner.update({ is_approved: isApproved });
+    return owner;
+  },
+
+  async searchBusinessOwners(filters = {}, { limit = 10, offset = 0 }) {
+    const where = {};
+
+    const likeFilter = (key, value) => {
+    if (value !== undefined && value !== null) {
+      const val = String(value).trim();
+      if (val) where[key] = { [Op.iLike]: `%${val}%` };
+    }
+  };
+
+    likeFilter("first_name", filters.first_name);
+    likeFilter("last_name", filters.last_name);
+    likeFilter("email", filters.email);
+    likeFilter("businessName", filters.businessName);
+    likeFilter("phoneNumber", filters.phoneNumber);
+    likeFilter("postalCode", filters.postalCode);
+
+    if (filters.status) where.status = filters.status;
+    where.is_deleted = false;
+
+    return BusinessOwner.findAndCountAll({
+      where,
+      limit: Number(limit),
+      offset: Number(offset),
+      order: [["createdAt", "DESC"]],
   });
 },
 

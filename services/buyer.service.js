@@ -251,15 +251,28 @@ export const buyerService = {
     return { buyer };
   },
 
-  searchBuyers: async (ownerId, query) => {
+  searchBuyers: async (ownerId, query = {}, pagination = {}) => {
     const filters = {};
-    if (query.country) filters.country = { [Op.iLike]: `%${query.country}%` };
-    if (query.status) filters.status = query.status;
-    if (typeof query.isVerified !== "undefined")
-      filters.isVerified = query.isVerified;
 
-    const buyers = await buyersRepository.searchBuyers(ownerId, filters);
-    return { buyers };
+    const country = query.country?.trim();
+    const status = query.status?.trim();
+    const isVerified =
+      typeof query.isVerified !== "undefined" ? query.isVerified : undefined;
+
+    if (country) filters.country = { [Op.iLike]: `%${country}%` };
+    if (status) filters.status = status;
+    if (typeof isVerified !== "undefined") filters.isVerified = isVerified;
+
+    const limit = Number(pagination.limit ?? query.limit ?? 10);
+    const page = Number(pagination.page ?? query.page ?? 0);
+    const offset = page * limit;
+
+    const result = await buyersRepository.searchBuyers(ownerId, filters, {
+      limit,
+      offset,
+    });
+
+    return result;
   },
 
   becomeBusinessOwner: async (userEmail, data) => {
