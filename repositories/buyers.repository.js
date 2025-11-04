@@ -52,8 +52,13 @@ async  findRegistrationNumber(registrationNumber) {
     return Buyer.findOne({ where: { id: buyerId, ownerId } });
   }
 
-  async searchBuyers(ownerId, filters) {
-    return Buyer.findAll({ where: { ownerId, ...filters } });
+  async searchBuyers(ownerId, filters, { limit, offset }) {
+    return Buyer.findAndCountAll({
+      where: { ownerId, ...filters },
+      limit,
+      offset,
+      order: [["createdAt", "DESC"]],
+    });
   }
 
   // ===== Business Owner =====

@@ -1,6 +1,7 @@
 import {
   buyerSchema,
   buyerSchemaValidation,
+  buyerSearchSchemaValidation,
 } from "../validations/buyer.validation.js";
 import { businessOwnerSchema } from "../validations/business.validation.js";
 import { buyerService } from "../services/buyer.service.js";
@@ -84,8 +85,6 @@ export const becomeBusinessOwner = asyncHandler(async (req, res) => {
         existingUser
       );
 
-    console.log("paymentid from bus controller..", paymentId);
-
     return successResponse(res, 201, "Business owner created successfully!", {
       accessToken,
       id: newOwner.id,
@@ -158,14 +157,19 @@ export const searchBuyers = asyncHandler(async (req, res) => {
   try {
     authorizeRoles(req, ["business_owner"]);
 
-    const { country, status, isVerified } = req.query;
+    const country = req.query["params[country]"];
+    const status = req.query["params[status]"];
+    const isVerified = req.query["params[isVerified]"]
+      ? req.query["params[isVerified]"] === "true"
+      : undefined;
+    const page = Number(req.query["params[page]"]) || 0;
+    const limit = Number(req.query["params[limit]"]) || 10;
+
+    const ownerId = req.user.businessOwnerId;
+
     const parsed = buyerSearchSchemaValidation
       .pick({ country: true, status: true, isVerified: true })
-      .safeParse({
-        country,
-        status,
-        isVerified: isVerified ? isVerified === "true" : undefined,
-      });
+      .safeParse({ country, status, isVerified });
 
     if (!parsed.success) {
       return errorResponse(
@@ -175,13 +179,18 @@ export const searchBuyers = asyncHandler(async (req, res) => {
       );
     }
 
-    const buyers = await buyerService.searchBuyers(req.user.id, parsed.data);
-    return successResponse(
-      res,
-      200,
-      buyers.length ? "Buyers filtered successfully" : "No buyers found",
-      buyers
+    const { count, rows } = await buyerService.searchBuyers(
+      ownerId,
+      parsed.data,
+      { page, limit }
     );
+
+    return successResponse(res, 200, "Buyers filtered successfully", {
+      buyers: rows,
+      totalItems: count,
+      totalPages: Math.ceil(count / limit),
+      currentPage: Number(page),
+    });
   } catch (err) {
     return errorResponse(res, 500, err.message || "Failed to search buyers");
   }

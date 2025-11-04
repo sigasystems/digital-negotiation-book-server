@@ -24,5 +24,6 @@ router.delete("/business-owner/:id",authenticateJWT, superadminController.softDe
 
 //review with approve and reject ok
 router.patch("/business-owner/:id/review",authenticateJWT, superadminController.reviewBusinessOwner);
+router.get("/business-owners/search", authenticateJWT, superadminController.searchBusinessOwners);
 
 export default router;

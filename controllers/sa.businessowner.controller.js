@@ -108,6 +108,59 @@ export const reviewBusinessOwner = asyncHandler(async (req, res) => {
   }
 });
 
+  export const searchBusinessOwners = asyncHandler(async (req, res) => {
+  try {
+    authorizeRoles(req, ["super_admin"]);
+
+    const first_name =
+      req.query.first_name || req.query["params[first_name]"];
+    const last_name =
+      req.query.last_name || req.query["params[last_name]"];
+    const email =
+      req.query.email || req.query["params[email]"];
+    const businessName =
+      req.query.businessName || req.query["params[businessName]"];
+    const phoneNumber =
+      req.query.phoneNumber || req.query["params[phoneNumber]"];
+    const postalCode =
+      req.query.postalCode || req.query["params[postalCode]"];
+    const status =
+      req.query.status || req.query["params[status]"];
+
+    const page =
+      Number(req.query.page || req.query["params[page]"] || 0);
+    const limit =
+      Number(req.query.limit || req.query["params[limit]"] || 10);
+
+    const filters = {
+      first_name,
+      last_name,
+      email,
+      businessName,
+      phoneNumber,
+      postalCode,
+      status,
+    };
+
+    const offset = page * limit;
+
+    const result = await superAdminService.searchBusinessOwners(filters, {
+      limit,
+      offset,
+    });
+
+    return successResponse(res, 200, "Business owners fetched successfully", {
+      businessOwners: result.businessOwners,
+      totalItems: result.totalItems,
+      totalPages: result.totalPages,
+      currentPage: result.currentPage,
+    });
+  } catch (err) {
+    console.error("searchBusinessOwners Error:", err);
+    return errorResponse(res, err.statusCode || 500, err.message);
+  }
+});
+
 export default {
   createBusinessOwner,
   getAllBusinessOwners,
@@ -117,4 +170,5 @@ export default {
   deactivateBusinessOwner,
   softDeleteBusinessOwner,
   reviewBusinessOwner,
+  searchBusinessOwners
 };

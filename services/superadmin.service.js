@@ -184,4 +184,30 @@ export const superAdminService = {
     const isApproved = action === "approve";
     return superAdminRepo.reviewOwner(owner, isApproved);
   },
-};
+
+  searchBusinessOwners: async (filters = {}, { limit = 10, offset = 0 }) => {
+  const normalized = {
+    first_name: filters.first_name?.toString().trim() || undefined,
+    last_name: filters.last_name?.toString().trim() || undefined,
+    email: filters.email?.toString().trim() || undefined,
+    businessName: filters.businessName?.toString().trim() || undefined,
+    phoneNumber: filters.phoneNumber?.toString().trim() || undefined,
+    postalCode: filters.postalCode?.toString().trim() || undefined,
+    status: filters.status?.toString().trim() || undefined,
+  };
+
+  const { count, rows } = await superAdminRepo.searchBusinessOwners(normalized, {
+    limit: Number(limit),
+    offset: Number(offset),
+  });
+
+  const formatted = rows.map((owner) => formatTimestamps(owner.toJSON()));
+
+  return {
+    businessOwners: formatted,
+    totalItems: count,
+    totalPages: Math.ceil(count / limit),
+    currentPage: Math.floor(offset / limit),
+  };
+},
+}
