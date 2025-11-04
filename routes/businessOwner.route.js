@@ -1,6 +1,7 @@
 import express from "express";
 import { authenticateJWT } from "../middlewares/authenticateJWT.js";
 import {businessOwnerController} from "../controllers/index.js"
+import { checkBusinessOwnerUnique } from "../controllers/sa.businessowner.controller.js";
 
 const router = express.Router();
 
@@ -19,5 +20,7 @@ router.get("/:ownerId/buyers/search", authenticateJWT, searchBuyers);
 router.get("/get-all-buyers", authenticateJWT, getAllBuyers);
 router.get("/get-buyer/:id", authenticateJWT, getBuyerById);
 router.get("/check-registration/:registrationNumber",  checkRegistrationNumber);
+
+router.get("/check-unique", checkBusinessOwnerUnique);
 
 export default router;

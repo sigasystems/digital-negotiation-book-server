@@ -48,18 +48,11 @@ const corsOptions = {
   credentials: true,
 };
 
-
-// ✅ Explicitly handle preflight OPTIONS requests
-// app.options("*", cors(corsOptions));
-// ✅ Apply CORS before all routes
 // ✅ Apply CORS before all routes
 app.use(cors(corsOptions));
 
 // ✅ Explicitly handle preflight OPTIONS requests (Express 5-safe)
 app.options(/.*/, cors(corsOptions));
-
-
-
 
 // -----------------------------
 // ✅ Webhook route (before body parser)

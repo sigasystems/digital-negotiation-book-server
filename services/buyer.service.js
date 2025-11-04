@@ -394,7 +394,7 @@ await Subscription.create({
   } catch (err) {
     console.error("❌ Failed to send welcome email:", err.message);
   }
-}, 1 * 60 * 1000); // 1 minutes
+},25 * 1000); // 1 minutes
 
 
   return { newOwner, accessToken ,payment };
