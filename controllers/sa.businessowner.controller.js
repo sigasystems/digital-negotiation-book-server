@@ -108,7 +108,7 @@ export const reviewBusinessOwner = asyncHandler(async (req, res) => {
   }
 });
 
-  export const searchBusinessOwners = asyncHandler(async (req, res) => {
+export const searchBusinessOwners = asyncHandler(async (req, res) => {
   try {
     authorizeRoles(req, ["super_admin"]);
 
@@ -161,6 +161,84 @@ export const reviewBusinessOwner = asyncHandler(async (req, res) => {
   }
 });
 
+export const checkBusinessOwnerUnique = asyncHandler(async (req, res) => {
+  try {
+    // read and normalize inputs
+    const rawEmail = req.query.email;
+    const rawBusinessName = req.query.businessName;
+    const rawRegistrationNumber = req.query.registrationNumber;
+
+    const email = rawEmail?.trim();
+    const businessName = rawBusinessName?.trim();
+    const registrationNumber = rawRegistrationNumber?.trim();
+
+    // require at least one field
+    if (!email && !businessName && !registrationNumber) {
+      return errorResponse(
+        res,
+        400,
+        "At least one field (email, businessName, or registrationNumber) is required"
+      );
+    }
+
+    // build conditions (case-insensitive match for businessName optional)
+    const conditions = [];
+    if (email) conditions.push({ email });
+    if (businessName) conditions.push({ businessName }); // DB should handle case rules; see note
+    if (registrationNumber) conditions.push({ registrationNumber });
+
+    // find any existing owner matching any condition
+    const existing = await BusinessOwner.findOne({ $or: conditions }).select(
+      "email businessName registrationNumber"
+    );
+
+    // if nothing found -> unique
+    if (!existing) {
+      return successResponse(res, 200, "All fields are unique", {
+        exists: false,
+        conflicts: {},
+      });
+    }
+
+    // build conflicts and messages
+    const conflicts = {};
+    const messageParts = [];
+
+    if (email && existing.email === email) {
+      conflicts.email = true;
+      messageParts.push("Email is already registered");
+    }
+
+    // If your DB is case-sensitive for businessName, you may want to compare lowercased versions:
+    // if (businessName && existing.businessName?.toLowerCase() === businessName.toLowerCase()) { ... }
+    if (businessName && existing.businessName === businessName) {
+      conflicts.businessName = true;
+      messageParts.push("Business name already exists");
+    }
+
+    if (
+      registrationNumber &&
+      existing.registrationNumber === registrationNumber
+    ) {
+      conflicts.registrationNumber = true;
+      messageParts.push("Registration number already exists");
+    }
+
+    // Return 409 Conflict with details
+    return errorResponse(
+      res,
+      409,
+      messageParts.length ? messageParts.join(", ") : "Some fields already exist",
+      {
+        exists: true,
+        conflicts,
+      }
+    );
+  } catch (err) {
+    return errorResponse(res, err.statusCode || 500, err.message || "Server error");
+  }
+});
+
 export default {
   createBusinessOwner,
   getAllBusinessOwners,
@@ -170,5 +248,6 @@ export default {
   deactivateBusinessOwner,
   softDeleteBusinessOwner,
   reviewBusinessOwner,
-  searchBusinessOwners
+  searchBusinessOwners,
+  checkBusinessOwnerUnique
 };
