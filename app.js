@@ -19,6 +19,7 @@ import {
 
 import { notFoundHandler, errorHandler } from "./handlers/index.js";
 import { stripeWebhook } from "./controllers/stripeWebhook.controller.js";
+import { createSessionMiddleware } from "./utlis/session.js";
 
 dotenv.config();
 
@@ -77,6 +78,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+app.use(createSessionMiddleware());
 // -----------------------------
 // ✅ API Routes
 // -----------------------------
