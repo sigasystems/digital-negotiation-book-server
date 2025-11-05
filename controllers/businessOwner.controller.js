@@ -87,7 +87,7 @@ export const becomeBusinessOwner = asyncHandler(async (req, res) => {
 
     return successResponse(res, 201, "Business owner created successfully!", {
       accessToken,
-      id: newOwner.id,
+      businessOwnerId: newOwner.id,
       first_name: newOwner.first_name,
       last_name: newOwner.last_name,
       email: newOwner.email,
