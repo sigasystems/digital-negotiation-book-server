@@ -118,8 +118,8 @@ export async function login({ res, email, password, businessName }) {
         id: user.id,
         email: user.email,
         userRole: roleName,
-        businessName: user.businessName || "No business name in DB",
-        name: `${user?.first_name || ""} ${user?.last_name || ""}`.trim() || "No name in DB",
+        businessName: user.businessName || "",
+        name: `${user?.first_name || ""} ${user?.last_name || ""}`.trim() || " ",
       };
       break;
   }

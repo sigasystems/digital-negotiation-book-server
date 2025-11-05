@@ -21,6 +21,10 @@ const BusinessOwner = sequelize.define(
       },
       onDelete: "CASCADE",
     },
+    businessName: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
 
     // Personal info from User table
     first_name: {
@@ -42,11 +46,6 @@ const BusinessOwner = sequelize.define(
     phoneNumber: {
       type: DataTypes.STRING,
       allowNull: true,
-    },
-
-    businessName: {
-      type: DataTypes.STRING,
-      allowNull: false,
     },
 
     registrationNumber: {
