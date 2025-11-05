@@ -3,10 +3,22 @@ import { z } from "zod";
 export const productSchema = z.object({
   code: z.string().min(1, "Code is required"),
   productName: z.string().min(1, "Product name is required"),
-  species: z.string().max(150, "Species max length is 150"),
-  size: z.array(z.string()).optional(),
+  species: z
+    .array(
+      z
+        .string()
+        .min(1, "Species name cannot be empty")
+        .max(150, "Each species must be under 150 characters")
+    )
+    .nonempty("At least one species is required"),
+  size: z
+    .array(
+      z
+        .string()
+        .min(1, "Size value cannot be empty")
+        .max(100, "Size must be under 100 characters")
+    )
+    .optional(),
 });
 
-
-// Array schema for bulk products
 export const productsArraySchema = z.array(productSchema).min(1, "At least one product is required");
