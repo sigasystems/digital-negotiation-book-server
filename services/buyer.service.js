@@ -373,7 +373,7 @@ await Subscription.create({
   refreshTokenGenerator(data.res, tokenPayload);
   setTimeout(async () => {
   try {
-    const loginUrl = `${process.env.LOCAL_URL}/login`;
+    const loginUrl = `${process.env.CLIENT_URL}/login`;
     const invoiceUrl = payment?.invoicePdf || null;
 
     const emailHtml = generateBusinessOwnerEmail({
@@ -394,7 +394,7 @@ await Subscription.create({
   } catch (err) {
     console.error("❌ Failed to send welcome email:", err.message);
   }
-},25 * 1000); // 1 minutes
+},10 * 1000); 
 
 
   return { newOwner, accessToken ,payment };
