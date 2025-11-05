@@ -17,11 +17,11 @@
       allowNull: false,
     },
     species: {
-      type: DataTypes.STRING(150),
+      type: DataTypes.ARRAY(DataTypes.STRING),
       allowNull: false,
     },
     size: {
-      type: DataTypes.ARRAY(DataTypes.STRING), // Array of sizes
+      type: DataTypes.ARRAY(DataTypes.STRING),
       allowNull: true,
     },
     ownerId: {
