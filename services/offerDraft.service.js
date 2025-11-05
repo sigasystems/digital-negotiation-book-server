@@ -12,7 +12,15 @@ export const offerDraftService = {
       return { error: `Validation failed: ${errors.join(", ")}` };
     }
 
-    const { sizeBreakups, total, grandTotal } = parsed.data;
+    const { sizeBreakups, total, grandTotal, draftName } = parsed.data;
+
+    const normalizedDraftName = draftName.trim();
+
+    const existingDraft = await offerDraftRepository.findByName(normalizedDraftName);
+    if (existingDraft) {
+      return { error: `A draft with the name "${normalizedDraftName}" already exists. Please choose different name.` };
+    }
+
     const validationError = validateSizeBreakups(sizeBreakups, total, grandTotal);
     if (validationError) return { error: validationError };
 

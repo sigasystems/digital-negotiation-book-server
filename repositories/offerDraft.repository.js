@@ -68,6 +68,21 @@ class OfferDraftRepository {
       totalItems: count,
     };
   }
+
+    async findByName(draftName) {
+      const normalized = draftName.trim().toLowerCase();
+
+      const existing = await OfferDraft.findOne({
+        where: sequelize.where(
+          sequelize.fn('lower', sequelize.col('draftName')),
+          normalized
+        ),
+        attributes: ['draftNo'],
+        paranoid: false,
+      });
+
+      return !!existing;
+    }
 }
 
 export default new OfferDraftRepository();
