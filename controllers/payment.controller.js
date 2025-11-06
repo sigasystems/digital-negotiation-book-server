@@ -18,12 +18,9 @@ export const createPayment = asyncHandler(async (req, res) => {
 
 export const getAllPayments = async (req, res) => {
   try {
-    const pageIndex = parseInt(req.query.pageIndex) || 1;
-    const pageSize = parseInt(req.query.pageSize) || 10;
 
     // Fetch payments + related user + plan
     const { count, rows: payments } = await Payment.findAndCountAll({
-      limit: pageSize,
       include: [
         {
           model: User,
@@ -57,8 +54,7 @@ export const getAllPayments = async (req, res) => {
       message: "Payments fetched successfully",
       data: {
         payments, // ✅ now included
-        pageIndex,
-        pageSize,
+      
       },
     });
   } catch (error) {
