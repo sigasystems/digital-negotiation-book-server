@@ -125,14 +125,13 @@ export async function login({ res, email, password, businessName }) {
   }
 
   const accessToken = accessTokenGenerator(tokenPayload);
-  refreshTokenGenerator(res, tokenPayload);
-  return { accessToken, roleDetails, tokenPayload };
+  const refreshToken = refreshTokenGenerator(tokenPayload);
+  return { accessToken, roleDetails, tokenPayload, refreshToken };
 }
 
-async function refreshToken(oldToken, res) {
+export async function refreshToken(oldToken) {
   try {
     const decoded = jwt.verify(oldToken, process.env.REFRESH_TOKEN_SECRET);
-    // Fetch user from DB
     const user = await userRepository.findById(decoded.id);
     if (!user) throw new Error("User not found");
 
@@ -147,11 +146,13 @@ async function refreshToken(oldToken, res) {
 
     let businessOwner = null;
     let businessOwnerId = null;
+    let businessName = null;
 
     if (user.roleId === 2) {
       businessOwner = await buyersRepository.findOwnerByEmail(user.email);
       if (businessOwner) {
-        businessOwnerId = businessOwner.id; // or businessOwner.businessOwnerId depending on schema
+        businessOwnerId = businessOwner.id;
+        businessName = businessOwner.businessName;
       }
     }
 
@@ -160,16 +161,19 @@ async function refreshToken(oldToken, res) {
       email: user.email,
       userRole: user.userRole || roleMap[user.roleId] || null,
       name: user.name || `${user.first_name || ""} ${user.last_name || ""}`.trim() || null,
-      businessName: businessOwner?.businessName || null,
+      businessName,
       ...(businessOwnerId ? { businessOwnerId } : {}),
     };
 
-    // Generate access token and refresh token
-    const accessToken = accessTokenGenerator(payload);
-    refreshTokenGenerator(res, payload);
+    const newAccessToken = accessTokenGenerator(payload);
+    const newRefreshToken = refreshTokenGenerator(payload);
 
-    // Return token + safe info
-    return { accessToken, safeUserInfo: payload };
+    return {
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+      payload,
+    };
+
   } catch (err) {
     console.error("Refresh token failed:", err);
     throw new Error("Invalid refresh token");
