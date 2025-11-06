@@ -370,7 +370,7 @@ await Subscription.create({
     name: `${newOwner.first_name || ""} ${newOwner.last_name || ""}`.trim(),
   };
   const accessToken = accessTokenGenerator(tokenPayload);
-  refreshTokenGenerator(data.res, tokenPayload);
+  const refreshToken = refreshTokenGenerator(tokenPayload);
   setTimeout(async () => {
   try {
     const loginUrl = `${process.env.CLIENT_URL}/login`;
@@ -397,7 +397,7 @@ await Subscription.create({
 },10 * 1000); 
 
 
-  return { newOwner, accessToken ,payment };
+  return { newOwner, accessToken, refreshToken, payment };
 },
 
   checkRegistrationNumber: async (registrationNumber) => {

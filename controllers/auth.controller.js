@@ -17,36 +17,43 @@ export const register = asyncHandler(async (req, res) => {
 });
 
 export const login = asyncHandler(async (req, res) => {
-  try {
     const parsed = loginSchemaValidation.safeParse(req.body);
-    if (!parsed.success)
+    if (!parsed.success) {
       return errorResponse(res, 400, parsed.error.issues.map(i => i.message).join(", "));
+    }
 
-    const { accessToken, roleDetails, tokenPayload } = await authService.login({ res, ...parsed.data });
+    const { accessToken, refreshToken, roleDetails, tokenPayload } = await authService.login({ ...parsed.data });
 
     return successResponse(res, 200, "Login successful", {
       accessToken,
+      refreshToken,
       tokenPayload,
       roleCreatedAt: roleDetails?.createdAt,
       roleUpdatedAt: roleDetails?.updatedAt,
       roleIsActive: roleDetails?.isActive ?? false,
     });
-  } catch (err) {
-    return errorResponse(res, 401, err.message || "Login failed");
-  }
-});
+  });
 
-export const refreshTokenRotation = asyncHandler(async (req, res) => {
+export const refreshTokenRotation = async (req, res) => {
   try {
-    const token = req.cookies?.refreshToken;
-    if (!token) return errorResponse(res, 401, "No refresh token");
+    const { refreshToken } = req.body;
 
-    const accessToken = await authService.refreshToken(token, res);
-    return successResponse(res, 200, "Access token refreshed", { accessToken });
+    if (!refreshToken || typeof refreshToken !== "string") {
+      return errorResponse(res, 400, "Refresh token is required");
+    }
+
+    const result = await authService.refreshToken(refreshToken);
+
+    return successResponse(res, 200, "Token refreshed successfully", {
+      accessToken: result.accessToken,
+      refreshToken: result.newRefreshToken,
+      user: result.payload,
+    });
+
   } catch (err) {
-    return errorResponse(res, 401, err.message || "Refresh token failed");
+    return errorResponse(res, 403, "Invalid or expired refresh token", err.message);
   }
-});
+};
 
 export const requestPasswordReset = asyncHandler(async (req, res) => {
   try {
