@@ -24,7 +24,7 @@ export function validateOfferData(data, schema) {
 }
 
 export function ensureOfferOwnership(offer, user) {
-  if (offer.businessOwnerId !== user.id) {
+  if (offer.businessOwnerId !== user.businessOwnerId) {
     throw new Error("This offer does not belong to you.");
   }
 }

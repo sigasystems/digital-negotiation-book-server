@@ -18,10 +18,24 @@ export const getAllOffers = asyncHandler(async (req, res) => {
   try {
     authorizeRoles(req, ["business_owner"]);
 
-    const offers = await offerService.getAllOffers(req.query.status, req.user);
-    return successResponse(res, 200, "Offers fetched successfully", { offers });
+    const pageIndex = parseInt(req.query.pageIndex) || 0;
+    const pageSize = parseInt(req.query.pageSize) || 10;
+    const status = req.query.status || null;
+
+    const offersPaginated = await offerService.getAllOffers(req.user, {
+      pageIndex,
+      pageSize,
+      status,
+    });
+
+    return successResponse(
+      res,
+      200,
+      "Offers fetched successfully",
+      offersPaginated
+    );
   } catch (err) {
-    return errorResponse(res, 400, err.message);
+    return errorResponse(res, err.statusCode || 500, err.message);
   }
 });
 

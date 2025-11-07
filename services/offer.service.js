@@ -15,14 +15,14 @@ const offerService = {
     const draft = await offerRepository.findDraftById(draftId, t);
     if (!draft) throw new Error("Draft not found");
 
-    if (draft.businessOwnerId !== user.id) {
+    if (draft.businessOwnerId !== user.businessOwnerId) {
       throw new Error("You are not authorized to create an offer for this draft");
     }
 
     if (!user?.businessName) throw new Error("Business name not found in token");
 
     const existingOffers = await offerRepository.findAllOffers({
-      businessOwnerId: user.id,
+      businessOwnerId: user.businessOwnerId,
     });
 
    if (existingOffers && existingOffers.length > 0) {
@@ -38,7 +38,7 @@ const offerService = {
       businessOwnerId: draft.businessOwnerId,
       offerName,
       businessName: user.businessName,
-      fromParty: `${user.businessName} / ${user.userRole}`,
+      fromParty: user.businessName,
       origin: draft.origin,
       processor: draft.processor,
       plantApprovalNumber: draft.plantApprovalNumber,
@@ -70,9 +70,28 @@ const offerService = {
       return offerRepository.createOffer(validData, t);
     });
   },
-  async getAllOffers(status, user) {
-    const where = { businessOwnerId: user.id, ...(status && { status }) };
-    return offerRepository.findAllOffers(where);
+  async getAllOffers(user, { pageIndex = 0, pageSize = 10, status = null } = {}) {
+    const where = { businessOwnerId: user.businessOwnerId,
+      ...(status && { status }),
+    };
+
+    const offers = await offerRepository.findAllOffers(where);
+
+    const formattedOffers = offers.map((o) => o.toJSON());
+
+    const totalItems = formattedOffers.length;
+    const totalPages = Math.ceil(totalItems / pageSize);
+
+    const start = pageIndex * pageSize;
+    const paginatedOffers = formattedOffers.slice(start, start + pageSize);
+
+    return {
+      data: paginatedOffers,
+      totalItems,
+      totalPages,
+      pageIndex,
+      pageSize,
+    };
   },
 
   async getOfferById(id, user) {
