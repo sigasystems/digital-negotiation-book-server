@@ -1,38 +1,6 @@
-// import app from "./app.js";
-// import sequelize from "./config/db.js";
-
-// async function startServer() {
-//   try {
-//     const PORT = process.env.PORT || 5000;
-
-//     await sequelize.authenticate();
-//     console.log("✅ Database connected...");
-//     app.listen(PORT, () => {
-//       console.log(`🚀 Server running on port ${PORT}`);
-//     });
-//   } catch (error) {
-//     console.log(error)
-//     process.exit()
-//   }
-// }
-
-// startServer();
-
-
-// import app from "./app.js";
-// import sequelize from "./config/db.js";
-
-// // Initialize the database connection once
-// await sequelize.authenticate();
-// console.log("✅ Database connected...");
-
-// // Vercel expects a function that handles requests directly
-// export default function handler(req, res) {
-//   return app(req, res);
-// }
-
 import app from "./app.js";
 import sequelize from "./config/db.js";
+import getExpiringPlans from "./cronWorker/planExpiryCron.js";
 
 async function init() {
   try {
@@ -45,6 +13,7 @@ async function init() {
 }
 
 await init();
+getExpiringPlans();
 
 function startLocalServer() {
   const PORT = process.env.PORT || 5000;

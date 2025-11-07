@@ -3,6 +3,9 @@ import  stripe  from "../config/stripe.js";
 import Payment from "../models/payment.model.js";
 import User from "../models/user.model.js";
 import Plan from "../models/plan.model.js";
+// import dayjs from "dayjs";
+// import sequelize from "../config/db.js";
+// import { sendExpiryMail } from "../utlis/emailTemplate.js";
 
 const router = express.Router();
 
@@ -88,6 +91,42 @@ router.post("/create-checkout-session", async (req, res) => {
   }
 });
 
+
+//test api for start node-cron
+// 🧠 Manually trigger expiry mail test
+// router.post("/send-expiry", async (req, res) => {
+//   try {
+//     const { userEmail, planName, endDate } = req.body;
+
+//     if (!userEmail || !planName || !endDate) {
+//       return res.status(400).json({ success: false, message: "Missing required fields" });
+//     }
+
+//     // (Optional) Fetch subscription if needed
+//     const [subscriptions] = await sequelize.query(
+//       `SELECT * FROM subscriptions WHERE "planName" = :planName LIMIT 1`,
+//       { replacements: { planName } }
+//     );
+
+//     // Send expiry email
+//     await sendExpiryMail({
+//       to: userEmail,
+//       subject: "Your plan is about to expire",
+//       text: `Hi there, your ${planName} plan will expire on ${dayjs(endDate).format(
+//         "DD MMM YYYY"
+//       )}. Please renew to continue uninterrupted service.`,
+//     });
+
+//     res.json({
+//       success: true,
+//       message: "Test expiry email sent successfully",
+//       data: subscriptions || {},
+//     });
+//   } catch (error) {
+//     console.error("❌ Error sending test mail:", error.message);
+//     res.status(500).json({ success: false, message: "Internal server error" });
+//   }
+// });
 
 
 
