@@ -30,10 +30,6 @@ const Subscription = sequelize.define("Subscription", {
     type: DataTypes.ENUM("active", "past_due", "canceled", "trialing", "inactive"),
     defaultValue: "trialing",
   },
-  trialEnd: {
-    type: DataTypes.DATE,
-    allowNull: true,
-  },
   startDate: {
     type: DataTypes.DATE,
     allowNull: false,

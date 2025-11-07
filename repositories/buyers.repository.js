@@ -73,6 +73,14 @@ async  findRegistrationNumber(registrationNumber) {
   async createOwner(data) {
     return BusinessOwner.create(data);
   }
+  async findBusinessName(businessName) {
+    return BusinessOwner.findOne({
+      where: { businessName: businessName.trim() },
+    });
+  }
+  async findRegistrationNumber(registrationNumber) {
+    return BusinessOwner.findOne({ where: { registrationNumber } });
+  }
 
   // ===== User =====
   async findUserByEmail(email) {
