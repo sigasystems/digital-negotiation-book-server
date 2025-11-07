@@ -1,6 +1,8 @@
 // controllers/businessOwnerController.js
 import { asyncHandler } from "../handlers/asyncHandler.js";
 import { errorResponse, successResponse } from "../handlers/responseHandler.js";
+import buyersRepository from "../repositories/buyers.repository.js";
+import userRepository from "../repositories/user.repository.js";
 import { superAdminService } from "../services/superadmin.service.js";
 import { authorizeRoles } from "../utlis/helper.js";
 
@@ -163,79 +165,50 @@ export const searchBusinessOwners = asyncHandler(async (req, res) => {
 
 export const checkBusinessOwnerUnique = asyncHandler(async (req, res) => {
   try {
-    // read and normalize inputs
-    const rawEmail = req.query.email;
-    const rawBusinessName = req.query.businessName;
-    const rawRegistrationNumber = req.query.registrationNumber;
-
-    const email = rawEmail?.trim();
-    const businessName = rawBusinessName?.trim();
-    const registrationNumber = rawRegistrationNumber?.trim();
-
-    // require at least one field
+    // ✅ Accept both plain and nested query params (like ?params[email]=)
+    const email =
+      req.query.email || req.query["params[email]"];
+    const businessName =
+      req.query.businessName || req.query["params[businessName]"];
+    const registrationNumber =
+      req.query.registrationNumber || req.query["params[registrationNumber]"];
     if (!email && !businessName && !registrationNumber) {
       return errorResponse(
         res,
         400,
-        "At least one field (email, businessName, or registrationNumber) is required"
+        "At least one field (email, businessName, or registrationNumber) is required."
       );
     }
 
-    // build conditions (case-insensitive match for businessName optional)
-    const conditions = [];
-    if (email) conditions.push({ email });
-    if (businessName) conditions.push({ businessName }); // DB should handle case rules; see note
-    if (registrationNumber) conditions.push({ registrationNumber });
-
-    // find any existing owner matching any condition
-    const existing = await BusinessOwner.findOne({ $or: conditions }).select(
-      "email businessName registrationNumber"
-    );
-
-    // if nothing found -> unique
-    if (!existing) {
-      return successResponse(res, 200, "All fields are unique", {
-        exists: false,
-        conflicts: {},
-      });
+    let existing = null;
+    let message = "";
+    let field = "";
+    if (email) {
+      existing = await userRepository.findByEmail(email);
+      field = "email";
+      message = existing
+        ? "Email already registered. Please use another."
+        : "Email is available.";
+    } else if (businessName) {
+      existing = await buyersRepository.findBusinessName(businessName);
+      field = "businessName";
+      message = existing
+        ? "Business name already exists. Please choose another."
+        : "Business name is available.";
+    } else if (registrationNumber) {
+      existing = await buyersRepository.findRegistrationNumber(registrationNumber);
+      field = "registrationNumber";
+      message = existing
+        ? "Registration number already exists."
+        : "Registration number is available.";
     }
-
-    // build conflicts and messages
-    const conflicts = {};
-    const messageParts = [];
-
-    if (email && existing.email === email) {
-      conflicts.email = true;
-      messageParts.push("Email is already registered");
-    }
-
-    // If your DB is case-sensitive for businessName, you may want to compare lowercased versions:
-    // if (businessName && existing.businessName?.toLowerCase() === businessName.toLowerCase()) { ... }
-    if (businessName && existing.businessName === businessName) {
-      conflicts.businessName = true;
-      messageParts.push("Business name already exists");
-    }
-
-    if (
-      registrationNumber &&
-      existing.registrationNumber === registrationNumber
-    ) {
-      conflicts.registrationNumber = true;
-      messageParts.push("Registration number already exists");
-    }
-
-    // Return 409 Conflict with details
-    return errorResponse(
-      res,
-      409,
-      messageParts.length ? messageParts.join(", ") : "Some fields already exist",
-      {
-        exists: true,
-        conflicts,
-      }
-    );
-  } catch (err) {
-    return errorResponse(res, err.statusCode || 500, err.message || "Server error");
+    return successResponse(res, 200, message, {
+      exists: !!existing,
+      field,
+    });
+  } catch (error) {
+    console.error("Unique check error:", error);
+    return errorResponse(res, 500, "Server error");
   }
 });
 
