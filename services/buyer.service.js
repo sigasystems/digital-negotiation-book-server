@@ -13,7 +13,7 @@ import {
 } from "../utlis/tokenGenerator.js";
 import { Op } from "sequelize";
 import formatTimestamps from "../utlis/formatTimestamps.js";
-import {Payment, Subscription} from "../models/index.js";
+import {Payment, Plan, Subscription, UserPlanUsage} from "../models/index.js";
 import { generateBusinessOwnerEmail } from "../utlis/generateBusinessOwnerEmail .js";
 import stripe from "../config/stripe.js";
 
@@ -354,12 +354,29 @@ await Subscription.create({
   planName: data.planName || "Unknown Plan",
   status: "active",
   startDate: new Date(),
+  paymentStatus: "paid",
   endDate, 
   trialEnd: null,
   maxUsers: data.maxUsers || 5,
   maxProducts: data.maxProducts || 100,
   maxOffers: data.maxOffers || 50,
   maxBuyers: data.maxBuyers || 100,
+});
+
+const plan = await Plan.findOne({ where: { id: data.planId } });
+if (!plan) throw new Error("Invalid planId");
+
+const planKey = plan.key;
+await UserPlanUsage.findOrCreate({
+  where: { userId: existingUser.id },
+  defaults: {
+    userId: existingUser.id,
+    usedUsers: 0,
+    usedProducts: 0,
+    usedOffers: 0,
+    usedBuyers: 0,
+    planKey,
+  },
 });
 
   const tokenPayload = {

@@ -16,6 +16,7 @@ import Subscription from "./subscription.model.js";
 import OfferBuyer from "./offerBuyer.model.js";
 import OfferVersion from "./offerVersion.model.js";
 import OfferDraft from "./offerDraft.model.js";
+import UserPlanUsage from "./UserPlanUsage.js";
 // import PasswordResetOtp from "./passwordReset.model.js";
 // (If you want associations later, you can add here)
 // Example: Plan.hasMany(Subscription);
@@ -37,6 +38,7 @@ export {
   OfferVersion,
   OfferResult,
   Subscription,
+  UserPlanUsage,
   // PasswordResetOtp
 };
 Payment.belongsTo(User, { foreignKey: "userId" });

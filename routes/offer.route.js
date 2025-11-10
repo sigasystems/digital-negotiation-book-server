@@ -1,6 +1,7 @@
 import express from "express";
 import { authenticateJWT } from "../middlewares/authenticateJWT.js";
 import { offerController } from "../controllers/index.js";
+import { checkPlanLimit } from "../middlewares/checkPlanLimit.js";
 
 const router = express.Router();
 
@@ -21,7 +22,7 @@ const {
 
 router.use(authenticateJWT);
 
-router.post("/create-offer/:id", createOffer);
+router.post("/create-offer/:id" , checkPlanLimit("offer"), createOffer);
 router.get("/get-all", getAllOffers);
 router.get("/get/:id", getOfferById);
 router.patch("/update/:id", updateOffer);

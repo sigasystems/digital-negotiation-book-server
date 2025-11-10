@@ -54,8 +54,6 @@ const Payment = sequelize.define("Payment", {
     timestamps: true,
   });
 
-// Payment.belongsTo(User, { foreignKey: "userId" });
-// Payment.belongsTo(Plan, { foreignKey: "planId" });
 
 Payment.belongsTo(User, { foreignKey: "userId" });
 Payment.belongsTo(Plan, { foreignKey: "planId" });

@@ -5,7 +5,6 @@ import User from "../models/user.model.js";
 import Plan from "../models/plan.model.js";
 // import dayjs from "dayjs";
 // import sequelize from "../config/db.js";
-// import { sendExpiryMail } from "../utlis/emailTemplate.js";
 
 const router = express.Router();
 
