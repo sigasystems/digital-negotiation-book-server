@@ -10,18 +10,20 @@ const {
   updateOfferDraft,
   deleteOfferDraft,
   updateOfferStatus,
-  searchOfferDrafts
+  searchOfferDrafts,
+  fetchLatestDraftNo
 } = offeDraftController;
 
 const router = express.Router();
 
 router.use(authenticateJWT);
-router.post("/create-draft", checkPlanLimit("offer"), createOfferDraft);
+router.post("/create-draft", createOfferDraft);
 router.get("/get-all", getAllOfferDrafts);
 router.get("/get/:id", getOfferDraftById);
 router.patch("/update/:id", updateOfferDraft);
 router.delete("/delete/:id", deleteOfferDraft);
 router.patch("/:id/status", updateOfferStatus);
 router.get("/search", searchOfferDrafts);
+router.get("/latest", fetchLatestDraftNo );
 
 export default router;

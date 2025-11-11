@@ -1,34 +1,63 @@
 import { Op } from "sequelize";
-import offerDraftRepository from "../repositories/offerDraft.repository.js";
+import {offerDraftRepository} from "../repositories/offerDraft.repository.js";
 import { OfferSchema } from "../validations/offer.validation.js";
 import { validateSizeBreakups, formatOfferDates } from "../utlis/dateFormatter.js";
+import Product from "../models/product.model.js";
 
 export const offerDraftService = {
-  // CREATE offer draft
   createOfferDraft: async (data) => {
+
     const parsed = OfferSchema.safeParse(data);
     if (!parsed.success) {
-      const errors = parsed.error.issues.map((issue) => issue.message);
+      const errors = parsed.error.issues.map(
+        (issue) => `${issue.path.join('.')}: ${issue.message}`
+      );
       return { error: `Validation failed: ${errors.join(", ")}` };
     }
 
-    const { sizeBreakups, total, grandTotal, draftName } = parsed.data;
+  const { products, grandTotal, draftName } = parsed.data;
 
+  const draftData = {
+    businessOwnerId: parsed.data.businessOwnerId,
+    fromParty: parsed.data.fromParty,
+    origin: parsed.data.origin,
+    processor: parsed.data.processor,
+    plantApprovalNumber: parsed.data.plantApprovalNumber,
+    brand: parsed.data.brand,
+    draftName: draftName,
+    offerValidityDate: parsed.data.offerValidityDate,
+    shipmentDate: parsed.data.shipmentDate,
+    packing: parsed.data.packing,
+    quantity: parsed.data.quantity,
+    tolerance: parsed.data.tolerance,
+    paymentTerms: parsed.data.paymentTerms,
+    remark: parsed.data.remark,
+    grandTotal: grandTotal,
+    status: parsed.data.status || "open",
+    isDeleted: false,
+  };
+  if (draftName) {
     const normalizedDraftName = draftName.trim();
-
     const existingDraft = await offerDraftRepository.findByName(normalizedDraftName);
     if (existingDraft) {
-      return { error: `A draft with the name "${normalizedDraftName}" already exists. Please choose different name.` };
+      return { error: `A draft with the name "${normalizedDraftName}" already exists.` };
+    }
     }
 
-    const validationError = validateSizeBreakups(sizeBreakups, total, grandTotal);
+    const validationError = validateSizeBreakups(products, grandTotal);
     if (validationError) return { error: validationError };
 
-    const draft = await offerDraftRepository.create(parsed.data);
+    const draft = await offerDraftRepository.createWithProducts(draftData, products);
+
     return { created: formatOfferDates(draft) };
+},
+
+  getOfferDraftById: async (id) => {
+    const draft = await offerDraftRepository.findDraftById(id);
+    if (!draft) return { error: "Offer draft not found" };
+    return { draft: formatOfferDates(draft) };
   },
 
-  // GET all offer drafts
  getAllOfferDrafts: async (businessOwnerId, { pageIndex, pageSize, offset }) => {
   if (!businessOwnerId) throw new Error("businessOwnerId is required");
 
@@ -44,14 +73,6 @@ export const offerDraftService = {
   };
 },
 
-  // GET offer draft by ID
-  getOfferDraftById: async (id) => {
-    const draft = await offerDraftRepository.findDraftById(id);
-    if (!draft) return { error: "Offer draft not found" };
-    return { draft: formatOfferDates(draft) };
-  },
-
-  // UPDATE offer draft
   updateOfferDraft: async (id, data) => {
     const draft = await offerDraftRepository.findDraftById(id);
     if (!draft) return { error: "Offer draft not found" };
@@ -66,11 +87,8 @@ export const offerDraftService = {
 
     const { sizeBreakups, total, grandTotal } = parsed.data;
 
-    // Merge with existing record for validation
-    const finalOfferValidityDate =
-      parsed.data.offerValidityDate ?? draft.offerValidityDate;
-    const finalShipmentDate =
-      parsed.data.shipmentDate ?? draft.shipmentDate;
+      const finalOfferValidityDate = parsed.data.offerValidityDate ?? draft.offerValidityDate;
+    const finalShipmentDate = parsed.data.shipmentDate ?? draft.shipmentDate;
 
     const toLocalDateOnly = (date) => {
       const d = new Date(date);
@@ -78,14 +96,9 @@ export const offerDraftService = {
     };
 
     const today = toLocalDateOnly(new Date());
-    const validityDay = finalOfferValidityDate
-      ? toLocalDateOnly(finalOfferValidityDate)
-      : null;
-    const shipmentDay = finalShipmentDate
-      ? toLocalDateOnly(finalShipmentDate)
-      : null;
+    const validityDay = finalOfferValidityDate ? toLocalDateOnly(finalOfferValidityDate) : null;
+    const shipmentDay = finalShipmentDate ? toLocalDateOnly(finalShipmentDate) : null;
 
-    // --- Validations ---
     if (validityDay && validityDay < today)
       return { error: "Offer validity date cannot be earlier than today." };
 
@@ -95,7 +108,6 @@ export const offerDraftService = {
     if (shipmentDay && !validityDay && shipmentDay < today)
       return { error: "Shipment date cannot be earlier than today." };
 
-    // --- Size breakup validation ---
     if (sizeBreakups && total && grandTotal) {
       const validationError = validateSizeBreakups(sizeBreakups, total, grandTotal);
       if (validationError) return { error: validationError };
@@ -105,7 +117,6 @@ export const offerDraftService = {
     return { updated };
   },
 
-  // DELETE offer draft
   deleteOfferDraft: async (id) => {
     const draft = await offerDraftRepository.findDraftById(id);
     if (!draft) return { error: "Offer draft not found" };
@@ -120,7 +131,6 @@ export const offerDraftService = {
     };
   },
 
-  // UPDATE offer status
   updateOfferStatus: async (id, status) => {
     const draft = await offerDraftRepository.findDraftById(id);
     if (!draft) return { error: "Offer draft not found" };
@@ -138,7 +148,6 @@ export const offerDraftService = {
     };
   },
 
-  // SEARCH offer drafts
 searchOfferDrafts: async ({ filters, pageIndex, pageSize }) => {
     const whereClause = {};
     if (filters.draftNo) whereClause.draftNo = Number(filters.draftNo);
@@ -162,5 +171,10 @@ searchOfferDrafts: async ({ filters, pageIndex, pageSize }) => {
     pageIndex,
     pageSize,
   };
+},
+
+  getLatestDraftNo: async () => {
+    const lastDraft = await offerDraftRepository.getLatestDraftNo();
+    return lastDraft;
 },
 };

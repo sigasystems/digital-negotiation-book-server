@@ -84,7 +84,7 @@ const BusinessOwner = sequelize.define(
    paymentId: {
   type: DataTypes.UUID,
   allowNull: true,
-  references: { model: "payment", key: "id" },
+  references: { model: "Payments", key: "id" },
 },
     status: {
       type: DataTypes.ENUM("active", "inactive"),
@@ -119,10 +119,12 @@ const BusinessOwner = sequelize.define(
 
 // Associations
 User.hasOne(BusinessOwner, { foreignKey: "userId", as: "businessOwner" });
-Plan.hasMany(BusinessOwner, { foreignKey: "planId", as: "businessOwners" });
 BusinessOwner.belongsTo(User, { foreignKey: "userId", as: "user" });
 
+Plan.hasMany(BusinessOwner, { foreignKey: "planId", as: "businessOwners" });
+BusinessOwner.belongsTo(Plan, { foreignKey: "planId", as: "plan" });
+
+Payment.hasMany(BusinessOwner, { foreignKey: "paymentId", as: "businessOwners" });
 BusinessOwner.belongsTo(Payment, { foreignKey: "paymentId", as: "payment" });
-Payment.hasOne(BusinessOwner, { foreignKey: "paymentId", as: "businessOwner" });
 
 export default BusinessOwner;

@@ -92,8 +92,12 @@ export const ProductService = {
   searchProduct: async (queryParams, pagination, ownerId) => {
     if (!ownerId) throw new Error("ownerId is required");
 
-    const { query, code, productName, species, size } = queryParams;
+    const { query, code, productName, species, size, productId } = queryParams;
     const where = { ownerId };
+
+    if (productId) {
+      where.id = productId;
+    }
 
     if (query) {
       where[Op.or] = [

@@ -1,99 +1,46 @@
 import { z } from "zod";
 
-export const OfferSchema = z.object({
-  // ---------------------------
-  // About Business Owner Section
-  // ---------------------------
-  businessOwnerId: z.string().uuid(),
-  draftNo: z.number().int().positive().optional(),
-  fromParty: z.string().max(150),
-  origin: z.string().max(50),
-  processor: z.string().max(50).optional(),
-  plantApprovalNumber: z.string().max(50),
-  brand: z.string().max(50),
-
-  // ---------------------------
-  // About Draft Section
-  // ---------------------------
-  draftName: z.string().max(50).optional(),
-  offerValidityDate: z.coerce.date().optional(),
-  shipmentDate: z.coerce.date().optional(),
-  grandTotal: z.number().optional(),
-  quantity: z.string().optional(),
-  tolerance: z.string().optional(),
-  paymentTerms: z.string().optional(),
-  remark: z.string().max(100).optional(),
-
-  // ---------------------------
-  // Product Info Section
-  // ---------------------------
-  productName: z.string().max(100),
-  speciesName: z.string().max(100),
-  packing: z.string().optional(),
-
-  // ---------------------------
-  // Sizes/Breakups Section
-  // ---------------------------
-  sizeBreakups: z
-    .array(
-      z.object({
-        size: z.string(),              // e.g., "20/30"
-        breakup: z.number().int(),     // e.g., 250
-        condition: z.string().max(50).optional(),
-        price: z.number(),             // e.g., 1.5
-      })
-    )
-    .nonempty(), // must have at least one sizeBreakup
-
-  total: z.number().optional(),
-
-  // ---------------------------
-  // System Fields
-  // ---------------------------
-  isDeleted: z.boolean().optional(),
-  status: z.enum(["open", "close"], {
-    errorMap: () => ({
-      message: "Invalid value for 'status': expected one of 'open', 'close'",
-    }),
-  }).optional(),
-  deletedAt: z.coerce.date().nullable().optional(),
-  createdAt: z.coerce.date().optional(),
-  updatedAt: z.coerce.date().optional(),
+export const ProductSchema = z.object({
+  productId: z.string().uuid(),
+  productName: z.string().min(1).max(100),
+  species: z.string().min(1).max(100),
+  sizeBreakups: z.array(
+    z.object({
+      size: z.string().min(1),
+      breakup: z.number().int().positive(),
+      price: z.number().positive(),
+      condition: z.string().max(50).optional(),
+    })
+  ).min(1, "At least one size breakup is required"),
 });
 
-export const createOfferSchema = z.object({
-  businessOwnerId: z.string().uuid(),
-  businessName: z.string().min(1),
-  fromParty: z.string().min(1),
-  origin: z.string().min(1),
-  processor: z.string().optional(),
-  plantApprovalNumber: z.string().min(1),
-  brand: z.string().min(1),
-  draftName: z.string().optional(),
-  offerName: z.string().optional(),
-  offerValidityDate: z.date(),
-  shipmentDate: z.date().optional(),
-  grandTotal: z.number().optional(),
+export const OfferSchema = z.object({
+  businessOwnerId: z.string().uuid("Invalid business owner ID"),
+  fromParty: z.string().min(1).max(150, "From party must be less than 150 characters"),
+  origin: z.string().min(1).max(50, "Origin must be less than 50 characters"),
+  processor: z.string().max(50, "Processor must be less than 50 characters").optional(),
+  plantApprovalNumber: z.string().min(1).max(50, "Plant approval number must be less than 50 characters"),
+  brand: z.string().min(1).max(50, "Brand must be less than 50 characters"),
+  draftName: z.string().max(50, "Draft name must be less than 50 characters").optional(),
+  offerValidityDate: z.string().optional().refine((date) => !date || !isNaN(Date.parse(date)), {
+    message: "Invalid offer validity date",
+  }),
+  shipmentDate: z.string().optional().refine((date) => !date || !isNaN(Date.parse(date)), {
+    message: "Invalid shipment date",
+  }),
+  packing: z.string().optional(),
   quantity: z.string().optional(),
   tolerance: z.string().optional(),
   paymentTerms: z.string().optional(),
-  remark: z.string().optional(),
-  productName: z.string().min(1),
-  speciesName: z.string().min(1),
-  packing: z.string().optional(),
-  sizeBreakups: z
-  .array(
-    z.object({
-      size: z.string(),        // OK
-      breakup: z.number().int(),  // REQUIRED, integer
-      condition: z.string().max(50).optional(),
-      price: z.number(),       // REQUIRED, number
-    })
-  )
-  .nonempty(),
-  total: z.number(),
-  status: z.enum(["open", "close"]).optional(),
-})
+  remark: z.string().max(100, "Remark must be less than 100 characters").optional(),
+  grandTotal: z.number().positive("Grand total must be a positive number"),
+  products: z.array(ProductSchema).min(1, "At least one product is required"),
+  isDeleted: z.boolean().optional().default(false),
+  status: z.enum(["open", "close"]).optional().default("open"),
+  deletedAt: z.date().nullable().optional(),
+});
+
+export const createOfferSchema = OfferSchema;
 
 export const createOfferBuyerSchemaValidation = z.object({
   offerId: z.number().int({ message: "offerId must be an integer" }),

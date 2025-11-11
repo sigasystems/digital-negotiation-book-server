@@ -29,7 +29,7 @@ export const getAllProducts = asyncHandler(async (req, res) => {
       where: { ownerId },
       limit: pageSize,
       offset,
-      order: [["createdAt", "DESC"]],
+      order: [["productName", "ASC"]],
     });
 
     const totalPages = Math.ceil(totalItems / pageSize);

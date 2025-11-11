@@ -41,17 +41,28 @@ export const formatOfferDates = (offer) => {
   return formatted;
 };
 
-export const validateSizeBreakups = (sizeBreakups, total, grandTotal) => {
-  // If sizeBreakups is not provided or not an array, skip validation
-  if (!Array.isArray(sizeBreakups)) return null;
+export const validateSizeBreakups = (products, grandTotal) => {
+  if (!Array.isArray(products)) {
+    return "Products must be an array";
+  }
 
-  const sumBreakups = sizeBreakups.reduce(
+  let totalBreakupSum = 0;
+
+  for (const product of products) {
+    if (!Array.isArray(product.sizeBreakups)) {
+      return `Product ${product.productName} must have size breakups array`;
+    }
+
+    const productBreakupSum = product.sizeBreakups.reduce(
     (sum, item) => sum + Number(item?.breakup || 0),
     0
   );
 
-  if (sumBreakups !== Number(total) || sumBreakups !== Number(grandTotal)) {
-    return `Validation failed: Sum of all size breakups (${sumBreakups}) does not equal total (${total}) or grand total (${grandTotal})`;
+    totalBreakupSum += productBreakupSum;
+  }
+
+  if (totalBreakupSum !== Number(grandTotal)) {
+    return `Validation failed: Sum of all size breakups (${totalBreakupSum}) does not equal grand total (${grandTotal})`;
   }
 
   return null; // Valid

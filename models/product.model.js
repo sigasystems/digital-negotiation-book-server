@@ -1,6 +1,5 @@
   import { DataTypes } from "sequelize";
   import sequelize from "../config/db.js";
-  import BusinessOwner from "./businessOwner.model.js";
   const Product = sequelize.define("Product", {
     id: {
         type: DataTypes.UUID,
@@ -28,18 +27,21 @@
     type: DataTypes.UUID,
     allowNull: false,
     references: {
-      model: 'business_owners',
-      key: 'id'
+      model: "business_owners",
+      key: "id",
     },
-    field: "ownerId",
+  },
+  offerDraftId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: "offers_draft",
+      key: "draftNo",
+    },
   },
   }, {
     tableName: "products",
     timestamps: true,
   });
-
-// Association with BusinessOwner
-Product.belongsTo(BusinessOwner, { foreignKey: "ownerId", as: "owner" });
-BusinessOwner.hasMany(Product, { foreignKey: "ownerId", as: "products" });
 
   export default Product;

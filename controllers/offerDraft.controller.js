@@ -6,9 +6,15 @@ import {offerDraftService} from "../services/offerDraft.service.js";
 export const createOfferDraft = asyncHandler(async (req, res) => {
   try {
     authorizeRoles(req, ["business_owner"]);
-    const draft = await offerDraftService.createOfferDraft(req.body);
-    return successResponse(res, 201, "Offer draft created successfully", draft);
+    const result = await offerDraftService.createOfferDraft(req.body);
+    
+    if (result.error) {
+      return errorResponse(res, 400, result.error);
+    }
+    
+    return successResponse(res, 201, "Offer draft created successfully", result.created);
   } catch (err) {
+    console.error("Create draft error:", err);
     return errorResponse(res, 400, err.message);
   }
 });
@@ -102,3 +108,13 @@ export const searchOfferDrafts = asyncHandler(async (req, res) => {
     return errorResponse(res, 400, err.message);
   }
 });
+
+export const fetchLatestDraftNo = async (req, res) => {
+  try {
+    const lastDraftNo = await offerDraftService.getLatestDraftNo();
+    res.json({ lastDraftNo });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to fetch last draft number" });
+  }
+};
