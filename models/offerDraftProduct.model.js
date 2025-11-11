@@ -23,6 +23,18 @@ const OfferDraftProduct = sequelize.define("OfferDraftProduct", {
     type: DataTypes.STRING(100),
     allowNull: false,
   },
+  sizeDetails: {
+    type: DataTypes.STRING(100),
+    allowNull: true,
+  },
+  breakupDetails: {
+    type: DataTypes.STRING(100),
+    allowNull: true,
+  },
+  priceDetails: {
+    type: DataTypes.STRING(50),
+    allowNull: true,
+  },
 }, {
   tableName: "offer_draft_products",
   timestamps: true,

@@ -4,6 +4,9 @@ export const ProductSchema = z.object({
   productId: z.string().uuid(),
   productName: z.string().min(1).max(100),
   species: z.string().min(1).max(100),
+  sizeDetails: z.string().max(100).optional(), 
+  breakupDetails: z.string().max(100).optional(),
+  priceDetails: z.string().max(50).optional(),  
   sizeBreakups: z.array(
     z.object({
       size: z.string().min(1),
@@ -68,6 +71,9 @@ export const createOfferVersionSchemaValidation = z.object({
       z.object({
         size: z.string().min(1),
         quantity: z.number().nonnegative(),
+        sizeDetails: z.string().max(100).optional(),
+        breakupDetails: z.string().max(100).optional(),
+        priceDetails: z.string().max(50).optional(),
       })
     )
     .optional()
