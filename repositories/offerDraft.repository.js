@@ -95,7 +95,17 @@ findAll: async (businessOwnerId, { offset, pageSize }) => {
   });
 
   return { drafts: rows, total: count };
-}
+},
+
+ delete: async (draftNo) => {
+    const draft = await OfferDraft.findByPk(draftNo);
+    if (!draft) throw new Error("Offer draft not found");
+    if (draft.deletedAt) throw new Error("Offer draft already deleted");
+
+    await draft.destroy();
+
+    return draft;
+  },
 
 };
 
