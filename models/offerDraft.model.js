@@ -2,25 +2,15 @@ import { DataTypes } from "sequelize";
 import sequelize from "../config/db.js";
 import BusinessOwner from "./businessOwner.model.js";
 
-const OfferDraft = sequelize.define(
-  "OfferDraft",
-  {
-    // ---------------------------
-    // About Business Owner Section
-    // ---------------------------
+const OfferDraft = sequelize.define("OfferDraft", {
     draftNo: {
       type: DataTypes.INTEGER,
       primaryKey: true,
-      autoIncrement: true
+      autoIncrement: true,
     },
     businessOwnerId: {
       type: DataTypes.UUID,
       allowNull: false,
-      references: {
-        model: BusinessOwner,
-        key: "id",
-      },
-      onDelete: "CASCADE"
     },
     fromParty: {
       type: DataTypes.STRING(150),
@@ -42,10 +32,6 @@ const OfferDraft = sequelize.define(
       type: DataTypes.STRING(50),
       allowNull: false,
     },
-
-    // ---------------------------
-    // About Draft Section
-    // ---------------------------
     draftName: {
       type: DataTypes.STRING(50),
       allowNull: true,
@@ -58,8 +44,8 @@ const OfferDraft = sequelize.define(
       type: DataTypes.DATE,
       allowNull: true,
     },
-    grandTotal: {
-      type: DataTypes.FLOAT,
+    packing: {
+      type: DataTypes.STRING,
       allowNull: true,
     },
     quantity: {
@@ -78,68 +64,25 @@ const OfferDraft = sequelize.define(
       type: DataTypes.STRING(100),
       allowNull: true,
     },
-
-    // ---------------------------
-    // Product Info Section
-    // ---------------------------
-    productName: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
-    },
-    speciesName: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
-    },
-    packing: {
-      type: DataTypes.STRING,
+  grandTotal: {
+    type: DataTypes.DECIMAL(15, 2),
       allowNull: true,
-    },
-
-    // ---------------------------
-    // Sizes/Breakups Section
-    // ---------------------------
-    sizeBreakups: {
-      type: DataTypes.JSON,
-      allowNull: false,
-      defaultValue: [],
-    },
-
-    total: {
-      type: DataTypes.FLOAT,
-      allowNull: true,
-    },
-
-    // ---------------------------
-    // System Fields
-    // ---------------------------
-    isDeleted: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false,
     },
     status: {
       type: DataTypes.ENUM("open", "close"),
       defaultValue: "open",
     },
-    createdAt: {
-      type: DataTypes.DATE,
-    },
-    updatedAt: {
-      type: DataTypes.DATE,
+  isDeleted: {
+      type: DataTypes.BOOLEAN,
+    defaultValue: false,
     },
     deletedAt: {
       type: DataTypes.DATE,
-    },
+    allowNull: true,
   },
-  {
+}, {
     tableName: "offers_draft",
     timestamps: true,
-    paranoid: false,
-    indexes: [{ fields: ["businessOwnerId"] }],
-  }
-);
-
-// Associations
-BusinessOwner.hasMany(OfferDraft, { foreignKey: "businessOwnerId", as: "drafts" });
-OfferDraft.belongsTo(BusinessOwner, { foreignKey: "businessOwnerId", as: "businessOwner" });
+});
 
 export default OfferDraft;
