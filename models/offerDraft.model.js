@@ -83,6 +83,7 @@ const OfferDraft = sequelize.define("OfferDraft", {
 }, {
     tableName: "offers_draft",
     timestamps: true,
+    paranoid: true
 });
 
 export default OfferDraft;
