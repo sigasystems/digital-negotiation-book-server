@@ -18,6 +18,9 @@ export const offerDraftRepository = {
               productId: p.productId,
               productName: p.productName,
               species: p.species,
+              sizeDetails: p.sizeDetails || null,
+              breakupDetails: p.breakupDetails || null,
+              priceDetails: p.priceDetails || null,
             },
             { transaction }
           );
