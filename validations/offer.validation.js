@@ -7,6 +7,7 @@ export const ProductSchema = z.object({
   sizeDetails: z.string().max(100).optional(), 
   breakupDetails: z.string().max(100).optional(),
   priceDetails: z.string().max(50).optional(),  
+  packing: z.string().optional(),
   sizeBreakups: z.array(
     z.object({
       size: z.string().min(1),
@@ -31,7 +32,6 @@ export const OfferSchema = z.object({
   shipmentDate: z.string().optional().refine((date) => !date || !isNaN(Date.parse(date)), {
     message: "Invalid shipment date",
   }),
-  packing: z.string().optional(),
   quantity: z.string().optional(),
   tolerance: z.string().optional(),
   paymentTerms: z.string().optional(),

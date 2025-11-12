@@ -21,6 +21,7 @@ export const offerDraftRepository = {
               sizeDetails: p.sizeDetails || null,
               breakupDetails: p.breakupDetails || null,
               priceDetails: p.priceDetails || null,
+              packing: p.packing || null
             },
             { transaction }
           );

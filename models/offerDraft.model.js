@@ -44,10 +44,6 @@ const OfferDraft = sequelize.define("OfferDraft", {
       type: DataTypes.DATE,
       allowNull: true,
     },
-    packing: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
     quantity: {
       type: DataTypes.STRING,
       allowNull: true,
