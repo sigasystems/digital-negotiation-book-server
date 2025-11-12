@@ -138,6 +138,18 @@ export const getAllBuyers = asyncHandler(async (req, res) => {
   }
 });
 
+export const getBuyersList = asyncHandler(async (req, res) => {
+  try {
+    authorizeRoles(req, ["business_owner"]);
+
+    const buyers = await buyerService.getBuyersList(req.user.businessOwnerId);
+
+    return successResponse(res, 200, "Buyers list fetched successfully", buyers);
+  } catch (err) {
+    return errorResponse(res, err.statusCode || 500, err.message);
+  }
+});
+
 // Get buyer by ID
 export const getBuyerById = asyncHandler(async (req, res) => {
   try {

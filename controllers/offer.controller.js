@@ -7,7 +7,7 @@ import { offerNegotiationService } from "../services/offerNegotiation.service.js
 export const createOffer = asyncHandler(async (req, res) => {
   try {
     authorizeRoles(req, ["business_owner"]);
-    const offer = await offerService.createOffer(req.params.id, req.body.offerName, req.user);
+    const offer = await offerService.createOffer(req.params.id, req.body, req.user);
     return successResponse(res, 201, "Offer created from draft successfully", { offer });
   } catch (err) {
     return errorResponse(res, 400, err.message);

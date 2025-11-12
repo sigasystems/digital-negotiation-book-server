@@ -17,13 +17,18 @@ import OfferDraft from "./offerDraft.model.js";
 import SizeBreakup from "./sizeBreakup.js";
 import UserPlanUsage from "./UserPlanUsage.js";
 import OfferDraftProduct from "./offerDraftProduct.model.js";
+import OfferSizeBreakup from "./offerSizeBreakup.model.js";
+import OfferProduct from "./offerProduct.model.js";
 
 Payment.belongsTo(User, { foreignKey: "userId" });
 Payment.belongsTo(Plan, { foreignKey: "planId" });
 User.hasMany(Payment, { foreignKey: "userId" });
 Plan.hasMany(Payment, { foreignKey: "planId" });
 
-OfferDraft.belongsTo(BusinessOwner, { foreignKey: "businessOwnerId" });
+OfferDraft.belongsTo(BusinessOwner, {
+  foreignKey: "businessOwnerId",
+  as: "businessOwner",
+});
 
 OfferDraft.hasMany(OfferDraftProduct, {
   foreignKey: "draftNo",
@@ -32,6 +37,7 @@ OfferDraft.hasMany(OfferDraftProduct, {
 
 OfferDraftProduct.belongsTo(OfferDraft, {
   foreignKey: "draftNo",
+  as: "offerDraft",
 });
 
 OfferDraftProduct.hasMany(SizeBreakup, {
@@ -41,6 +47,19 @@ OfferDraftProduct.hasMany(SizeBreakup, {
 
 SizeBreakup.belongsTo(OfferDraftProduct, {
   foreignKey: "offerDraftProductId",
+  as: "offerDraftProduct",
+});
+
+Offer.hasMany(OfferProduct, { foreignKey: "offerId", as: "products" });
+OfferProduct.belongsTo(Offer, { foreignKey: "offerId", as: "offer" });
+
+OfferProduct.hasMany(OfferSizeBreakup, {
+  foreignKey: "offerProductId",
+  as: "sizeBreakups",
+});
+OfferSizeBreakup.belongsTo(OfferProduct, {
+  foreignKey: "offerProductId",
+  as: "offerProduct",
 });
 
 export {
@@ -62,4 +81,6 @@ export {
   UserPlanUsage,
   SizeBreakup,
   OfferDraftProduct,
+  OfferProduct,
+  OfferSizeBreakup,
 };
