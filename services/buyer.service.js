@@ -396,9 +396,20 @@ await UserPlanUsage.findOrCreate({
     const emailHtml = generateBusinessOwnerEmail({
       name: newOwner.first_name,
       businessName: newOwner.businessName,
+      plan: plan.name,
+      planPrice: plan.priceMonthly,
+      currency: plan.currency,
+      email: newOwner.email,
+      phoneNumber: newOwner.phoneNumber,
+      country: newOwner.country,
+      state: newOwner.state,
+      city: newOwner.city,
+      address: newOwner.address,
+      postalCode: newOwner.postalCode,
       loginUrl,
       invoiceUrl,
     });
+    console.log('Sent email to that user.....',  newOwner.email);
 
     const mailOptions = {
       from: `"Business Platform" <${process.env.EMAIL_USER}>`,

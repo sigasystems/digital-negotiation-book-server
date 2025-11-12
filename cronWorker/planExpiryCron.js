@@ -21,7 +21,7 @@ async function getExpiringPlans() {
   }
 }
 
-cron.schedule("45 15 * * *", async () => {
+cron.schedule("40 10 * * *", async () => {
   console.log("🔍 Checking for plans with upcoming end dates...");
 
   try {
