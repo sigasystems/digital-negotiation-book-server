@@ -1,6 +1,6 @@
 // routes/planRoutes.js
 import express from "express";
-import planController from "../controllers/plan.controller.js";
+import planController, { checkPlanByOwner, handlePaymentSuccess, upgradeOrRenewPlan } from "../controllers/plan.controller.js";
 import { authenticateJWT } from "../middlewares/authenticateJWT.js";
 
 const router = express.Router();
@@ -16,4 +16,7 @@ router.put("/update-plan/:id", authenticateJWT ,planController.updatePlan);
 router.delete("/delete-plan/:id", authenticateJWT ,planController.deletePlan);        
 router.patch("/:id/toggle",authenticateJWT , planController.togglePlanStatus); 
 
+router.get("/check-owner/:userId",  checkPlanByOwner);
+router.post("/upgrade",  upgradeOrRenewPlan);
+router.post("/payment/success", handlePaymentSuccess);
 export default router;
