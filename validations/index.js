@@ -16,7 +16,7 @@ export { createPlanSchema, updatePlanSchema } from './plan.validation.js';
 export { locationSchema, locationUpdateSchema, locationsArraySchema } from './location.validation.js';
 
 // Offer Schemas
-export { OfferSchema, createOfferSchema, createOfferBuyerSchemaValidation, createOfferVersionSchemaValidation } from './offer.validation.js';
+export { OfferSchema, createOfferSchema, createOfferBuyerSchemaValidation } from './offer.validation.js';
 export {offerResultSchema} from './offerresult.validation.js';
 
 // Payment Schemas

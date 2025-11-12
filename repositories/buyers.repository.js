@@ -48,6 +48,14 @@ async  findRegistrationNumber(registrationNumber) {
     return Buyer.findAll({ where: { ownerId } });
   }
 
+  async findAllByOwnerMinimal(ownerId) {
+    return Buyer.findAll({
+      where: { ownerId, isDeleted: false },
+      attributes: ["id", "buyersCompanyName"],
+      order: [["buyersCompanyName", "ASC"]],
+    });
+  }
+
   async findByOwnerAndId(ownerId, buyerId) {
     return Buyer.findOne({ where: { id: buyerId, ownerId } });
   }

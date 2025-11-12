@@ -245,6 +245,23 @@ export const buyerService = {
   };
 },
 
+  getBuyersList: async (ownerId) => {
+    const owner = await buyersRepository.findOwnerById(ownerId);
+    if (!owner) throw new Error("Business Owner not found");
+
+    const buyers = await buyersRepository.findAllByOwnerMinimal(ownerId);
+
+    const activeBuyers = buyers
+      .filter(b => !b.isDeleted)
+      .map(b => ({
+        id: b.id,
+        buyersCompanyName: b.buyersCompanyName
+      }))
+      .sort((a, b) => a.buyersCompanyName.localeCompare(b.buyersCompanyName, "en", { sensitivity: "base" }));
+
+    return activeBuyers;
+  },
+
   getBuyerById: async (ownerId, buyerId) => {
     const buyer = await buyersRepository.findByOwnerAndId(ownerId, buyerId);
     if (!buyer) return { error: "Buyer not found under this business owner" };

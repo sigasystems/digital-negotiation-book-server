@@ -6,13 +6,15 @@ import { withTransaction, validateOfferData, ensureOfferOwnership, normalizeDate
 import { Op } from "sequelize";
 
 const offerService = {
-  async createOffer(draftId, offerName, user) {
+  async createOffer(draftNo, offerBody, user) {
     return withTransaction(sequelize, async (t) => {
+      const { offerName, ...restData } = offerBody;
+
       if (!offerName || typeof offerName !== "string" || !offerName.trim()) {
         throw new Error("Offer name is required and must be a non-empty string");
       }
 
-    const draft = await offerRepository.findDraftById(draftId, t);
+    const draft = await offerRepository.findDraftById(draftNo, t);
     if (!draft) throw new Error("Draft not found");
 
     if (draft.businessOwnerId !== user.businessOwnerId) {
@@ -21,53 +23,39 @@ const offerService = {
 
     if (!user?.businessName) throw new Error("Business name not found in token");
 
+      // Check duplicate offer names
     const existingOffers = await offerRepository.findAllOffers({
       businessOwnerId: user.businessOwnerId,
     });
 
-   if (existingOffers && existingOffers.length > 0) {
-      const duplicate = existingOffers.find((offer) => {
-        return offer.offerName?.toLowerCase() === offerName.toLowerCase();
-      });
-      if (duplicate) {
+   if (
+       existingOffers?.some(
+          (o) => o.offerName?.toLowerCase() === offerName.toLowerCase()
+        )
+      ) {
         throw new Error("Offer name already exists for this business owner");
       }
-    }
 
-    const offerData = {
-      businessOwnerId: draft.businessOwnerId,
-      offerName,
-      businessName: user.businessName,
-      fromParty: user.businessName,
-      origin: draft.origin,
-      processor: draft.processor,
-      plantApprovalNumber: draft.plantApprovalNumber,
-      brand: draft.brand,
-      draftName: draft.draftName,
-      offerValidityDate: draft.offerValidityDate,
-      shipmentDate: draft.shipmentDate,
-      grandTotal: draft.grandTotal,
-      quantity: draft.quantity,
-      tolerance: draft.tolerance,
-      paymentTerms: draft.paymentTerms,
-      remark: draft.remark,
-      productName: draft.productName,
-      speciesName: draft.speciesName,
-      packing: draft.packing,
-      sizeBreakups: draft.sizeBreakups,
-      total: draft.total,
-      status: "open",
-    };
+      if (!draft.draftProducts || draft.draftProducts.length === 0) {
+        throw new Error(
+          "Draft must have at least one product before creating an offer"
+        );
+      }
 
-    const validData = validateOfferData(offerData, createOfferSchema);
-    const validationError = validateSizeBreakups(
-      validData.sizeBreakups,
-      validData.total,
-        validData.grandTotal
+      const mergedData = {
+        ...draft.dataValues,
+        ...restData,
+        draftProducts: draft.draftProducts,
+      };
+
+      const createdOffer = await offerRepository.createOffer(
+        mergedData,
+        offerName,
+        user,
+        t
       );
-      if (validationError) throw new Error(validationError);
 
-      return offerRepository.createOffer(validData, t);
+      return createdOffer;
     });
   },
   async getAllOffers(user, { pageIndex = 0, pageSize = 10, status = null } = {}) {

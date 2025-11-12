@@ -54,37 +54,3 @@ export const createOfferBuyerSchemaValidation = z.object({
     .default("open"),
 });
 
-export const createOfferVersionSchemaValidation = z.object({
-  offerBuyerId: z.number().int({ message: "offerBuyerId must be an integer" }),
-  versionNo: z.number().int({ message: "versionNo must be an integer" }).optional(),
-  madeBy: z.enum(["seller", "buyer"], { required_error: "madeBy is required" }),
-
-  productName: z.string().min(1, "productName is required"),
-  speciesName: z.string().min(1, "speciesName is required"),
-  brand: z.string().min(1, "brand is required"),
-  plantApprovalNumber: z.string().min(1, "plantApprovalNumber is required"),
-  quantity: z.string().optional().nullable(),
-  tolerance: z.string().optional().nullable(),
-  paymentTerms: z.string().optional().nullable(),
-  sizeBreakups: z
-    .array(
-      z.object({
-        size: z.string().min(1),
-        quantity: z.number().nonnegative(),
-        sizeDetails: z.string().max(100).optional(),
-        breakupDetails: z.string().max(100).optional(),
-        priceDetails: z.string().max(50).optional(),
-      })
-    )
-    .optional()
-    .default([]),
-  grandTotal: z.number().optional().nullable(),
-  shipmentDate: z
-    .string()
-    .optional()
-    .nullable()
-    .refine((date) => !date || !isNaN(Date.parse(date)), {
-      message: "shipmentDate must be a valid date",
-    }),
-  remark: z.string().max(100).optional().nullable(),
-});

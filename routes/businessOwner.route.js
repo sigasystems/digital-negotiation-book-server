@@ -7,7 +7,7 @@ import { checkPlanLimit } from "../middlewares/checkPlanLimit.js";
 const router = express.Router();
 
 // ================== Buyer Routes ==================
-const { addBuyer,checkRegistrationNumber,  deleteBuyer, activateBuyer, deactivateBuyer, editBuyer, becomeBusinessOwner, searchBuyers, getAllBuyers, getBuyerById } = businessOwnerController;
+const { addBuyer,checkRegistrationNumber,  deleteBuyer, activateBuyer, deactivateBuyer, editBuyer, becomeBusinessOwner, searchBuyers, getAllBuyers, getBuyerById, getBuyersList } = businessOwnerController;
 
 // router.post("/add-buyer", checkPlanLimit("buyer"), authenticateJWT, addBuyer);
 router.post(
@@ -25,6 +25,7 @@ router.patch("/edit-buyer/:id/edit", authenticateJWT, editBuyer);
 router.post("/become-business-owner", becomeBusinessOwner);
 router.get("/:ownerId/buyers/search", authenticateJWT, searchBuyers);
 router.get("/get-all-buyers", authenticateJWT, getAllBuyers);
+router.get("/get-buyers-list", authenticateJWT, getBuyersList);
 router.get("/get-buyer/:id", authenticateJWT, getBuyerById);
 router.get("/check-registration/:registrationNumber",  checkRegistrationNumber);
 
