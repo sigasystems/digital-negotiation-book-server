@@ -6,7 +6,6 @@
       return async (req, res, next) => {
         try {
           const userId = req.user?.id || req.body.userId;
-                console.log('user id....',userId);
 
           if (!userId) {
             return errorResponse(res, 400, "User ID is required");
