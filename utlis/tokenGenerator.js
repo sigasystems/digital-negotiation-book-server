@@ -44,6 +44,6 @@ export const refreshTokenGenerator = (payload) => {
 export const accessTokenGenerator = (payload) => {
   if (!payload) throw new Error("Token payload missing");
   return jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
-    expiresIn: "1m",
+    expiresIn: "30m",
   });
 };

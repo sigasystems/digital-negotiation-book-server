@@ -17,7 +17,8 @@ const {
   respondOffer, 
   sendOffer, 
   getRecentNegotiations,
-  getLatestNegotiation
+  getLatestNegotiation,
+  getNegotiations
 } = offerController;
 
 router.use(authenticateJWT);
@@ -30,6 +31,7 @@ router.patch("/close/:id", closeOffer);
 router.patch("/open/:id", openOffer);
 router.delete("/delete/:id", deleteOffer);
 router.get("/search", searchOffers);
+router.get("/negotiation/:id",getNegotiations)
 router.get("/last-negotiation", getLatestNegotiation);
 router.get("/all-negotiations", getRecentNegotiations);
 router.post("/respond/:id", respondOffer);

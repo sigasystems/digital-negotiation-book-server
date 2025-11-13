@@ -1,6 +1,6 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/db.js";
-import BusinessOwner from "./businessOwner.model.js";
+import {Buyer, BusinessOwner} from "./index.js";
 
 const Offer = sequelize.define("Offer", {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
@@ -18,6 +18,17 @@ const Offer = sequelize.define("Offer", {
   },
   fromParty: { type: DataTypes.STRING, allowNull: false, field: "from_party" },
   toParty: { type: DataTypes.STRING, allowNull: false, field: "from_party" },
+  buyerId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: "buyer_id",
+      references: {
+        model: Buyer,
+        key: "id",
+      },
+      onDelete: "SET NULL",
+      onUpdate: "CASCADE",
+    },
   origin: { type: DataTypes.STRING, allowNull: false },
   processor: { type: DataTypes.STRING },
   plantApprovalNumber: {

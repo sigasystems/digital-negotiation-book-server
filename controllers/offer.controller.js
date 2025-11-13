@@ -120,6 +120,24 @@ export const respondOffer = asyncHandler(async (req, res) => {
   }
 });
 
+export const getNegotiations = asyncHandler(async (req, res) => {
+  try {
+    authorizeRoles(req, ["business_owner", "buyer"]);
+    const negotiations = await offerNegotiationService.getNegotiations(
+      req.params.id,
+      req.user
+    );
+    return successResponse(
+      res,
+      200,
+      "Negotiations fetched successfully",
+      { negotiations }
+    );
+  } catch (err) {
+    return errorResponse(res, 400, err.message);
+  }
+});
+
 export const getRecentNegotiations = asyncHandler(async (req, res) => {
   try {
     const { ownerId, buyerId } = req.body;
