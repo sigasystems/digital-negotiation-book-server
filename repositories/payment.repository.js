@@ -31,15 +31,13 @@ export const paymentRepository = {
   recurring: { interval: "month" }, // or "year"
   product: productId,
 }) ,
-  createStripeSession: ({ email, priceId , userId, paymentId, planId }) =>
-    stripe.checkout.sessions.create({
-
-      mode: "subscription",
-      line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${process.env.CLIENT_URL}/paymentsuccess`,
-      cancel_url: `${process.env.CLIENT_URL}/`,
-      customer_email: email,
-      metadata: { paymentId, planId },
-      metadata: { paymentId, planId, userId },  
-    }),
+ createStripeSession: ({ email, priceId, userId, paymentId, planId }) =>
+  stripe.checkout.sessions.create({
+    mode: "subscription",
+    line_items: [{ price: priceId, quantity: 1 }], // make sure priceId is valid
+    success_url: `${process.env.CLIENT_URL}/paymentsuccess`,
+    cancel_url: `${process.env.CLIENT_URL}/`,
+    customer_email: email,
+    metadata: { paymentId, planId, userId }, // only one metadata object
+  }), 
 };
