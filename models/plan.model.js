@@ -15,7 +15,7 @@ const Plan = sequelize.define(
       allowNull: false,
       unique: true,
       validate: {
-        isIn: [["trial","advanced", "basic", "pro", "custom"]], 
+        isIn: [["trial", "basic", "pro" ,"custom"]], // extendable
       },
     },
 
@@ -29,35 +29,27 @@ const Plan = sequelize.define(
       defaultValue: "",
     },
 
+    priceMonthly: {
+      type: DataTypes.DECIMAL(10, 2),
+      defaultValue: 0.0,
+      validate: { min: 0 },
+    },
+
+    priceYearly: {
+      type: DataTypes.DECIMAL(10, 2),
+      defaultValue: 0.0,
+      validate: { min: 0 },
+    },
+
     currency: {
       type: DataTypes.STRING,
-      defaultValue: "INR",
+      defaultValue: "USD",
     },
 
     billingCycle: {
       type: DataTypes.ENUM("monthly", "yearly"),
       defaultValue: "monthly",
     },
-    stripeProductId: {
-  type: DataTypes.STRING,
-  allowNull: true,
-},
-stripePriceMonthlyId: {
-  type: DataTypes.STRING,
-  allowNull: true,
-},
-stripePriceYearlyId: {
-  type: DataTypes.STRING,
-  allowNull: true,
-},
-priceMonthly: {
-  type: DataTypes.DECIMAL(10, 2),
-  allowNull: true,
-},
-priceYearly: {
-  type: DataTypes.DECIMAL(10, 2),
-  allowNull: true,
-},
 
     // Limits
     maxUsers: {
@@ -84,10 +76,10 @@ priceYearly: {
       validate: { min: 0 },
     },
 
-    // Features
+    // Features (stored as JSON in Postgres/MySQL)
     features: {
-      type: DataTypes.JSONB,
-      defaultValue: [],
+      type: DataTypes.JSONB, // use JSON if your DB doesn’t support JSONB
+      defaultValue: {},
     },
 
     trialDays: {
@@ -113,7 +105,7 @@ priceYearly: {
   },
   {
     tableName: "plans",
-    timestamps: true,
+    timestamps: true, // adds createdAt & updatedAt
   }
 );
 

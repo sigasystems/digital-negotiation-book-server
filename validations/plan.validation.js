@@ -11,9 +11,6 @@ export const createPlanSchema = z.object({
   billingCycle: z.enum(["monthly", "yearly"], {
     required_error: "Billing cycle must be either monthly or yearly",
   }).optional(),
-  stripeProductId: z.string().optional(),
-stripePriceMonthlyId: z.string().optional(),
-stripePriceYearlyId: z.string().optional(),
   maxUsers: z.number().int("Must be an integer").nonnegative("Must be positive").optional(),
   maxProducts: z.number().int("Must be an integer").nonnegative("Must be positive").optional(),
   maxOffers: z.number().int("Must be an integer").nonnegative("Must be positive").optional(),
