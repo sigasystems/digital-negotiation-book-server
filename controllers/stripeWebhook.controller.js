@@ -1,56 +1,85 @@
-import Stripe from "stripe";
-import { PlanRepository } from "../repositories/plan.repository.js";
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-// ✅ Webhook handler (must use raw body middleware)
+import stripe from "../config/stripe.js";
+import Payment from "../models/payment.model.js";
+import User from "../models/user.model.js";
+
 export const stripeWebhook = async (req, res) => {
   const sig = req.headers["stripe-signature"];
-  let event;
+  var event;
   try {
     event = stripe.webhooks.constructEvent(
-      req.rawBody, 
+      req.body,
       sig,
       process.env.STRIPE_WEBHOOK_SECRET
     );
   } catch (err) {
-    console.error("Webhook signature verification failed:", err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
-  try {
-    switch (event.type) {
-      // First-time subscription
-      case "checkout.session.completed": {
-        const session = event.data.object;
-        const subscription = await stripe.subscriptions.retrieve(session.subscription)
-        await PlanRepository.upsertSubscription({
-          userId: session.metadata.userId,
-          planId: session.metadata.planId,
-          stripeCustomerId: session.customer,
-          stripeSubscriptionId: subscription.id,
-          status: subscription.status,
-          startDate: new Date(subscription.start_date * 1000),
-          endDate: new Date(subscription.current_period_end * 1000),
-        });
-        break;
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object;
+
+    const payment = await Payment.findOne({
+      where: { transactionId: session.id },
+    });
+
+    if (payment) {
+      payment.status = "success";
+      payment.stripeSubscriptionId = session.subscription;
+      await payment.save();
+
+      const user = await User.findByPk(payment.userId);
+      if (user) {
+        user.subscriptionStatus = "active";
+        await user.save();
       }
-      // Stripe auto renewals
-      case "invoice.payment_succeeded": {
-        const invoice = event.data.object;
-        await PlanRepository.markPaid(invoice.subscription);
-        break;
+    }
+  }
+  if (event.type === "invoice.payment_failed") {
+    const invoice = event.data.object;
+    const payment = await Payment.findOne({
+      where: { stripeSubscriptionId: invoice.subscription },
+    });
+    if (payment) {
+      payment.status = "failed";
+      await payment.save();
+
+      const user = await User.findByPk(payment.userId);
+      if (user) {
+        user.subscriptionStatus = "inactive";
+        await user.save();
       }
-      // Subscription canceled (manually or failed payment)
-      case "customer.subscription.deleted": {
-        const subscription = event.data.object;
-        await PlanRepository.markCanceled(subscription.id);
-        break;
-      }
-      default:
-        console.log(`Unhandled event type: ${event.type}`);
+    }
+  }
+  if (event.type === "invoice.payment_succeeded") {
+    const invoice = event.data.object;
+    const subscriptionId =
+      invoice.subscription ||
+      invoice?.parent?.subscription_details?.subscription ||
+      invoice?.lines?.data?.[0]?.parent?.subscription_item_details
+        ?.subscription ||
+      null;
+
+    console.log("subscription id from event:", subscriptionId);
+
+    if (!subscriptionId) {
+      console.warn("⚠️ No subscriptionId found for invoice:", invoice.id);
+      return res.json({ received: true });
     }
 
-    res.sendStatus(200);
-  } catch (err) {
-    console.error("Error processing webhook event:", err);
-    res.sendStatus(500);
+    const invoicePdf = invoice.invoice_pdf;
+    const customerEmail = invoice.customer_email;
+
+    const payment = await Payment.findOne({
+      where: { stripeSubscriptionId: subscriptionId },
+    });
+
+    if (payment && subscriptionId === payment.stripeSubscriptionId) {
+      console.log("✅ Payment found for subscription:", subscriptionId);
+      await payment.update({ invoicePdf });
+      console.log("✅ Payment updated with invoice PDF for:", customerEmail);
+      console.log("✅ Payment id iws....:", payment.id);
+    } else {
+      console.warn("⚠️ No matching payment for subscription:", subscriptionId);
+    }
   }
+  res.json({ received: true });
 };
