@@ -42,9 +42,19 @@ const offerService = {
         );
       }
 
+      const enrichedProducts = (restData.products || []).map((p, index) => {
+        const draftProduct = draft.draftProducts[index];
+          return {
+              ...draftProduct,
+              ...p,
+              productName: p.productName || draftProduct.productName || "",
+            };
+      });
+
       const mergedData = {
         ...draft.dataValues,
         ...restData,
+        products: enrichedProducts,
         draftProducts: draft.draftProducts,
       };
 
