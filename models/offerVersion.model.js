@@ -1,6 +1,6 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/db.js";
-import OfferBuyer from "./offerBuyer.model.js";
+import { Buyer, Offer } from "./index.js";
 
 const OfferVersion = sequelize.define(
   "OfferVersion",
@@ -10,15 +10,25 @@ const OfferVersion = sequelize.define(
       primaryKey: true,
       autoIncrement: true,
     },
-    offerBuyerId: {
-      type: DataTypes.INTEGER,
+    buyerId: {
+      type: DataTypes.UUID,
       allowNull: false,
       references: {
-        model: OfferBuyer,
+        model: Buyer,
         key: "id",
       },
       onDelete: "CASCADE",
-      field: "offer_buyer_id", // <-- map camelCase to DB column
+      field: "buyer_id",
+    },
+    offerId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: "offers",
+        key: "id",
+      },
+      onDelete: "CASCADE",
+      field: "offer_id",
     },
     offerName: {
       type: DataTypes.STRING(255),
@@ -28,7 +38,7 @@ const OfferVersion = sequelize.define(
     versionNo: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      field: "version_no", // <-- map if column in DB is snake_case
+      field: "version_no",
     },
     fromParty: {
       type: DataTypes.STRING(255),
@@ -41,9 +51,6 @@ const OfferVersion = sequelize.define(
       field: "to_party",
     },
 
-    // ---------------------------
-    // Negotiation Details
-    // ---------------------------
     productName: {
       type: DataTypes.STRING(100),
       allowNull: false,
@@ -97,9 +104,6 @@ const OfferVersion = sequelize.define(
       allowNull: true,
     },
 
-    // ---------------------------
-    // System Fields
-    // ---------------------------
     createdAt: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,
@@ -114,12 +118,13 @@ const OfferVersion = sequelize.define(
   {
     tableName: "offer_versions",
     timestamps: true,
-    indexes: [{ fields: ["offer_buyer_id"] }], // use DB column name
+    indexes: [{ fields: ["buyer_id"] }],
   }
 );
 
-// Associations
-OfferBuyer.hasMany(OfferVersion, { foreignKey: "offerBuyerId", as: "versions" });
-OfferVersion.belongsTo(OfferBuyer, { foreignKey: "offerBuyerId", as: "offerBuyer" });
+Buyer.hasMany(OfferVersion, { foreignKey: "buyerId", as: "offerVersions" });
+OfferVersion.belongsTo(Buyer, { foreignKey: "buyerId", as: "buyer" });
+Offer.hasMany(OfferVersion, { foreignKey: "offerId", as: "versions" });
+OfferVersion.belongsTo(Offer, { foreignKey: "offerId", as: "offer" });
 
 export default OfferVersion;

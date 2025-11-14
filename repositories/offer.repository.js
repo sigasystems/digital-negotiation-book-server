@@ -1,4 +1,4 @@
-import { Offer, OfferDraft, BusinessOwner, OfferDraftProduct, SizeBreakup, OfferProduct, OfferSizeBreakup } from "../models/index.js";
+import { Offer, OfferDraft, BusinessOwner, OfferDraftProduct, SizeBreakup, OfferProduct, OfferSizeBreakup, OfferBuyer } from "../models/index.js";
 
 class OfferRepository {
   // Draft
@@ -42,14 +42,14 @@ class OfferRepository {
   }
 
   // Offer CRUD
-    async createOffer(data, offerName, user, transaction) {
+    async createOffer(data, offerName, user, transaction, buyerId) {
       const offer = await Offer.create({
         businessOwnerId: data.businessOwnerId,
         offerName,
         businessName: user.businessName,
         fromParty: user.businessName,
         toParty: data.toParty,
-        buyerId: data.buyerId || null,
+        buyerId: buyerId || null,
         origin: data.origin,
         processor: data.processor,
         plantApprovalNumber: data.plantApprovalNumber,
@@ -113,6 +113,24 @@ class OfferRepository {
       limit,
       offset,
     });
+  }
+
+    async getNegotiationsByOfferId(offerId) {
+    const offerBuyers = await OfferBuyer.findAll({
+      where: { offerId },
+      attributes: ["id", "buyerId", "ownerId", "status"],
+    });
+
+    if (!offerBuyers.length) return { offerBuyers: [], versions: [] };
+
+    const buyerId = offerBuyers.map((ob) => ob.id);
+
+    const versions = await OfferVersion.findAll({
+      where: { buyerId },
+      order: [["versionNo", "ASC"]],
+    });
+
+    return { offerBuyers, versions };
   }
 }
 

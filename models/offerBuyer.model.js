@@ -1,50 +1,32 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/db.js";
-import { Offer, Buyer, BusinessOwner } from "./index.js";
+import {BusinessOwner, Offer, Buyer} from "./index.js";
 
 const OfferBuyer = sequelize.define(
   "OfferBuyer",
   {
     id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
-      autoIncrement: true,
     },
     offerId: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      references: {
-        model: Offer,
-        key: "id",
-      },
-      onDelete: "CASCADE",
       field: "offer_id",
     },
     buyerId: {
       type: DataTypes.UUID,
       allowNull: false,
-      references: {
-        model: Buyer,
-        key: "id",
-      },
-      onDelete: "CASCADE",
       field: "buyer_id",
     },
-
-    // 👇 New ownerId column
     ownerId: {
       type: DataTypes.UUID,
-      allowNull: true, // nullable initially
-      references: {
-        model: BusinessOwner, // optional, only if you want FK constraint
-        key: "id",
-      },
-      onDelete: "SET NULL", // if owner deleted, nullify
+      allowNull: false,
       field: "owner_id",
     },
-
     status: {
-      type: DataTypes.ENUM("open", "accepted", "rejected", "countered", "close"),
+      type: DataTypes.STRING(50),
       defaultValue: "open",
     },
     createdAt: {
