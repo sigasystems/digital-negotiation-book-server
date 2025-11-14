@@ -17,7 +17,7 @@ const Offer = sequelize.define("Offer", {
     field: "business_name"
   },
   fromParty: { type: DataTypes.STRING, allowNull: false, field: "from_party" },
-  toParty: { type: DataTypes.STRING, allowNull: false, field: "from_party" },
+  toParty: { type: DataTypes.STRING, allowNull: false, field: "to_party" },
   buyerId: {
       type: DataTypes.UUID,
       allowNull: true,

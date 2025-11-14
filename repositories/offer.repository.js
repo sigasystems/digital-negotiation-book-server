@@ -42,14 +42,14 @@ class OfferRepository {
   }
 
   // Offer CRUD
-    async createOffer(data, offerName, user, transaction) {
+    async createOffer(data, offerName, user, transaction, buyerId) {
       const offer = await Offer.create({
         businessOwnerId: data.businessOwnerId,
         offerName,
         businessName: user.businessName,
         fromParty: user.businessName,
         toParty: data.toParty,
-        buyerId: data.buyerId || null,
+        buyerId: buyerId || null,
         origin: data.origin,
         processor: data.processor,
         plantApprovalNumber: data.plantApprovalNumber,

@@ -1,4 +1,4 @@
-import { Offer, OfferBuyer, OfferVersion, OfferResult, Buyer, BusinessOwner } from "../models/index.js";
+import { Offer, OfferBuyer, OfferVersion, OfferResult, Buyer, BusinessOwner, OfferProduct } from "../models/index.js";
 import { withTransactionOfferNegotiation, ensureActiveOffer, ensureActiveOwner, getLastVersion } from "../utlis/offerHelpers.js";
 import { generateEmailTemplate, sendEmailWithRetry } from "../utlis/emailTemplate.js";
 import transporter from "../config/nodemailer.js";
@@ -158,15 +158,39 @@ export const offerNegotiationService = {
     });
   },
 
-    async getNegotiations(offerId, user) {
+    async getNegotiations(id, user) {
     const { id: userId, userRole, businessOwnerId } = user;
 
-    if (!offerId) throw new Error("Offer ID is required");
+    if (!id) throw new Error("Offer ID is required");
     if (!["business_owner", "buyer"].includes(userRole))
       throw new Error("Unauthorized role");
 
-    const offer = await Offer.findByPk(offerId, {
-      attributes: ["id", "offerName", "businessOwnerId"],
+    const offer = await Offer.findByPk(id, {
+      attributes: [
+        "id",
+        "offerName",
+        "businessOwnerId",
+        "businessName",
+        "fromParty",
+        "toParty",
+        "buyerId",
+        "origin",
+        "processor",
+        "brand",
+        "plantApprovalNumber",
+        "draftName",
+        "offerValidityDate",
+        "shipmentDate",
+        "grandTotal",
+        "quantity",
+        "tolerance",
+        "paymentTerms",
+        "remark",
+        "status",
+        "isDeleted",
+        "createdAt",
+        "updatedAt",
+      ],
     });
 
     if (!offer) throw new Error("Offer not found");
@@ -179,24 +203,41 @@ export const offerNegotiationService = {
     }
     
     const offerBuyers = await OfferBuyer.findAll({
-      where: { offerId },
+      where: { offerId: id },
       attributes: ["id", "buyerId", "ownerId"],
     });
 
     if (!offerBuyers.length)
       throw new Error("No negotiations found for this offer");
 
-    const buyerId = offerBuyers.map((ob) => ob.buyerId);
+    const buyerIdList = offerBuyers.map((ob) => ob.buyerId);
+
+    const offerProducts = await OfferProduct.findAll({
+      where: { offerId: id },
+      attributes: ["sizeDetails", "breakupDetails", "priceDetails", "packing"],
+    });
+
+    const products = offerProducts.map((p) => ({
+      sizeDetails: p.sizeDetails,
+      breakupDetails: p.breakupDetails,
+      priceDetails: p.priceDetails,
+      packing: p.packing,
+    }));
 
     const versions = await OfferVersion.findAll({
-      where: { buyerId },
+      where: {
+        offerId: id,
+        offer_name: offer.offerName,
+        buyer_id: buyerIdList,
+      },
       order: [["versionNo", "ASC"]],
       attributes: [
         "id",
         "versionNo",
         "fromParty",
         "toParty",
-        "offerName",
+        "offerId",
+        "offer_name",
         "productName",
         "speciesName",
         "brand",
@@ -212,9 +253,34 @@ export const offerNegotiationService = {
       ],
     });
 
-    const negotiations = {
+    return {
+      offer: {
       offerId: offer.id,
       offerName: offer.offerName,
+        businessOwnerId: offer.businessOwnerId,
+        businessName: offer.businessName,
+        fromParty: offer.fromParty,
+        toParty: offer.toParty,
+        buyerId: offer.buyerId,
+        origin: offer.origin,
+        processor: offer.processor,
+        brand: offer.brand,
+        packing: products[0]?.packing || null,
+        plantApprovalNumber: offer.plantApprovalNumber,
+        draftName: offer.draftName,
+        offerValidityDate: offer.offerValidityDate,
+        shipmentDate: offer.shipmentDate,
+        grandTotal: offer.grandTotal,
+        quantity: offer.quantity,
+        tolerance: offer.tolerance,
+        paymentTerms: offer.paymentTerms,
+        remark: offer.remark,
+        status: offer.status,
+        isDeleted: offer.isDeleted,
+        createdAt: offer.createdAt,
+        updatedAt: offer.updatedAt,
+      },
+
       participants: offerBuyers.map((ob) => ({
         buyerId: ob.buyerId,
         ownerId: ob.ownerId,
@@ -224,6 +290,8 @@ export const offerNegotiationService = {
         versionNo: v.versionNo,
         fromParty: v.fromParty,
         toParty: v.toParty,
+        offerId: v.offerId,
+        offerName: v.offer_name,
         productName: v.productName,
         speciesName: v.speciesName,
         brand: v.brand,
@@ -237,8 +305,8 @@ export const offerNegotiationService = {
         remark: v.remark,
         createdAt: v.createdAt,
       })),
+      products,
     };
-    return negotiations;
   },
 
   async getRecentNegotiations(ownerId, buyerId) {

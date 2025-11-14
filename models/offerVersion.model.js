@@ -1,6 +1,6 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/db.js";
-import { Buyer } from "./index.js";
+import { Buyer, Offer } from "./index.js";
 
 const OfferVersion = sequelize.define(
   "OfferVersion",
@@ -19,6 +19,16 @@ const OfferVersion = sequelize.define(
       },
       onDelete: "CASCADE",
       field: "buyer_id",
+    },
+    offerId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: "offers",
+        key: "id",
+      },
+      onDelete: "CASCADE",
+      field: "offer_id",
     },
     offerName: {
       type: DataTypes.STRING(255),
@@ -114,5 +124,7 @@ const OfferVersion = sequelize.define(
 
 Buyer.hasMany(OfferVersion, { foreignKey: "buyerId", as: "offerVersions" });
 OfferVersion.belongsTo(Buyer, { foreignKey: "buyerId", as: "buyer" });
+Offer.hasMany(OfferVersion, { foreignKey: "offerId", as: "versions" });
+OfferVersion.belongsTo(Offer, { foreignKey: "offerId", as: "offer" });
 
 export default OfferVersion;

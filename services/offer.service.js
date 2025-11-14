@@ -69,7 +69,8 @@ const offerService = {
         mergedData,
         offerName,
         user,
-        t
+        t,
+        buyerId
       );
 
       const buyerIdsArr = buyerId ? [buyerId] : createdOffer.buyerId ? [createdOffer.buyerId] : [];
@@ -128,6 +129,7 @@ const offerService = {
           {
             buyerId,
             versionNo: 1,
+            offerId: createdOffer.id,
             fromParty: fromPartyDisplay,
             toParty: toPartyDisplay,
             offerName: createdOffer.offerName,
