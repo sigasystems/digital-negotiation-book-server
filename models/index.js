@@ -19,6 +19,7 @@ import UserPlanUsage from "./UserPlanUsage.js";
 import OfferDraftProduct from "./offerDraftProduct.model.js";
 import OfferSizeBreakup from "./offerSizeBreakup.model.js";
 import OfferProduct from "./offerProduct.model.js";
+import Country from "./country.model.js";
 
 Payment.belongsTo(User, { foreignKey: "userId" });
 Payment.belongsTo(Plan, { foreignKey: "planId" });
@@ -62,6 +63,9 @@ OfferSizeBreakup.belongsTo(OfferProduct, {
   as: "offerProduct",
 });
 
+Country.hasMany(Location, { foreignKey: "countryId" });
+Location.belongsTo(Country, { foreignKey: "countryId" });
+
 export {
   sequelize,
   User,
@@ -83,4 +87,5 @@ export {
   OfferDraftProduct,
   OfferProduct,
   OfferSizeBreakup,
+  Country
 };

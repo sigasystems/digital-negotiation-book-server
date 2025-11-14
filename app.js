@@ -15,6 +15,7 @@ import {
   planRoutes,
   paymentRoutes,
   subscriptionRoutes,
+  countryRoutes
 } from "./routes/index.js";
 
 import { notFoundHandler, errorHandler } from "./handlers/index.js";
@@ -84,6 +85,7 @@ app.use("/api/business-owner", businessOwnerRoutes);
 app.use("/api/offer-draft", offerDraftRoute);
 app.use("/api/product", productRoutes);
 app.use("/api/location", locationRoutes);
+app.use("/api/country", countryRoutes);
 app.use("/api/offer", offerRoute);
 
 // -----------------------------
