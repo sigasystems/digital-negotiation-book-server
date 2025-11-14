@@ -32,6 +32,14 @@ const Location = sequelize.define("Location", {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  countryId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: {
+        model: "countries",
+        key: "id",
+      },
+    },
 }, {
   tableName: "locations",
   timestamps: true,

@@ -13,5 +13,6 @@ import offerDraftRoute from "./offerDraft.route.js"
 import offerRoute from "./offer.route.js"
 import paymentRoutes from "./payment.routes.js"
 import subscriptionRoutes from "./subscription.route.js"
+import countryRoutes from "./country.routes.js"
 // export {authRoutes, boBuyersRoutes, offerDraftRoutes, paymentRoutes, planRoutes, superadminRoutes, boOfferRoutes, offerActionsRoutes }
-export {locationRoutes, authRoutes, businessOwnerRoutes , superadminRoutes ,productRoutes, offerDraftRoute, offerRoute,planRoutes ,subscriptionRoutes, paymentRoutes};
+export {locationRoutes, authRoutes, businessOwnerRoutes , superadminRoutes ,productRoutes, offerDraftRoute, offerRoute,planRoutes ,subscriptionRoutes, paymentRoutes, countryRoutes};
