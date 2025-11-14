@@ -67,7 +67,6 @@ export const checkPlanByOwner = async (req, res) => {
 
     if (!userId) return errorResponse(res, 400, "User ID missing");
 
-    console.log('user id...', userId);
     const result = await PlanService.checkPlanService(userId);
     return successResponse(res, 200, result);
   } catch (err) {
@@ -80,7 +79,6 @@ export const upgradeOrRenewPlan = async (req, res) => {
   try {
     const userId = req.user?.id || req.body.userId;
     const { planId, billingCycle = "monthly" } = req.body;
-    console.log('plan id and billingCycle....', planId, billingCycle);
 
     if (!userId || !planId) 
       return errorResponse(res, 400, "Missing required data");

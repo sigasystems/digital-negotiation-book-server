@@ -1,12 +1,14 @@
+const { User } = require("../models");
+
 // helpers for Stripe webhook
 async function handleSubscriptionCreated(session) {
   const { userId, planId } = session.metadata;
   const subscriptionId = session.subscription;
 
-  await Use.create({
+  await User.create({
     userId,
     planId,
-    subscriptionId: subscriptionId,
+    // subscriptionId: subscriptionId,
     startDate: new Date(),
     expiryDate: new Date(session.expires_at * 1000),
     status: "active",

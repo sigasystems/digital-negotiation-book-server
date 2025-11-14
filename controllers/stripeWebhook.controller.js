@@ -60,12 +60,11 @@ import Stripe from "stripe";
 import getRawBody from "raw-body";
 import { PlanRepository } from "../repositories/plan.repository.js";
 import Payment from "../models/payment.model.js";
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // ✅ Webhook handler (must use raw body middleware)
 export const stripeWebhook = async (req, res) => {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
   const sig = req.headers["stripe-signature"];
-  console.log({ sig });
   let event;
   let rawBody;
   try {
@@ -96,46 +95,73 @@ export const stripeWebhook = async (req, res) => {
       // First-time subscription
       case "checkout.session.completed": {
         const session = event.data.object;
+        console.log("session log from checkout session......", session);
+
+        // Safely get subscription ID
+        const subscriptionExposedId = session.subscription || session.id;
+
+        if (!subscriptionExposedId) {
+          console.error(
+            "Missing subscription ID in checkout.session.completed:",
+            session
+          );
+          break; // exit early to avoid 500
+        }
+
+        // Retrieve subscription from Stripe
         const subscription = await stripe.subscriptions.retrieve(
-          session.subscription
+          subscriptionExposedId
         );
+
+        // Calculate end date safely
+        const endDate = subscription.current_period_end
+          ? new Date(subscription.current_period_end * 1000)
+          : new Date(); // fallback
+
         await PlanRepository.upsertSubscription({
           userId: session.metadata.userId,
           planId: session.metadata.planId,
           stripeCustomerId: session.customer,
-          subscriptionId: subscription.id,
+          // subscriptionId: subscription.id,
           status: subscription.status,
           startDate: new Date(subscription.start_date * 1000),
-          endDate: new Date(subscription.current_period_end * 1000),
+          endDate: endDate,
         });
         break;
       }
       // Stripe auto renewals
       case "invoice.payment_succeeded": {
         const invoice = event.data.object;
-        console.log('Invoice.....',invoice);
-        console.log('Invoice pdf.....',invoice.invoice_pdf);
+        // console.log('Invoice.....',invoice);
+        // console.log('Invoice pdf.....',invoice.invoice_pdf);
+
+        if (!invoice.subscription) {
+          console.log("Skipping invoice: no subscription attached", invoice.id);
+          break; // exit early
+        }
+
         await PlanRepository.markPaid(invoice.subscription);
         // 1. Mark payment record as PAID
-  await Payment.update(
-    {
-      status: "success",
-      subscriptionId,
-      invoicePdf: invoice.invoice_pdf,
-    },
-    { where: { transactionId: sessionId } }
-  );
+        await Payment.update(
+          {
+            status: "success",
+            // subscriptionId: ,
+            invoicePdf: invoice.invoice_pdf,
+          },
+          { where: { transactionId: sessionId } }
+        );
 
-  // 2. Update subscription endDate
-  const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
+        // 2. Update subscription endDate
+        const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
+        console.log("stripeSub......👍", stripeSub);
 
-  await Subscription.update(
-    {
-      status: stripeSub.status,
-      endDate: new Date(stripeSub.current_period_end * 1000),
-    },
-    { where: { subscriptionId } }
-  );
+        await Subscription.update(
+          {
+            status: stripeSub.status,
+            endDate: new Date(stripeSub.current_period_end * 1000),
+          },
+          { where: { subscriptionId } }
+        );
 
         break;
       }

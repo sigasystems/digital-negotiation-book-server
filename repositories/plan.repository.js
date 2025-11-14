@@ -156,7 +156,7 @@ export const PlanRepository = {
     Payment.findOne({ where: { sessionId } }),
 
   upsertSubscription: async (data) => {
-    const { id, userId, planId, status, startDate, endDate, subscriptionId } =
+    const { id, userId, planId, status, startDate, endDate } =
       data;
 
     const payload = {
@@ -165,7 +165,7 @@ export const PlanRepository = {
       status,
       startDate,
       endDate,
-      subscriptionId,
+      // subscriptionId,
     };
 
     if (id) payload.id = id;
