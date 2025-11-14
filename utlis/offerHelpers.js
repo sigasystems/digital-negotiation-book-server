@@ -63,7 +63,7 @@ export async function ensureActiveOwner(BusinessOwner, id, transaction) {
 
 export async function getLastVersion(OfferVersion, offerBuyerId, transaction) {
   return OfferVersion.findOne({
-    where: { offerBuyerId },
+    where: { buyerId: offerBuyerId },
     order: [["versionNo", "DESC"]],
     transaction,
   });
