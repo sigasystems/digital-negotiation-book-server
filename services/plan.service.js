@@ -179,7 +179,7 @@ upgradeOrRenewPlan : async (userId, planId, billingCycle = "monthly") => {
 
     // 6️⃣ Return session details to frontend
     return {
-      checkoutUrl: session.url,
+      url: session.url,
       sessionId: session.id,
     };
   } catch (err) {

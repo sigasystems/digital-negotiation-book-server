@@ -19,10 +19,12 @@ export const paymentService = {
       // fetch user and plan
       const user = await userRepository.findById(userId);
       const plan = await PlanRepository.findById(planId);
+      console.log('userid and planid from payment service....',user , plan);
       if (!user || !plan)
         throw { statuscode: 404, message: "User or Plan not found" };
 
       const amount = plan.billingCycle === "monthly" ? plan.priceMonthly : plan.priceYearly;
+      console.log('amount......', amount);
       if (!amount || amount <= 0)
         throw { statuscode: 400, message: "Plan price must be greater than zero" };
 
@@ -37,12 +39,14 @@ export const paymentService = {
         transactionId: `pending_${Date.now()}`,
         paymentMethod: "card",
       });
+      console.log('payment.....',payment);
 
       // Create Stripe Product & Price
       const stripeProduct = await paymentRepository.createStripeProduct(plan.name, {
         planId: plan.id,
         userId: user.id,
       });
+      console.log('stripe product.....',stripeProduct)
 
       const stripePrice = await paymentRepository.createStripePrice(
         amount,

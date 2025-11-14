@@ -224,7 +224,7 @@ async function resetPasswordWithOtp({ email, otp, password }) {
     title: "Password Reset Successful",
     subTitle: `Hello ${user.fullName || "User"},`,
     body: `<p>Password reset successfully.</p>${emailLoginButton({
-      url: "http://localhost:6000/api/auth/login",
+      url: "http://localhost:5000/api/auth/login",
       label: "Login Now",
     })}`,
     footer: "This is an automated email.",

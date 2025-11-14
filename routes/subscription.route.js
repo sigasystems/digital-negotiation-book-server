@@ -1,8 +1,8 @@
 import express from "express";
 import  stripe  from "../config/stripe.js";
-import Payment from "../models/payment.model.js";
 import User from "../models/user.model.js";
 import Plan from "../models/plan.model.js";
+import {Payment} from "../models/index.js";
 // import dayjs from "dayjs";
 // import sequelize from "../config/db.js";
 
@@ -70,6 +70,7 @@ router.post("/create-checkout-session", async (req, res) => {
       success_url: `${process.env.CLIENT_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.CLIENT_URL}/cancel`,
     });
+    console.log('hiiii');
 
     // 8️⃣ Save payment as pending
     await Payment.create({
@@ -80,7 +81,7 @@ router.post("/create-checkout-session", async (req, res) => {
       transactionId: session.id,
       stripeSubscriptionId: session.subscription || null,
     });
-
+    console.log('buyy')
     res.json({ url: session.url });
   } catch (err) {
     console.error("Error in create-checkout-session:", err);
