@@ -59,6 +59,7 @@
 import Stripe from "stripe";
 import getRawBody from "raw-body";
 import { PlanRepository } from "../repositories/plan.repository.js";
+import Payment from "../models/payment.model.js";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // ✅ Webhook handler (must use raw body middleware)
@@ -112,7 +113,30 @@ export const stripeWebhook = async (req, res) => {
       // Stripe auto renewals
       case "invoice.payment_succeeded": {
         const invoice = event.data.object;
+        console.log('Invoice.....',invoice);
+        console.log('Invoice pdf.....',invoice.invoice_pdf);
         await PlanRepository.markPaid(invoice.subscription);
+        // 1. Mark payment record as PAID
+  await Payment.update(
+    {
+      status: "success",
+      subscriptionId,
+      invoicePdf: invoice.invoice_pdf,
+    },
+    { where: { transactionId: sessionId } }
+  );
+
+  // 2. Update subscription endDate
+  const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
+
+  await Subscription.update(
+    {
+      status: stripeSub.status,
+      endDate: new Date(stripeSub.current_period_end * 1000),
+    },
+    { where: { subscriptionId } }
+  );
+
         break;
       }
       // Subscription canceled (manually or failed payment)
