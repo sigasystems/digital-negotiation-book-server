@@ -204,7 +204,7 @@ upgradeOrRenewPlan : async (userId, planId, billingCycle = "monthly") => {
 
   await PlanRepository.upsertSubscription({
     userId: payment.userId,
-    stripeSubscriptionId: sessionId,
+    subscriptionId: sessionId,
     planName: plan.name,
     status: "active",
     startDate,

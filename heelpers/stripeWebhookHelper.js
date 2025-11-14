@@ -6,7 +6,7 @@ async function handleSubscriptionCreated(session) {
   await Use.create({
     userId,
     planId,
-    stripeSubscriptionId: subscriptionId,
+    subscriptionId: subscriptionId,
     startDate: new Date(),
     expiryDate: new Date(session.expires_at * 1000),
     status: "active",
@@ -21,7 +21,7 @@ async function handleRenewal(invoice) {
       expiryDate: new Date(invoice.lines.data[0].period.end * 1000),
       status: "active",
     },
-    { where: { stripeSubscriptionId: subscriptionId } }
+    { where: { subscriptionId: subscriptionId } }
   );
 }
 
@@ -29,7 +29,7 @@ async function handleSubscriptionCanceled(subscription) {
   const subscriptionId = subscription.id;
   await UserPlan.update(
     { status: "canceled" },
-    { where: { stripeSubscriptionId: subscriptionId } }
+    { where: { subscriptionId: subscriptionId } }
   );
 }
 

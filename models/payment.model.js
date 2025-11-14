@@ -39,7 +39,7 @@ const Payment = sequelize.define("Payment", {
       allowNull: false,
       unique: true,
     },
-    stripeSubscriptionId: {
+    subscriptionId: {
       type: DataTypes.STRING,
       allowNull: true,
       unique: true,

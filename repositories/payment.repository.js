@@ -7,7 +7,7 @@ export const paymentRepository = {
   getPaymentById: (id) => Payment.findByPk(id, { include: ["User", "Plan"] }),
   updatePaymentStatus: (payment, status) => {
     payment.status = status;
-    if (status === "success") payment.paidAt = new Date();
+    if (status === "success");
     return payment.save();
   },
   getPaymentByTransactionId: (transactionId) => Payment.findOne({ where: { transactionId } }), 

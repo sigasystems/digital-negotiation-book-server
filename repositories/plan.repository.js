@@ -40,32 +40,34 @@ createPayment : async (paymentData) => {
  getPaymentBySession : async (sessionId) => {
   return await Payment.findOne({ where: { sessionId } });
 },
-async upsertSubscription(data) {
+ upsertSubscription: async (data)=> {
     // Create or update user’s plan record
-    const { userId, planId, stripeCustomerId, stripeSubscriptionId, status, startDate, endDate } = data;
+    const { userId, planId,  status, startDate, endDate } = data;
 
-    const existing = await User.findOne({ where: { userId } });
+    const existing = await User.findOne({ where: { id } });
     if (existing) {
-      await existing.update({ planId, stripeCustomerId, stripeSubscriptionId, status, startDate, endDate });
+      await existing.update({ planId,  status, startDate, endDate });
     } else {
-      await User.create({ userId, planId, stripeCustomerId, stripeSubscriptionId, status, startDate, endDate });
+      await User.create({ userId, planId,  status, startDate, endDate });
     }
   },
 
-  async markPaid(subscriptionId) {
-    const plan = await User.findOne({ where: { stripeSubscriptionId: subscriptionId } });
+   markPaid : async(subscriptionId) => {
+    // const plan = await User.findOne({ where: { subscriptionId: subscriptionId } });
+    const plan = await Payment.findOne({ subscriptionId  });
+console.log('Plannn......',plan);
     if (plan) {
       const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-      await plan.update({
+      await Payment.update({
         status: subscription.status,
         endDate: new Date(subscription.current_period_end * 1000),
       });
     }
   },
-  async markCanceled(subscriptionId) {
+   markCanceled : async(subscriptionId) => {
     await User.update(
       { status: "canceled" },
-      { where: { stripeSubscriptionId: subscriptionId } }
+      { where: {  subscriptionId } }
     );
   },
 };

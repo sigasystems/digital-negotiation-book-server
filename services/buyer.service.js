@@ -346,9 +346,9 @@ if (payment) {
 
 // ✅ determine endDate using Stripe if subscriptionId is available
 let endDate = new Date(); // fallback
-if (data.stripeSubscriptionId) {
+if (data.subscriptionId) {
   try {
-    const stripeSub = await stripe.subscriptions.retrieve(data.stripeSubscriptionId);
+    const stripeSub = await stripe.subscriptions.retrieve(data.subscriptionId);
     if (stripeSub?.current_period_end) {
       endDate = new Date(stripeSub.current_period_end * 1000); // Stripe returns seconds, JS needs ms
     }
@@ -356,7 +356,7 @@ if (data.stripeSubscriptionId) {
     console.error("⚠️ Failed to fetch Stripe subscription period:", err.message);
   }
 } else {
-  // fallback if no stripeSubscriptionId passed — manual calc
+  // fallback if no subscriptionId passed — manual calc
   if (data.billingCycle === "monthly") {
     endDate.setMonth(endDate.getMonth() + 1);
   } else if (data.billingCycle === "yearly") {
@@ -367,7 +367,7 @@ if (data.stripeSubscriptionId) {
 // 🔥 Create Subscription entry
 await Subscription.create({
    userId: existingUser.id,
-  stripeSubscriptionId: data.stripeSubscriptionId || "manual_" + Date.now(),
+  subscriptionId: data.subscriptionId || "manual_" + Date.now(),
   planName: data.planName || "Unknown Plan",
   status: "active",
   startDate: new Date(),

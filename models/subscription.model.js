@@ -8,16 +8,15 @@ const Subscription = sequelize.define("Subscription", {
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true,
   },
-  userId: {
-    type: DataTypes.UUID,
-    allowNull: false,
-    references: {
-      model: User,
-      key: "id",
-    },
-    onDelete: "CASCADE",
-  },
-  stripeSubscriptionId: {
+ userId: {
+  type: DataTypes.UUID,
+  allowNull: false,
+  references: {
+    model: "Users",
+    key: "id"
+  }
+},
+  subscriptionId: {
     type: DataTypes.STRING,
     allowNull: false,
     unique: true,

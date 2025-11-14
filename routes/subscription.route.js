@@ -40,7 +40,7 @@ router.post("/create-checkout-session", async (req, res) => {
         amount: 0,
         status: "success",
         transactionId: `TRIAL-${Date.now()}`,
-        stripeSubscriptionId: null,
+        subscriptionId: null,
         remarks: "Trial plan activated",
       });
 
@@ -79,7 +79,7 @@ router.post("/create-checkout-session", async (req, res) => {
       amount: Number(price),
       status: "pending",
       transactionId: session.id,
-      stripeSubscriptionId: session.subscription || null,
+      subscriptionId: session.subscription || null,
     });
     console.log('buyy')
     res.json({ url: session.url });
