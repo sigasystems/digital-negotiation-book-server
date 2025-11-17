@@ -19,7 +19,14 @@ export const getCountries = asyncHandler(async (req, res) => {
   authorizeRoles(req, ["business_owner"]);
   const ownerid = req.user?.businessOwnerId;
 
-  const data = await countryService.getCountries(req.query, ownerid);
+  const pageIndex = parseInt(req.query.pageIndex) || 0;
+  const pageSize = parseInt(req.query.pageSize) || 10;
+
+  const data = await countryService.getCountries(ownerid, {
+    pageIndex,
+    pageSize,
+  });
+
   return successResponse(res, 200, "Countries fetched", data);
 });
 
@@ -41,10 +48,26 @@ export const getCountryById = asyncHandler(async (req, res) => {
 
 export const searchCountry = asyncHandler(async (req, res) => {
   authorizeRoles(req, ["business_owner"]);
-  const ownerid = req.user?.businessOwnerId;
+  const { code, country } = req.query.query || {};
 
-  const data = await countryService.searchCountry(req.query, ownerid);
-  return successResponse(res, 200, "Search result", data);
+  if (!code && !country) {
+    return errorResponse(res, 400, "At least one search parameter (code or country) is required");
+  }
+
+  const result = await countryService.searchCountry({ code, country }, req.user);
+
+  const dataArray = result ? [result] : [];
+
+  return successResponse(res, 200, "Search completed", {
+    data: dataArray,
+    totalItems: dataArray.length,
+    totalPages: 1,
+    pageIndex: 0,
+    pageSize: dataArray.length,
+    totalActive: dataArray.length,
+    totalInactive: 0,
+    totalDeleted: 0
+  });
 });
 
 export const updateCountry = asyncHandler(async (req, res) => {

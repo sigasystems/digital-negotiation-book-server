@@ -108,6 +108,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
+import qs from "qs"
 
 import {
   locationRoutes,
@@ -177,9 +178,11 @@ app.use(helmet());
 app.use(cookieParser());
 app.use(createSessionMiddleware());
 
-// ---------------------------
-// API Routes
-// ---------------------------
+app.set("query parser", str => qs.parse(str));
+
+// -----------------------------
+// ✅ API Routes
+// -----------------------------
 app.use("/api/subscription", subscriptionRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/plans", planRoutes);

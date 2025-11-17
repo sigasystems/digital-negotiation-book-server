@@ -65,8 +65,31 @@ export const createCountry = async (data, user) => {
   return { created };
 };
 
-export const getCountries = async (query, ownerid) => {
-  return countryRepository.list(query, ownerid);
+export const getCountries = async (ownerid, { pageIndex = 0, pageSize = 10 }) => {
+  const { count, rows } = await countryRepository.list(ownerid,{
+    pageIndex,
+    pageSize,
+  });
+
+  const formatted = rows.map((c) => c.toJSON());
+
+  const totalItems = count;
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  const totalActive = formatted.filter((x) => x.status === "active" && !x.isDeleted).length;
+  const totalInactive = formatted.filter((x) => x.status === "inactive" && !x.isDeleted).length;
+  const totalDeleted = formatted.filter((x) => x.isDeleted === true).length;
+
+  return {
+    data: formatted,
+    totalItems,
+    totalPages,
+    totalActive,
+    totalInactive,
+    totalDeleted,
+    pageIndex,
+    pageSize,
+  };
 };
 
 export const getCountryById = async (id, user) => {
@@ -84,9 +107,18 @@ export const getCountryById = async (id, user) => {
   return { country };
 };
 
-export const searchCountry = async (query, ownerid) => {
-  const { term = "" } = query;
-  return countryRepository.search(term.trim(), ownerid);
+export const searchCountry = async ({ code, country }, user) => {
+  const ownerid = user?.businessOwnerId;
+  if (!ownerid) return { error: "Unauthorized: ownerId missing" };
+
+  const criteria = {};
+
+  if (code) criteria.code = code.trim();
+  if (country) criteria.country = country.trim();
+
+  const results = await countryRepository.search(criteria, ownerid);
+
+  return results;
 };
 
 export const updateCountry = async (id, data, ownerid) => {
