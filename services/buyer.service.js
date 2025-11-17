@@ -293,6 +293,7 @@ export const buyerService = {
   },
 
   becomeBusinessOwner: async (userEmail, data) => {
+    console.log('data log on buyer serivce page.....',data);
     const existingUser = await buyersRepository.findUserByEmail(userEmail);
   if (!existingUser) return { error: "User not found" };
 
@@ -333,6 +334,7 @@ export const buyerService = {
     is_approved: true,
   });
   // ✅ only update if payment exists
+  console.log('Payment from buyer serivce...',payment);
 if (payment) {
   await payment.update({
     sendInvoice: true,
@@ -346,6 +348,7 @@ if (payment) {
 
 // ✅ determine endDate using Stripe if subscriptionId is available
 let endDate = new Date(); // fallback
+console.log('data subscription id from buyer service....',data.subscriptionId)
 if (data.subscriptionId) {
   try {
     const stripeSub = await stripe.subscriptions.retrieve(data.subscriptionId);
