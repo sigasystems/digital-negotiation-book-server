@@ -14,27 +14,36 @@ export const create = async (data) => {
   return await Country.create(data);
 };
 
-export const list = async ({ page = 1, limit = 20 }) => {
-  const offset = (page - 1) * limit;
+export const list = async (ownerid, { pageIndex = 0, pageSize = 10 }) => {
+  const offset = pageIndex * pageSize;
+
   return await Country.findAndCountAll({
-    limit: Number(limit),
+    where: { ownerid },
+    limit: Number(pageSize),
     offset: Number(offset),
-    order: [["country", "ASC"]],
+    order: [
+      [sequelize.fn("LOWER", sequelize.col("country")), "ASC"]],
   });
 };
 
-export const search = async (term) => {
-  return await Country.findAll({
-    where: {
-      [Op.or]: [
-        { country: { [Op.iLike]: `%${term}%` } },
-        { code: { [Op.iLike]: `%${term}%` } },
-      ],
-    },
+export const search = async (criteria, ownerid) => {
+  const whereClause = { ownerid };
+
+  if (criteria.code) {
+    
+    whereClause.code = { [Op.iLike]: `%${criteria.code}%` };
+  }
+
+  if (criteria.country) {
+    
+    whereClause.country = { [Op.iLike]: `%${criteria.country}%` };
+  }
+
+  return Country.findOne({
+    where: whereClause,
     order: [["country", "ASC"]],
   });
 };
-
 export const findById = async (id) => {
   return await Country.findByPk(id);
 };

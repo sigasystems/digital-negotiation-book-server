@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
+import qs from "qs"
 
 import {
   locationRoutes,
@@ -73,6 +74,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 app.use(createSessionMiddleware());
+
+app.set("query parser", str => qs.parse(str));
+
 // -----------------------------
 // ✅ API Routes
 // -----------------------------
