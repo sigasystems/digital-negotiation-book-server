@@ -1,3 +1,108 @@
+// import dotenv from "dotenv";
+// import express from "express";
+// import cors from "cors";
+// import helmet from "helmet";
+// import cookieParser from "cookie-parser";
+
+// import {
+//   locationRoutes,
+//   authRoutes,
+//   superadminRoutes,
+//   businessOwnerRoutes,
+//   productRoutes,
+//   offerDraftRoute,
+//   offerRoute,
+//   planRoutes,
+//   paymentRoutes,
+//   subscriptionRoutes,
+//   countryRoutes,
+// } from "./routes/index.js";
+
+// import { notFoundHandler, errorHandler } from "./handlers/index.js";
+// import { createSessionMiddleware } from "./utlis/session.js";
+// import stripeWebhookcontroller from "./controllers/stripeWebhook.controller.js";
+
+// dotenv.config();
+
+// const app = express();
+
+// // -----------------------------
+// // ✅ Dynamic CORS Configuration
+// // -----------------------------
+// const allowedOrigins = [
+//   "https://dnb.sigasystems.com",                 // your frontend (production)
+//   "https://digital-negotiation-book.vercel.app", // if you preview frontend on vercel
+//   "http://localhost:5173",                       // local dev
+//   "http://localhost:3000",                       // local dev alt
+// ];
+
+// const corsOptions = {
+//   origin: function (origin, callback) {
+//     if (!origin || allowedOrigins.includes(origin)) {
+//       callback(null, true);
+//     } else {
+//       console.warn(`❌ CORS blocked for origin: ${origin}`);
+//       callback(new Error("Not allowed by CORS"));
+//     }
+//   },
+//   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+//   credentials: true,
+// };
+
+// // ✅ Apply CORS before all routes
+// app.use(cors(corsOptions));
+
+// // ✅ Explicitly handle preflight OPTIONS requests (Express 5-safe)
+// app.options(/.*/, cors(corsOptions));
+
+// // -----------------------------
+// // ✅ Webhook route (before body parser)
+// // -----------------------------
+// // Webhook must be registered before body parsers
+// app.post(
+//   "/api/subscription/webhook",
+//   cors(), // optional: allow all origins for webhook
+//   express.raw({ type: "application/json" }), // raw body for signature verification
+//   stripeWebhookcontroller
+// );
+
+// // then general body parsers
+// app.use(express.json());
+// app.use(express.urlencoded({ extended: true }));
+
+// // -----------------------------
+// // ✅ Middleware stack
+// // -----------------------------
+// app.use(helmet());
+
+// app.use(cookieParser());
+
+// app.use(createSessionMiddleware());
+// // -----------------------------
+// // ✅ API Routes
+// // -----------------------------
+// app.use("/api/subscription", subscriptionRoutes);
+// app.use("/api/auth", authRoutes);
+// app.use("/api/plans", planRoutes);
+// app.use("/api/payments", paymentRoutes);
+// app.use("/api/superadmin", superadminRoutes);
+// app.use("/api/business-owner", businessOwnerRoutes);
+// app.use("/api/offer-draft", offerDraftRoute);
+// app.use("/api/product", productRoutes);
+// app.use("/api/location", locationRoutes);
+// app.use("/api/country", countryRoutes);
+// app.use("/api/offer", offerRoute);
+
+// // -----------------------------
+// // ✅ Error handlers
+// // -----------------------------
+// app.use(notFoundHandler);
+// app.use(errorHandler);
+
+// export default app;
+
+
+
 import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
@@ -16,63 +121,61 @@ import {
   planRoutes,
   paymentRoutes,
   subscriptionRoutes,
-  countryRoutes
+  countryRoutes,
 } from "./routes/index.js";
 
 import { notFoundHandler, errorHandler } from "./handlers/index.js";
-import { stripeWebhook } from "./controllers/stripeWebhook.controller.js";
 import { createSessionMiddleware } from "./utlis/session.js";
 
-dotenv.config();
+import stripeWebhookController from "./controllers/stripeWebhook.controller.js";
 
+dotenv.config();
 const app = express();
 
-// -----------------------------
-// ✅ Dynamic CORS Configuration
-// -----------------------------
+// ---------------------------
+// CORS
+// ---------------------------
 const allowedOrigins = [
-  "https://dnb.sigasystems.com",                 // your frontend (production)
-  "https://digital-negotiation-book.vercel.app", // if you preview frontend on vercel
-  "http://localhost:5173",                       // local dev
-  "http://localhost:3000",                       // local dev alt
+  "https://dnb.sigasystems.com",
+  "https://digital-negotiation-book.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:3000",
 ];
 
 const corsOptions = {
-  origin: function (origin, callback) {
+  origin(origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      console.warn(`❌ CORS blocked for origin: ${origin}`);
       callback(new Error("Not allowed by CORS"));
     }
   },
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
 };
 
-// ✅ Apply CORS before all routes
 app.use(cors(corsOptions));
-
-// ✅ Explicitly handle preflight OPTIONS requests (Express 5-safe)
+// app.options("*", cors(corsOptions));
 app.options(/.*/, cors(corsOptions));
 
-// -----------------------------
-// ✅ Webhook route (before body parser)
-// -----------------------------
+
+// ---------------------------
+// Stripe Webhook (MUST COME BEFORE BODY PARSER)
+// ---------------------------
 app.post(
   "/api/subscription/webhook",
+  cors(), // allow all origins for Stripe
   express.raw({ type: "application/json" }),
-  stripeWebhook
+  stripeWebhookController
 );
 
-// -----------------------------
-// ✅ Middleware stack
-// -----------------------------
-app.use(helmet());
+// ---------------------------
+// General Middleware
+// ---------------------------
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(helmet());
 app.use(cookieParser());
-
 app.use(createSessionMiddleware());
 
 app.set("query parser", str => qs.parse(str));
@@ -92,9 +195,9 @@ app.use("/api/location", locationRoutes);
 app.use("/api/country", countryRoutes);
 app.use("/api/offer", offerRoute);
 
-// -----------------------------
-// ✅ Error handlers
-// -----------------------------
+// ---------------------------
+// Error Handlers
+// ---------------------------
 app.use(notFoundHandler);
 app.use(errorHandler);
 
