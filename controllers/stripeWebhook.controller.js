@@ -1,88 +1,24 @@
-// import Stripe from "stripe";
-// import { PlanRepository } from "../repositories/plan.repository.js";
-// const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-// // ✅ Webhook handler (must use raw body middleware)
-// export const stripeWebhook = async (req, res) => {
-//   const sig = req.headers["stripe-signature"];
-//   let event;
-//   try {
-//     event = stripe.webhooks.constructEvent(
-//       req.rawBody,
-//       sig,
-//       process.env.STRIPE_WEBHOOK_SECRET
-//     );
-//   } catch (err) {
-//     console.error("Webhook signature verification failed:", err.message);
-//     return res.status(400).send(`Webhook Error: ${err.message}`);
-//   }
-//   try {
-//     switch (event.type) {
-//       // First-time subscription
-//       case "checkout.session.completed": {
-//         const session = event.data.object;
-//         const subscription = await stripe.subscriptions.retrieve(session.subscription)
-//         await PlanRepository.upsertSubscription({
-//           userId: session.metadata.userId,
-//           planId: session.metadata.planId,
-//           stripeCustomerId: session.customer,
-//           subscriptionId: subscription.id,
-//           status: subscription.status,
-//           startDate: new Date(subscription.start_date * 1000),
-//           endDate: new Date(subscription.current_period_end * 1000),
-//         });
-//         break;
-//       }
-//       // Stripe auto renewals
-//       case "invoice.payment_succeeded": {
-//         const invoice = event.data.object;
-//         await PlanRepository.markPaid(invoice.subscription);
-//         break;
-//       }
-//       // Subscription canceled (manually or failed payment)
-//       case "customer.subscription.deleted": {
-//         const subscription = event.data.object;
-//         await PlanRepository.markCanceled(subscription.id);
-//         break;
-//       }
-//       default:
-//         console.log(`Unhandled event type: ${event.type}`);
-//     }
+// controllers/stripeWebhook.controller.js
 
-//     res.sendStatus(200);
-//   } catch (err) {
-//     console.error("Error processing webhook event:", err);
-//     res.sendStatus(500);
-//   }
-// };
-
-// ...existing code...
 import Stripe from "stripe";
-import getRawBody from "raw-body";
 import { PlanRepository } from "../repositories/plan.repository.js";
 import Payment from "../models/payment.model.js";
+import Subscription from "../models/subscription.model.js"; // if exists
 
-// ✅ Webhook handler (must use raw body middleware)
-export const stripeWebhook = async (req, res) => {
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+const stripeWebhookController = async (req, res) => {
   const sig = req.headers["stripe-signature"];
-  let event;
-  let rawBody;
-  try {
-    if (req.body && Buffer.isBuffer(req.body)) {
-      rawBody = req.body;
-    } else if (req.rawBody && Buffer.isBuffer(req.rawBody)) {
-      rawBody = req.rawBody;
-    } else {
-      rawBody = await getRawBody(req);
-    }
-  } catch (readErr) {
-    console.error("Failed to read raw body:", readErr);
-    return res.status(400).send("Invalid request body");
-  }
+  console.log("Is raw body a buffer?", Buffer.isBuffer(req.body));
 
+  let event;
+
+  // ------------------------------
+  // Verify Stripe Signature
+  // ------------------------------
   try {
     event = stripe.webhooks.constructEvent(
-      rawBody,
+      req.body,
       sig,
       process.env.STRIPE_WEBHOOK_SECRET
     );
@@ -90,70 +26,76 @@ export const stripeWebhook = async (req, res) => {
     console.error("Webhook signature verification failed:", err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
+
+  console.log(`➡️ Webhook received: ${event.type}`);
+
+  // ------------------------------
+  // Handle Webhook Events
+  // ------------------------------
   try {
     switch (event.type) {
-      // First-time subscription
+      // ----------------------------------------------------------
+      // SUBSCRIPTION CHECKOUT SUCCESS
+      // ----------------------------------------------------------
       case "checkout.session.completed": {
         const session = event.data.object;
-        console.log("session log from checkout session......", session);
 
-        // Safely get subscription ID
-        const subscriptionExposedId = session.subscription || session.id;
-
-        if (!subscriptionExposedId) {
-          console.error(
-            "Missing subscription ID in checkout.session.completed:",
-            session
-          );
-          break; // exit early to avoid 500
+        // Only process if the checkout mode is subscription
+        if (session.mode !== "subscription") {
+          console.log("Skipping non-subscription checkout session.");
+          break;
         }
 
-        // Retrieve subscription from Stripe
-        const subscription = await stripe.subscriptions.retrieve(
-          subscriptionExposedId
-        );
+        console.log("Subscription checkout session:", session);
 
-        // Calculate end date safely
-        const endDate = subscription.current_period_end
-          ? new Date(subscription.current_period_end * 1000)
-          : new Date(); // fallback
+        const subscriptionId = session.subscription;
+
+        if (!subscriptionId) {
+          console.error("No subscription id in checkout session.");
+          break;
+        }
+
+        // Retrieve subscription object from Stripe
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 
         await PlanRepository.upsertSubscription({
           userId: session.metadata.userId,
           planId: session.metadata.planId,
           stripeCustomerId: session.customer,
-          // subscriptionId: subscription.id,
           status: subscription.status,
           startDate: new Date(subscription.start_date * 1000),
-          endDate: endDate,
+          endDate: new Date(subscription.current_period_end * 1000),
         });
+
         break;
       }
-      // Stripe auto renewals
+
+      // ----------------------------------------------------------
+      // SUBSCRIPTION RENEWAL PAYMENT
+      // ----------------------------------------------------------
       case "invoice.payment_succeeded": {
         const invoice = event.data.object;
-        // console.log('Invoice.....',invoice);
-        // console.log('Invoice pdf.....',invoice.invoice_pdf);
 
         if (!invoice.subscription) {
-          console.log("Skipping invoice: no subscription attached", invoice.id);
-          break; // exit early
+          console.log("Skipping invoice without subscription:", invoice.id);
+          break;
         }
 
-        await PlanRepository.markPaid(invoice.subscription);
-        // 1. Mark payment record as PAID
+        const subscriptionId = invoice.subscription;
+
+        await PlanRepository.markPaid(subscriptionId);
+
+        // Update payment record
         await Payment.update(
           {
             status: "success",
-            // subscriptionId: ,
             invoicePdf: invoice.invoice_pdf,
           },
-          { where: { transactionId: sessionId } }
+          { where: { transactionId: invoice.id } }
         );
 
-        // 2. Update subscription endDate
+        // Fetch subscription to update its end period
         const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
-        console.log("stripeSub......👍", stripeSub);
 
         await Subscription.update(
           {
@@ -165,19 +107,28 @@ export const stripeWebhook = async (req, res) => {
 
         break;
       }
-      // Subscription canceled (manually or failed payment)
+
+      // ----------------------------------------------------------
+      // SUBSCRIPTION CANCELLED OR PAYMENT FAILED
+      // ----------------------------------------------------------
       case "customer.subscription.deleted": {
         const subscription = event.data.object;
         await PlanRepository.markCanceled(subscription.id);
         break;
       }
+
+      // ----------------------------------------------------------
+      // DEFAULT (IGNORE)
+      // ----------------------------------------------------------
       default:
         console.log(`Unhandled event type: ${event.type}`);
     }
 
-    res.sendStatus(200);
+    return res.sendStatus(200);
   } catch (err) {
     console.error("Error processing webhook event:", err);
-    res.sendStatus(500);
+    return res.sendStatus(500);
   }
 };
+
+export default stripeWebhookController;

@@ -145,9 +145,9 @@ upgradeOrRenewPlan : async (userId, planId, billingCycle = "monthly") => {
     if (!plan) throw new Error("Plan not found");
 
     // 2️⃣ Determine Stripe priceId
-    const priceId = billingCycle === "yearly" ? plan.stripePriceMonthlyId : plan.stripePriceYearlyId;
+    const priceId = billingCycle === "yearly" ? plan.stripePriceYearlyId : plan.stripePriceMonthlyId;
     console.log('price id....', priceId);
-    if (!priceId) throw new Error(`Stripe price ID missing for ${billingCycle} plan`);
+    if (!priceId) throw new Error(`Stripe prsice ID missing for ${billingCycle} plan`);
 
     // 3️⃣ Fetch user
     const user = await User.findByPk(userId);

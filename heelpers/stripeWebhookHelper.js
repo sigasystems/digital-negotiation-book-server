@@ -8,7 +8,7 @@ async function handleSubscriptionCreated(session) {
   await User.create({
     userId,
     planId,
-    // subscriptionId: subscriptionId,
+    subscriptionId: subscriptionId,
     startDate: new Date(),
     expiryDate: new Date(session.expires_at * 1000),
     status: "active",
