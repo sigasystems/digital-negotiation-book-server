@@ -9,6 +9,14 @@ const Payment = sequelize.define("Payment", {
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
+    userId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: {
+        model: "Users",
+        key: "id",
+      },
+    },
     businessOwnerId: {
       type: DataTypes.UUID,
       allowNull: true,
@@ -42,14 +50,10 @@ const Payment = sequelize.define("Payment", {
     subscriptionId: {
       type: DataTypes.STRING,
       allowNull: true,
-      unique: true,
     },
     invoicePdf: {
       type: DataTypes.STRING,
     },
-    // paidAt: {
-    //   type: DataTypes.DATE,
-    // },
   }, {
     timestamps: true,
     tableName: "payments",   

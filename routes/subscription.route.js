@@ -67,10 +67,16 @@ router.post("/create-checkout-session", async (req, res) => {
           quantity: 1,
         },
       ],
+      metadata: {
+        userId: user.id,
+        planId: plan.id,
+        billingCycle,
+      },
       success_url: `${process.env.CLIENT_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.CLIENT_URL}/cancel`,
     });
-    console.log('hiiii');
+
+    console.log("✅ Stripe checkout session created:", session.id);
 
     // 8️⃣ Save payment as pending
     await Payment.create({
@@ -81,7 +87,8 @@ router.post("/create-checkout-session", async (req, res) => {
       transactionId: session.id,
       subscriptionId: session.subscription || null,
     });
-    console.log('buyy')
+
+    console.log("✅ Payment record created");
     res.json({ url: session.url });
   } catch (err) {
     console.error("Error in create-checkout-session:", err);
