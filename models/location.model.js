@@ -10,12 +10,19 @@ const Location = sequelize.define("Location", {
      ownerId: {
     type: DataTypes.UUID,
     allowNull: false,
+      field:"ownerid",
     references: {
-      model: 'business_owners',
-      key: 'id'
-    }
+      model: "business_owners",
+      key: "id",
+      },
   },
-  locationName: {
+
+  city: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+
+  state: {
     type: DataTypes.STRING,
     allowNull: false,
   },
@@ -24,17 +31,18 @@ const Location = sequelize.define("Location", {
     allowNull: false,
     unique: true,
   },
-  portalCode: {
-    type: DataTypes.STRING,
-    allowNull: false,
+  createdAt: {
+    type: DataTypes.DATE,
+      field: "createdat",
   },
-  country: {
-    type: DataTypes.STRING,
-    allowNull: false,
+    updatedAt: {
+    type: DataTypes.DATE,
+      field: "updatedat",
   },
-  countryId: {
+  countryid: {
       type: DataTypes.UUID,
       allowNull: false,
+      field: "countryid",
       references: {
         model: "countries",
         key: "id",
@@ -43,6 +51,11 @@ const Location = sequelize.define("Location", {
 }, {
   tableName: "locations",
   timestamps: true,
+    indexes: [
+      { fields: ["ownerId"] },
+      { fields: ["city"] },
+      { fields: ["state"] },
+    ],
 });
 
 export default Location;

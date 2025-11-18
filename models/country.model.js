@@ -16,26 +16,36 @@ const Country = sequelize.define(
       unique: true,
     },
 
-    country: {
+    name: {
       type: DataTypes.STRING,
       allowNull: false,
       unique: true,
     },
 
-    ownerid: {
+    ownerId: {
       type: DataTypes.UUID,
       allowNull: false,
+      field: "ownerid",
       references: {
         model: "business_owners",
         key: "id",
       },
+      onUpdate: "CASCADE",
+      onDelete: "RESTRICT",
+      },
+
+      createdAt: {
+        type: DataTypes.DATE,
+        field: "createdat",
+      },
+      updatedAt: {
+        type: DataTypes.DATE,
+        field: "updatedat",
     },
   },
   {
     tableName: "countries",
     timestamps: true,
-    createdAt: "createdAt",
-    updatedAt: "updatedAt",
   }
 );
 

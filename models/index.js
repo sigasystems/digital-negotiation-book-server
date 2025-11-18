@@ -63,8 +63,8 @@ OfferSizeBreakup.belongsTo(OfferProduct, {
   as: "offerProduct",
 });
 
-Country.hasMany(Location, { foreignKey: "countryId" });
-Location.belongsTo(Country, { foreignKey: "countryId" });
+// Country.hasMany(Location, { foreignKey: "countryId" });
+// Location.belongsTo(Country, { foreignKey: "countryId" });
 
 export {
   sequelize,
