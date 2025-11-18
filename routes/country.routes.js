@@ -13,6 +13,8 @@ router
 
 router.get("/search", countryController.searchCountry);
 
+router.get("/all",countryController.getAllCountries)
+
 router
   .route("/:id")
   .get(countryController.getCountryById)

@@ -39,7 +39,7 @@ const Location = sequelize.define("Location", {
     type: DataTypes.DATE,
       field: "updatedat",
   },
-  countryid: {
+  countryId: {
       type: DataTypes.UUID,
       allowNull: false,
       field: "countryid",

@@ -17,12 +17,14 @@ const findByCodes = async (codes, ownerId, options = {}) => {
 };
 
 const findAll = async (ownerId) => {
+  if (!ownerId) throw new Error("ownerId is required");
   return await Location.findAll({
     where: { ownerId },
     order: [["city", "ASC"]],
     include: [
       {
         model: Country,
+        as: "country",
         attributes: ["id", "name", "code"],
       },
     ],

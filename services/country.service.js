@@ -1,6 +1,6 @@
 import { updateCountrySchema } from "../validations/country.schema.js";
 import countryRepository from "../repositories/country.repository.js";
-import { locationsArraySchema } from "../validations/location.validation.js";
+import { locationsArraySchema, updateLocationSchema } from "../validations/location.validation.js";
 import {Country,Location} from "../models/index.js";
 
 const assertOwnerMatch = (recordOwnerId, userOwnerId) => {
@@ -72,46 +72,30 @@ export const createWithCountry = async (data, user) => {
   return { data: createdLocations };
 };
 
-export const getCountries = async (ownerid, { pageIndex = 0, pageSize = 10 }) => {
-  const { count, rows } = await countryRepository.list(ownerid,{
-    pageIndex,
-    pageSize,
-  });
+export const getCountries = async (ownerId, pagination) => {
+  if (!ownerId) return { error: "ownerId is required" };
+  return await countryRepository.list(ownerId, pagination);
+};
 
-  const formatted = rows.map((c) => c.toJSON());
-
-  const totalItems = count;
-  const totalPages = Math.ceil(totalItems / pageSize);
-
-  const totalActive = formatted.filter((x) => x.status === "active" && !x.isDeleted).length;
-  const totalInactive = formatted.filter((x) => x.status === "inactive" && !x.isDeleted).length;
-  const totalDeleted = formatted.filter((x) => x.isDeleted === true).length;
-
-  return {
-    data: formatted,
-    totalItems,
-    totalPages,
-    totalActive,
-    totalInactive,
-    totalDeleted,
-    pageIndex,
-    pageSize,
-  };
+export const getAllCountries = async () => {
+  const countries = await countryRepository.getAll();
+  return countries;
 };
 
 export const getCountryById = async (id, user) => {
   const ownerid = user?.businessOwnerId;
 
-  const country = await countryRepository.findById(id);
-  if (!country) return { notFound: true };
+  const location = await countryRepository.findById(id);
+  if (!location) return { notFound: true };
 
-  try {
-    assertOwnerMatch(country.ownerid, ownerid);
-  } catch {
-    return { unauthorized: true };
-  }
+  if (location.ownerId !== ownerid) return { forbidden: true };
 
-  return { country };
+  const country = location.country || null;
+
+  return {
+    location: location.toJSON(),
+    country: country ? country.toJSON() : null,
+  };
 };
 
 export const searchCountry = async ({ code, country }, user) => {
@@ -128,24 +112,23 @@ export const searchCountry = async ({ code, country }, user) => {
   return results;
 };
 
-export const updateCountry = async (id, data, ownerid) => {
-  const validation = updateCountrySchema.safeParse(data);
+export const updateCountry = async (id, data, ownerId) => {
+  const validation = updateLocationSchema.safeParse(data);
   if (!validation.success) return { error: validation.error.issues };
 
-  const country = await countryRepository.findById(id);
-  if (!country) return { notFound: true };
+  const location = await countryRepository.findById(id);
+  if (!location) return { notFound: true };
+  if (location.ownerId !== ownerId) return { unauthorized: true };
 
-  try {
-    assertOwnerMatch(country.ownerid, ownerid);
-  } catch {
-    return { unauthorized: true };
-  }
+  const updatedData = {
+    city: validation.data.city,
+    state: validation.data.state,
+    code: validation.data.code,
+    countryId: validation.data.countryId,
+  };
 
-  const exists = await countryRepository.findConflict(id, validation.data, ownerid);
-  if (exists) return { conflict: exists };
-
-  const updated = await countryRepository.update(id, validation.data);
-  return { updated };
+  const updatedLocation = await countryRepository.update(id, updatedData);
+  return { updated: updatedLocation };
 };
 
 export const deleteCountry = async (id, ownerid) => {
