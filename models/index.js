@@ -63,6 +63,11 @@ OfferSizeBreakup.belongsTo(OfferProduct, {
   as: "offerProduct",
 });
 
+Location.belongsTo(Country, {
+  foreignKey: "countryId",
+  as: "country",
+});
+
 // Country.hasMany(Location, { foreignKey: "countryId" });
 // Location.belongsTo(Country, { foreignKey: "countryId" });
 
