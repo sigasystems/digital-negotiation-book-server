@@ -176,13 +176,26 @@ export const checkBusinessOwnerUnique = asyncHandler(async (req, res) => {
     // Check email if provided
     if (email) {
       const existingEmail = await userRepository.findByEmail(email);
-      results.email = {
-        exists: !!existingEmail,
-        field: "email",
-        message: existingEmail
-          ? "Email already registered. Please use another."
-          : "Email is available.",
-      };
+    
+    if(existingEmail)
+      {
+        results.email = {
+          exists: !!existingEmail,
+          field: "email",
+          message: existingEmail
+            ? "Email already registered. Please use another."
+            : "Email is available.",
+        };
+      }
+      else{
+        results.email = {
+          exists: !!existingEmail,
+          field: "email",
+          message: existingEmail
+            ? "Email already registered. Please use another."
+            : "Email is available.",
+        };
+      }
     }
 
     // Check business name if provided
@@ -208,15 +221,6 @@ export const checkBusinessOwnerUnique = asyncHandler(async (req, res) => {
           : "Registration number is available.",
       };
     }
-
-    // If no fields provided, return error
-    // if (Object.keys(results).length === 0) {
-    //   return errorResponse(
-    //     res,
-    //     400,
-    //     "At least one field (email, businessName, or registrationNumber) is required."
-    //   );
-    // }
 
     // Return all results
     return successResponse(res, 200, "Validation completed", results);
