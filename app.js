@@ -155,22 +155,19 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-// app.options("*", cors(corsOptions));
 app.options(/.*/, cors(corsOptions));
 
-
 // ---------------------------
-// Stripe Webhook (MUST COME BEFORE BODY PARSER)
+// ⚠️ CRITICAL: Stripe Webhook MUST COME BEFORE BODY PARSER
 // ---------------------------
 app.post(
   "/api/subscription/webhook",
-  cors(), // allow all origins for Stripe
-  express.raw({ type: "application/json" }),
+  express.raw({ type: "application/json" }), // Preserve raw body for signature verification
   stripeWebhookController
 );
 
 // ---------------------------
-// General Middleware
+// General Middleware (AFTER webhook route)
 // ---------------------------
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
