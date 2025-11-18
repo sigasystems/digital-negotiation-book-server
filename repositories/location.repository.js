@@ -1,33 +1,55 @@
 import { Op } from "sequelize";
-import { Location } from "../models/index.js";
+import { Location, Country } from "../models/index.js";
 
-const createMany = async (locations) => {
-  return await Location.bulkCreate(locations);
+const createMany = async (locations, options = {}) => {
+  return await Location.bulkCreate(locations, { returning: true, ...options });
 };
 
-const findByCodes = async (codes) => {
-  return await Location.findAll({ where: { code: codes } });
+const findByCodes = async (codes, ownerId, options = {}) => {
+  if (!codes || codes.length === 0) return [];
+  return await Location.findAll({
+    where: {
+      ownerId,
+      code: { [Op.in]: codes },
+    },
+    ...options,
+  });
 };
 
 const findAll = async (ownerId) => {
-  if (!ownerId) return [];
-  return await Location.findAll({ where: { ownerId } });
+  return await Location.findAll({
+    where: { ownerId },
+    order: [["city", "ASC"]],
+    include: [
+      {
+        model: Country,
+        attributes: ["id", "name", "code"],
+      },
+    ],
+  });
 };
 
 const findById = async (id) => {
-  return await Location.findByPk(id);
+  return await Location.findByPk(id, {
+    include: [
+      {
+        model: Country,
+        attributes: ["id", "name", "code"],
+      },
+    ],
+  });
 };
 
-const findByCode = async (code) => {
-  return await Location.findOne({ where: { code } });
+const findByCode = async (code, ownerId) => {
+  return await Location.findOne({ where: { code, ownerId }, });
 };
 
-const update = async (location, data) => {
-  return await location.update(data);
+const update = async (locationInstance, data) => {
+  return await locationInstance.update(data);
 };
 
-const remove = async (location) => {
-  return await location.destroy();
+const remove = async (locationInstance) => {
+  return await locationInstance.destroy();
 };
 
 const search = async ({ where, limit, offset }) => {
@@ -35,7 +57,13 @@ const search = async ({ where, limit, offset }) => {
     where,
     limit,
     offset,
-    order: [["locationName", "ASC"]],
+    order: [["city", "ASC"]],
+    include: [
+      {
+        model: Country,
+        attributes: ["id", "name", "code"],
+      },
+    ],
   });
 };
 

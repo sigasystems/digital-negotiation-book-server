@@ -6,13 +6,11 @@ import * as countryService from "../services/country.service.js";
 export const createCountry = asyncHandler(async (req, res) => {
   authorizeRoles(req, ["business_owner"]);
 
-  const result = await countryService.createCountry(req.body, req.user);
+  const result = await countryService.createWithCountry(req.body, req.user);
 
   if (result.error) return errorResponse(res, 400, "Validation failed", result.error);
-  if (result.conflict)
-    return errorResponse(res, 409, "Country already exists with code/country", result.conflict);
 
-  return successResponse(res, 201, "Country created successfully", result.created);
+  return successResponse(res, 201, "Location created successfully", result.data);
 });
 
 export const getCountries = asyncHandler(async (req, res) => {
