@@ -1,9 +1,10 @@
 // controllers/stripeWebhook.controller.js
 
 import Stripe from "stripe";
-import {Payment} from "../models/index.js";
+import { Payment } from "../models/index.js";
 import Subscription from "../models/subscription.model.js";
 import Plan from "../models/plan.model.js";
+import User from "../models/user.model.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -78,7 +79,7 @@ const stripeWebhookController = async (req, res) => {
         console.log("💳 Payment found:", payment.id);
 
         // Update payment with subscription ID and mark as success
-        await Payment.update({
+        await payment.update({
           subscriptionId: session.subscription,
           status: "success",
         });
@@ -246,7 +247,7 @@ const stripeWebhookController = async (req, res) => {
         });
 
         if (!paymentCreated) {
-          await payment.update({
+          await Payment.update({
             status: "success",
             invoicePdf: invoice.invoice_pdf,
           });
