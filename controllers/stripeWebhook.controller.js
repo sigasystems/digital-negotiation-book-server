@@ -1,7 +1,7 @@
 // controllers/stripeWebhook.controller.js
 
 import Stripe from "stripe";
-import Payment from "../models/payment.model.js";
+import {Payment} from "../models/index.js";
 import Subscription from "../models/subscription.model.js";
 import Plan from "../models/plan.model.js";
 
@@ -70,13 +70,15 @@ const stripeWebhookController = async (req, res) => {
 
         if (!payment) {
           console.error("❌ Payment record not found for session:", session.id);
+          console.error("   This is normal for Stripe CLI test events.");
+          console.error("   For real checkouts, payment record must exist.");
           break;
         }
 
         console.log("💳 Payment found:", payment.id);
 
         // Update payment with subscription ID and mark as success
-        await payment.update({
+        await Payment.update({
           subscriptionId: session.subscription,
           status: "success",
         });
