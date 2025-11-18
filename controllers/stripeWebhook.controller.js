@@ -4,18 +4,11 @@ import Stripe from "stripe";
 import { Payment } from "../models/index.js";
 import Subscription from "../models/subscription.model.js";
 import Plan from "../models/plan.model.js";
-import User from "../models/user.model.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 const stripeWebhookController = async (req, res) => {
   const sig = req.headers["stripe-signature"];
-  
-  // Critical: Log raw body type for debugging
-  console.log("📥 Webhook received");
-  console.log("   Raw body is Buffer?", Buffer.isBuffer(req.body));
-  console.log("   Signature present?", !!sig);
-  console.log("   Content-Type:", req.headers["content-type"]);
 
   if (!sig) {
     console.error("❌ No signature header found");
@@ -35,14 +28,10 @@ const stripeWebhookController = async (req, res) => {
       process.env.STRIPE_WEBHOOK_SECRET
     );
   } catch (err) {
-    console.error("❌ Webhook signature verification failed:", err.message);
-    console.error("   Body type:", typeof req.body);
-    console.error("   Body is Buffer?", Buffer.isBuffer(req.body));
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  console.log(`✅ Webhook verified: ${event.type}`);
-  console.log(`   Event ID: ${event.id}`);
+
 
   // ------------------------------
   // Handle Webhook Events
@@ -54,10 +43,6 @@ const stripeWebhookController = async (req, res) => {
       // ----------------------------------------------------------
       case "checkout.session.completed": {
         const session = event.data.object;
-        console.log("🛒 Checkout session completed:", session.id);
-        console.log("   Mode:", session.mode);
-        console.log("   Subscription ID:", session.subscription);
-
         // Only process subscription checkouts
         if (session.mode !== "subscription" || !session.subscription) {
           console.log("⚠️ Not a subscription checkout, skipping");
@@ -76,7 +61,6 @@ const stripeWebhookController = async (req, res) => {
           break;
         }
 
-        console.log("💳 Payment found:", payment.id);
 
         // Update payment with subscription ID and mark as success
         await payment.update({
@@ -84,7 +68,6 @@ const stripeWebhookController = async (req, res) => {
           status: "success",
         });
 
-        console.log("✅ Payment updated: status=success, subscriptionId=" + session.subscription);
         break;
       }
 
@@ -93,10 +76,6 @@ const stripeWebhookController = async (req, res) => {
       // ----------------------------------------------------------
       case "customer.subscription.created": {
         const stripeSub = event.data.object;
-        console.log("🎉 Subscription created:", stripeSub.id);
-        console.log("   Status:", stripeSub.status);
-        console.log("   Customer:", stripeSub.customer);
-
         // Find payment by subscriptionId
         const payment = await Payment.findOne({
           where: { subscriptionId: stripeSub.id },
@@ -107,16 +86,12 @@ const stripeWebhookController = async (req, res) => {
           break;
         }
 
-        console.log("💳 Payment found:", payment.id);
-
         // Get plan details
         const plan = await Plan.findByPk(payment.planId);
         if (!plan) {
           console.error("❌ Plan not found:", payment.planId);
           break;
         }
-
-        console.log("📋 Plan found:", plan.name);
 
         // Create subscription record in database
         const [subscription, created] = await Subscription.findOrCreate({
@@ -145,7 +120,6 @@ const stripeWebhookController = async (req, res) => {
           });
         }
 
-        console.log(`✅ Subscription ${created ? "created" : "updated"} in database:`, subscription.id);
         break;
       }
 
@@ -154,9 +128,6 @@ const stripeWebhookController = async (req, res) => {
       // ----------------------------------------------------------
       case "customer.subscription.updated": {
         const stripeSub = event.data.object;
-        console.log("🔄 Subscription updated:", stripeSub.id);
-        console.log("   New status:", stripeSub.status);
-
         const subscription = await Subscription.findOne({
           where: { subscriptionId: stripeSub.id },
         });
@@ -166,7 +137,6 @@ const stripeWebhookController = async (req, res) => {
             status: stripeSub.status,
             endDate: new Date(stripeSub.current_period_end * 1000),
           });
-          console.log("✅ Subscription status updated:", stripeSub.status);
         } else {
           console.log("⚠️ Subscription not found in database:", stripeSub.id);
         }
@@ -179,7 +149,6 @@ const stripeWebhookController = async (req, res) => {
       // ----------------------------------------------------------
       case "customer.subscription.deleted": {
         const stripeSub = event.data.object;
-        console.log("🗑️ Subscription deleted:", stripeSub.id);
 
         const subscription = await Subscription.findOne({
           where: { subscriptionId: stripeSub.id },
@@ -190,7 +159,6 @@ const stripeWebhookController = async (req, res) => {
             status: "canceled",
             paymentStatus: "unpaid",
           });
-          console.log("✅ Subscription marked as canceled");
         } else {
           console.log("⚠️ Subscription not found in database:", stripeSub.id);
         }
@@ -203,7 +171,6 @@ const stripeWebhookController = async (req, res) => {
       // ----------------------------------------------------------
       case "invoice.payment_succeeded": {
         const invoice = event.data.object;
-        console.log("💰 Invoice payment succeeded:", invoice.id);
 
         if (!invoice.subscription) {
           console.log("⚠️ Invoice without subscription, skipping");
@@ -214,7 +181,6 @@ const stripeWebhookController = async (req, res) => {
 
         // Retrieve subscription from Stripe
         const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
-        console.log("📦 Subscription retrieved for renewal:", stripeSub.id);
 
         // Update subscription record
         const subscription = await Subscription.findOne({
@@ -227,7 +193,6 @@ const stripeWebhookController = async (req, res) => {
             paymentStatus: "paid",
             endDate: new Date(stripeSub.current_period_end * 1000),
           });
-          console.log("✅ Subscription renewed until:", new Date(stripeSub.current_period_end * 1000));
         } else {
           console.error("❌ Subscription not found:", subscriptionId);
         }
@@ -253,7 +218,6 @@ const stripeWebhookController = async (req, res) => {
           });
         }
 
-        console.log(`✅ Payment ${paymentCreated ? "created" : "updated"} for renewal`);
         break;
       }
 
@@ -262,7 +226,6 @@ const stripeWebhookController = async (req, res) => {
       // ----------------------------------------------------------
       case "invoice.payment_failed": {
         const invoice = event.data.object;
-        console.log("❌ Invoice payment failed:", invoice.id);
 
         if (!invoice.subscription) {
           console.log("⚠️ Invoice without subscription, skipping");
@@ -281,7 +244,6 @@ const stripeWebhookController = async (req, res) => {
             status: "past_due",
             paymentStatus: "unpaid",
           });
-          console.log("⚠️ Subscription marked as past_due");
         }
 
         // Create or update payment record
@@ -302,8 +264,6 @@ const stripeWebhookController = async (req, res) => {
             status: "failed",
           });
         }
-
-        console.log("❌ Payment marked as failed");
         break;
       }
 

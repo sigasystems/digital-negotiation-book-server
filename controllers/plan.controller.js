@@ -2,10 +2,6 @@ import { errorResponse, successResponse } from "../handlers/responseHandler.js";
 import { asyncHandler } from "../handlers/asyncHandler.js";
 import { authorizeRoles } from "../utlis/helper.js";
 import {PlanService} from "../services/plan.service.js";
-import Payment from "../models/payment.model.js";
-import { PlanRepository } from "../repositories/plan.repository.js";
-import stripe from "../config/stripe.js";
-import User from "../models/user.model.js";
 
 export const createPlan = asyncHandler(async (req, res) => {
   try {
@@ -67,7 +63,6 @@ export const checkPlanByOwner = async (req, res) => {
 
     if (!userId) return errorResponse(res, 400, "User ID missing");
 
-    console.log('user id...', userId);
     const result = await PlanService.checkPlanService(userId);
     return successResponse(res, 200, result);
   } catch (err) {

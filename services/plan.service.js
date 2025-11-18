@@ -11,7 +11,7 @@ import { emailLoginButton } from "../utlis/emailTemplate.js";
 import { createPlanSchema, updatePlanSchema } from "../validations/plan.validation.js";
 
 export const PlanService = {
-    createPlan: async (data) => {
+  createPlan: async (data) => {
     // validate input
     const parsed = createPlanSchema.safeParse(data);
     if (!parsed.success) {
@@ -45,7 +45,7 @@ data.priceYearlyId = data.stripePriceYearlyId;
     return plan;
   },
   
- createCheckoutSession: async (userId, planId, billingCycle) => {
+  createCheckoutSession: async (userId, planId, billingCycle) => {
   const user = await userRepository.findById(userId);
   const plan = await PlanRepository.findById(planId);
   if (!user || !plan) throw new Error("User or Plan not found");
@@ -72,7 +72,7 @@ data.priceYearlyId = data.stripePriceYearlyId;
     metadata: { userId, planId, billingCycle },
   });
   return { url: session.url };
-},
+  },
 
   getPlans: async () => {
     return await PlanRepository.findAll();
@@ -112,7 +112,7 @@ data.priceYearlyId = data.stripePriceYearlyId;
     return plan;
   },
 
-   checkPlanService : async (userId) => {
+  checkPlanService : async (userId) => {
   const subscription = await PlanRepository.getSubscriptionByUser(userId);
 
   if (!subscription) return { hasPlan: false };
@@ -136,9 +136,9 @@ data.priceYearlyId = data.stripePriceYearlyId;
       maxBuyers: subscription.maxBuyers,
     },
   };
-},
+  },
 
-upgradeOrRenewPlan : async (userId, planId, billingCycle = "monthly") => {
+  upgradeOrRenewPlan : async (userId, planId, billingCycle = "monthly") => {
   try {
     // 1️⃣ Fetch plan
     const plan = await Plan.findByPk(planId);
@@ -173,7 +173,7 @@ upgradeOrRenewPlan : async (userId, planId, billingCycle = "monthly") => {
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }], // ✅ must pass valid price ID
       success_url: `${process.env.CLIENT_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.CLIENT_URL}/cancel`,
+      cancel_url: `${process.env.CLIENT_URL}/`,
       metadata: { userId, planId, billingCycle },
     });
 
@@ -186,9 +186,9 @@ upgradeOrRenewPlan : async (userId, planId, billingCycle = "monthly") => {
     console.error("Error in upgradeOrRenewPlan:", err);
     throw err;
   }
-},
+  },
 
- handlePaymentSuccessService : async (sessionId) => {
+  handlePaymentSuccessService : async (sessionId) => {
   const payment = await PlanRepository.getPaymentBySession(sessionId);
   if (!payment) throw new Error("Payment not found");
 
@@ -216,5 +216,5 @@ upgradeOrRenewPlan : async (userId, planId, billingCycle = "monthly") => {
     paymentStatus: "paid",
   });
   return "Plan upgraded successfully";
-}
+  }
 };

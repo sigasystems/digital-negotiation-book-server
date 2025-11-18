@@ -8,7 +8,6 @@ const isProduction = process.env.NODE_ENV === "production";
 let sequelize;
 
 if (!global.sequelize) {
-  console.log("🔗 Initializing new Sequelize instance...");
   global.sequelize = new Sequelize(
     process.env.DB_NAME,
     process.env.DB_USER,
