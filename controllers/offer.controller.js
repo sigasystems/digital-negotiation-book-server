@@ -157,3 +157,16 @@ export const getLatestNegotiation = asyncHandler(async (req, res) => {
     return errorResponse(res, 400, err.message);
   }
 });
+
+export const getNextOfferName = asyncHandler(async (req, res) => {
+  try {
+    authorizeRoles(req, ["business_owner"]);
+    const businessOwnerId = req.user?.businessOwnerId;
+    if (!businessOwnerId)
+      return errorResponse(res, 401, "Unauthorized: businessOwnerId missing");
+    const offerName = await offerService.getNextOfferName(businessOwnerId);
+    return successResponse(res, 200, "Next offer name generated", { offerName });
+  } catch (err) {
+    return errorResponse(res, 400, err.message);
+  }
+});

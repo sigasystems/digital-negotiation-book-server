@@ -18,12 +18,14 @@ const {
   sendOffer, 
   getRecentNegotiations,
   getLatestNegotiation,
-  getNegotiations
+  getNegotiations,
+  getNextOfferName
 } = offerController;
 
 router.use(authenticateJWT);
 
 router.post("/create-offer/:id" , checkPlanLimit("offer"), createOffer);
+router.get("/next-offer-name", getNextOfferName);
 router.get("/get-all", getAllOffers);
 router.get("/get/:id", getOfferById);
 router.patch("/update/:id", updateOffer);

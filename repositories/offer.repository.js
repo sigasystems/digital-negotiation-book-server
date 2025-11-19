@@ -42,7 +42,7 @@ class OfferRepository {
   }
 
   // Offer CRUD
-    async createOffer(data, offerName, user, transaction, buyerId) {
+    async createOffer(data, offerName, user, transaction, buyerId, destination) {
       const offer = await Offer.create({
         businessOwnerId: data.businessOwnerId,
         offerName,
@@ -50,6 +50,7 @@ class OfferRepository {
         fromParty: user.businessName,
         toParty: data.toParty,
         buyerId: buyerId || null,
+        destination,
         origin: data.origin,
         processor: data.processor,
         plantApprovalNumber: data.plantApprovalNumber,
@@ -131,6 +132,14 @@ class OfferRepository {
     });
 
     return { offerBuyers, versions };
+  }
+
+  async findLastOfferByOwner(businessOwnerId) {
+  return Offer.findOne({
+    where: { businessOwnerId },
+    order: [["id", "DESC"]],
+    attributes: ["offerName"],
+  });
   }
 }
 

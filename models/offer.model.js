@@ -35,6 +35,10 @@ const Offer = sequelize.define("Offer", {
     type: DataTypes.STRING, allowNull: false,
     field: "plant_approval_number"
   },
+  destination: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
   brand: { type: DataTypes.STRING, allowNull: false },
   draftName: {
     type: DataTypes.STRING,

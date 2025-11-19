@@ -19,7 +19,7 @@ export const createLocations = asyncHandler(async (req, res) => {
 // GET ALL
 export const getAllLocations = asyncHandler(async (req, res) => {
   authorizeRoles(req, ["business_owner"]);
-  const ownerId = req.user?.id;
+  const ownerId = req.user?.businessOwnerId;
   if (!ownerId) return errorResponse(res, 401, "Unauthorized: ownerId missing");
   const locations = await locationService.getAll(ownerId);
   return successResponse(res, 200, "Locations retrieved successfully", { total: locations.length, locations });

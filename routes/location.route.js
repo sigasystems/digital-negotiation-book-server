@@ -5,11 +5,11 @@ import { checkPlanLimit } from "../middlewares/checkPlanLimit.js";
 
 const router = express.Router();
 
-router.post("/add-location", authenticateJWT ,checkPlanLimit("location"), locationController.createLocations);
-router.get("/getall-locations",authenticateJWT, locationController.getAllLocations);
-router.get("/getlocation/:id", authenticateJWT , locationController.getLocationById);
-router.put("/update-location/:id", authenticateJWT , locationController.updateLocation);
-router.delete("/delete-location/:id", authenticateJWT ,locationController.deleteLocation);
+router.post("/", authenticateJWT ,checkPlanLimit("location"), locationController.createLocations);
+router.get("/",authenticateJWT, locationController.getAllLocations);
+router.get("/:id", authenticateJWT , locationController.getLocationById);
+router.put("/:id", authenticateJWT , locationController.updateLocation);
+router.delete("/:id", authenticateJWT ,locationController.deleteLocation);
 router.get("/search", authenticateJWT , locationController.searchLocations);
 
 export default router;
