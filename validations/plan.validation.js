@@ -14,7 +14,7 @@ export const createPlanSchema = z.object({
   stripeProductId: z.string().optional(),
 stripePriceMonthlyId: z.string().optional(),
 stripePriceYearlyId: z.string().optional(),
-  maxUsers: z.number().int("Must be an integer").nonnegative("Must be positive").optional(),
+  maxLocations: z.number().int("Must be an integer").nonnegative("Must be positive").optional(),
   maxProducts: z.number().int("Must be an integer").nonnegative("Must be positive").optional(),
   maxOffers: z.number().int("Must be an integer").nonnegative("Must be positive").optional(),
   maxBuyers: z.number().int("Must be an integer").nonnegative("Must be positive").optional(),

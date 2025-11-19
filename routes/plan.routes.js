@@ -2,6 +2,7 @@
 import express from "express";
 import planController, { checkPlanByOwner, handlePaymentSuccess, upgradeOrRenewPlan } from "../controllers/plan.controller.js";
 import { authenticateJWT } from "../middlewares/authenticateJWT.js";
+import { getPlanUsage } from "../controllers/planUsage.controller.js";
 
 const router = express.Router();
 
@@ -19,4 +20,5 @@ router.patch("/:id/toggle",authenticateJWT , planController.togglePlanStatus);
 router.get("/check-owner/:userId",  checkPlanByOwner);
 router.post("/upgrade",  upgradeOrRenewPlan);
 router.post("/payment/success", handlePaymentSuccess);
+router.get("/plan-usage/:id", getPlanUsage);
 export default router;

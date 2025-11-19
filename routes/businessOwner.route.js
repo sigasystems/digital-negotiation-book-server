@@ -3,6 +3,7 @@ import { authenticateJWT } from "../middlewares/authenticateJWT.js";
 import {businessOwnerController} from "../controllers/index.js"
 import { checkBusinessOwnerUnique } from "../controllers/sa.businessowner.controller.js";
 import { checkPlanLimit } from "../middlewares/checkPlanLimit.js";
+import checkPlanValidity from "../middlewares/checkPlanValidity.js";
 
 const router = express.Router();
 
@@ -13,6 +14,7 @@ const { addBuyer,checkRegistrationNumber,  deleteBuyer, activateBuyer, deactivat
 router.post(
   "/add-buyer",
   authenticateJWT,
+  checkPlanValidity,
   checkPlanLimit("buyer"),
   addBuyer
 );

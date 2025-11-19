@@ -104,7 +104,7 @@ const stripeWebhookController = async (req, res) => {
             paymentStatus: "paid",
             startDate: new Date(stripeSub.start_date * 1000),
             endDate: new Date(stripeSub.current_period_end * 1000),
-            maxUsers: plan.maxUsers || 0,
+            maxLocations: plan.maxLocations || 0,
             maxProducts: plan.maxProducts || 0,
             maxOffers: plan.maxOffers || 0,
             maxBuyers: plan.maxBuyers || 0,

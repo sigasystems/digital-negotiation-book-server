@@ -2,12 +2,14 @@ import express from "express";
 import productController from "../controllers/product.controller.js";
 import { authenticateJWT } from "../middlewares/authenticateJWT.js";
 import { checkPlanLimit } from "../middlewares/checkPlanLimit.js"; // ← add this
+import checkPlanValidity from "../middlewares/checkPlanValidity.js";
 const router = express.Router();
 
 // 🧭 product creation counts toward product limit
 router.post(
   "/add-product",
   authenticateJWT,
+  checkPlanValidity,
   checkPlanLimit("product"), 
   productController.createProducts
 );

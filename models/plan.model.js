@@ -60,7 +60,7 @@ priceYearly: {
 },
 
     // Limits
-    maxUsers: {
+    maxLocations: {
       type: DataTypes.INTEGER,
       defaultValue: 1,
       validate: { min: 0 },

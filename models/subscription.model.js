@@ -43,7 +43,7 @@ const Subscription = sequelize.define("Subscription", {
     allowNull: true,
   },
   // Feature limits
-  maxUsers: {
+  maxLocations: {
     type: DataTypes.INTEGER,
     defaultValue: 0,
   },
