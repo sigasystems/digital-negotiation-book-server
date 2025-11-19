@@ -98,18 +98,19 @@ export const getCountryById = async (id, user) => {
   };
 };
 
-export const searchCountry = async ({ code, country }, user) => {
-  const ownerid = user?.businessOwnerId;
-  if (!ownerid) return { error: "Unauthorized: ownerId missing" };
+export const searchCountry = async (query, user) => {
+  const ownerId = user?.businessOwnerId;
+  if (!ownerId) throw new Error("Unauthorized: ownerId missing");
 
-  const criteria = {};
+  const locations = await countryRepository.search(query, ownerId);
 
-  if (code) criteria.code = code.trim();
-  if (country) criteria.country = country.trim();
-
-  const results = await countryRepository.search(criteria, ownerid);
-
-  return results;
+  return {
+    data: locations,
+    totalItems: locations.length,
+    totalPages: 1,
+    pageIndex: 0,
+    pageSize: locations.length,
+  };
 };
 
 export const updateCountry = async (id, data, ownerId) => {
@@ -132,15 +133,16 @@ export const updateCountry = async (id, data, ownerId) => {
 };
 
 export const deleteCountry = async (id, ownerid) => {
-  const country = await countryRepository.findById(id);
-  if (!country) return { notFound: true };
+  const location = await countryRepository.findLocationById(id);
+
+  if (!location) return { notFound: true };
 
   try {
-    assertOwnerMatch(country.ownerid, ownerid);
+    assertOwnerMatch(location.ownerId, ownerid);
   } catch {
     return { unauthorized: true };
   }
 
-  await countryRepository.remove(id);
+  await countryRepository.removeLocationById(id);
   return { success: true };
 };
