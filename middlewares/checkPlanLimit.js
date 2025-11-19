@@ -21,7 +21,7 @@
           // ✅ Check if planKey exists
           const planKey = usage.planKey;
           console.log("plan key....", planKey);
-          if (!planKey) {
+          if (!planKey) { 
             return errorResponse(res, 404, "User does not have a plan assigned");
           }
 

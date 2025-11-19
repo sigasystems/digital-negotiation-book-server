@@ -130,7 +130,7 @@ data.priceYearlyId = data.stripePriceYearlyId;
     paymentStatus: subscription.paymentStatus,
     isExpiringSoon: daysLeft <= 5,
     limits: {
-      maxUsers: subscription.maxUsers,
+      maxLocations: subscription.maxLocations,
       maxProducts: subscription.maxProducts,
       maxOffers: subscription.maxOffers,
       maxBuyers: subscription.maxBuyers,
@@ -209,7 +209,7 @@ data.priceYearlyId = data.stripePriceYearlyId;
     status: "active",
     startDate,
     endDate,
-    maxUsers: plan.maxUsers,
+    maxLocations: plan.maxLocations,
     maxProducts: plan.maxProducts,
     maxOffers: plan.maxOffers,
     maxBuyers: plan.maxBuyers,

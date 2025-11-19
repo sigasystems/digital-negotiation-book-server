@@ -377,7 +377,7 @@ await Subscription.create({
   paymentStatus: "paid",
   endDate, 
   trialEnd: null,
-  maxUsers: data.maxUsers || 5,
+  maxLocations: data.maxLocations || 5,
   maxProducts: data.maxProducts || 100,
   maxOffers: data.maxOffers || 50,
   maxBuyers: data.maxBuyers || 100,
@@ -391,7 +391,7 @@ await UserPlanUsage.findOrCreate({
   where: { userId: existingUser.id },
   defaults: {
     userId: existingUser.id,
-    usedUsers: 0,
+    usedLocations: 0,
     usedProducts: 0,
     usedOffers: 0,
     usedBuyers: 0,

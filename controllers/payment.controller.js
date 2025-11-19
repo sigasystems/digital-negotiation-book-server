@@ -36,7 +36,7 @@ export const getAllPayments = async (req, res) => {
             "priceMonthly",
             "currency",
             "billingCycle",
-            // "maxUsers",
+            // "maxLocations",
             // "maxProducts",
             // "maxOffers",
             // "maxBuyers",

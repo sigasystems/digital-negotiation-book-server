@@ -147,7 +147,7 @@ Renew here: https://dnb-app.com/pricing
               
               <!-- Button -->
               <div style="text-align: center; margin-bottom: 24px;">
-                <a href="https://dnb.sigasystems.com/" 
+                <a href="https://dnb.sigasystems.com/upgrade-plan" 
                   style="display: inline-block; background: #2563eb; color: #ffffff; font-size: 15px; font-weight: 500;
                          text-decoration: none; padding: 12px 24px; border-radius: 8px;">
                   Renew My Plan

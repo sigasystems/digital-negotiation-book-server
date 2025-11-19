@@ -77,7 +77,7 @@ export const becomeBusinessOwner = asyncHandler(async (req, res) => {
           paymentId,
           billingCycle,
           res,
-          maxUsers: plan.maxUsers || 5,
+          maxLocations: plan.maxLocations || 5,
           maxProducts: plan.maxProducts || 100,
           maxOffers: plan.maxOffers || 50,
           maxBuyers: plan.maxBuyers || 100,

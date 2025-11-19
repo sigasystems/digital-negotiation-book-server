@@ -19,7 +19,7 @@ const UserPlanUsage = sequelize.define(
   allowNull: true, // or false if you want it required
 },
 
-    usedUsers: {
+    usedLocations: {
       type: DataTypes.INTEGER,
       defaultValue: 0,
     },
