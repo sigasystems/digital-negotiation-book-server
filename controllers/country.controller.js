@@ -50,26 +50,15 @@ export const getCountryById = asyncHandler(async (req, res) => {
 
 export const searchCountry = asyncHandler(async (req, res) => {
   authorizeRoles(req, ["business_owner"]);
-  const { code, country } = req.query.query || {};
+  const { query } = req.query;
 
-  if (!code && !country) {
-    return errorResponse(res, 400, "At least one search parameter (code or country) is required");
+  if (!query) {
+    return errorResponse(res, 400, "Search query is required");
   }
 
-  const result = await countryService.searchCountry({ code, country }, req.user);
+  const result = await countryService.searchCountry(query, req.user);
 
-  const dataArray = result ? [result] : [];
-
-  return successResponse(res, 200, "Search completed", {
-    data: dataArray,
-    totalItems: dataArray.length,
-    totalPages: 1,
-    pageIndex: 0,
-    pageSize: dataArray.length,
-    totalActive: dataArray.length,
-    totalInactive: 0,
-    totalDeleted: 0
-  });
+  return successResponse(res, 200, "Search completed", result);
 });
 
 export const updateCountry = asyncHandler(async (req, res) => {
@@ -89,10 +78,12 @@ export const deleteCountry = asyncHandler(async (req, res) => {
   authorizeRoles(req, ["business_owner"]);
   const ownerid = req.user?.businessOwnerId;
 
-  const result = await countryService.deleteCountry(req.params.id, ownerid);
+  const locationId = req.params.id;
 
-  if (result.notFound) return errorResponse(res, 404, "Country not found");
+  const result = await countryService.deleteCountry(locationId, ownerid);
+
+  if (result.notFound) return errorResponse(res, 404, "Location not found");
   if (result.unauthorized) return errorResponse(res, 403, "Forbidden");
 
-  return successResponse(res, 200, "Country deleted successfully");
+  return successResponse(res, 200, "Location deleted successfully");
 });

@@ -108,6 +108,50 @@ const update = async (id, data) => {
   return await findById(id);
 };
 
+const removeLocationsByCity = async (cityName) => {
+  return await Location.destroy({
+    where: { city: cityName },
+  });
+};
+
+const search = async ({ city, state, country }, ownerId) => {
+  if (!ownerId) throw new Error("ownerId missing");
+
+  const orConditions = [];
+  if (city) orConditions.push({ city: { [Op.iLike]: `%${city}%` } });
+  if (state) orConditions.push({ state: { [Op.iLike]: `%${state}%` } });
+
+  const countryWhere = country
+    ? { name: { [Op.iLike]: `%${country}%` } }
+    : null;
+  const results = await Location.findAll({
+    where: {
+      ownerId,
+      ...(orConditions.length > 0 ? { [Op.or]: orConditions } : {}),
+    },
+    include: [
+      {
+        model: Country,
+        as: "country",
+        attributes: ["id", "name", "code"],
+        ...(countryWhere ? { where: countryWhere, required: true } : {}),
+      },
+    ],
+  });
+
+  return results.map((r) => r.toJSON());
+};
+
+const removeLocationById = async (id) => {
+  return await Location.destroy({
+    where: { id },
+  });
+};
+
+const findLocationById = async (id) => {
+  return await Location.findOne({ where: { id } });
+};
+
 export default {
   findByNameOrCode,
   create,
@@ -118,5 +162,9 @@ export default {
   findExisting,
   findById,
   getAll,
-  update
+  update,
+  search,
+  removeLocationsByCity,
+  findLocationById,
+  removeLocationById
 };
