@@ -11,7 +11,7 @@ import transporter from "../config/nodemailer.js";
 const offerService = {
   async createOffer(draftNo, offerBody, user) {
     return withTransaction(sequelize, async (t) => {
-      const { offerName, buyerId, ...restData } = offerBody;
+      const { offerName, destination, buyerId, ...restData } = offerBody;
       const { id: userId, userRole, businessName, businessOwnerId } = user;
 
       if (!offerName || typeof offerName !== "string" || !offerName.trim()) {
@@ -70,7 +70,8 @@ const offerService = {
         offerName,
         user,
         t,
-        buyerId
+        buyerId,
+        destination
       );
 
       const buyerIdsArr = buyerId ? [buyerId] : createdOffer.buyerId ? [createdOffer.buyerId] : [];
@@ -311,6 +312,19 @@ const offerService = {
       offers: rows,
     };
   },
+
+  async getNextOfferName(businessOwnerId) {
+  const lastOffer = await offerRepository.findLastOfferByOwner(businessOwnerId);
+  if (!lastOffer || !lastOffer.offerName) {
+    return "Offer 1";
+  }
+  const lastName = lastOffer.offerName.trim();
+  const match = lastName.match(/(\d+)$/);
+  const lastNumber = match ? parseInt(match[1], 10) : 0;
+  const nextNumber = lastNumber + 1;
+
+  return `Offer ${nextNumber}`;
+}
 };
 
 export default offerService;

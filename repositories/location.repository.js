@@ -21,6 +21,7 @@ const findAll = async (ownerId) => {
   return await Location.findAll({
     where: { ownerId },
     order: [["city", "ASC"]],
+    attributes: ["id", "city", "state", "code"],
     include: [
       {
         model: Country,
