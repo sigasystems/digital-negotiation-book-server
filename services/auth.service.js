@@ -8,6 +8,7 @@ import { emailLoginButton } from "../utlis/emailTemplate.js";
 import transporter from "../config/nodemailer.js";
 import { checkAccountStatus } from "../utlis/helper.js";
 import buyersRepository from "../repositories/buyers.repository.js";
+import offerRepository from "../repositories/offer.repository.js";
 
 function generateOtp() {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -108,6 +109,16 @@ export async function login({ res, email, password, businessName }) {
         name: buyer.contactName,
         ownerId: buyer.ownerId,
       };
+      try {
+        const activeNegotiation = await offerRepository.findLatestActiveNegotiationForBuyer({
+          buyerId: buyer.id,
+          businessOwnerId: buyer.ownerId,
+        });
+        tokenPayload.activeNegotiationId = activeNegotiation?.id ?? null;
+      } catch (e) {
+        tokenPayload.activeNegotiationId = null;
+        console.warn("Failed to load active negotiation for buyer:", e);
+      }
       break;
 
     default:

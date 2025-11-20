@@ -141,6 +141,19 @@ class OfferRepository {
     attributes: ["offerName"],
   });
   }
+
+  async findLatestActiveNegotiationForBuyer({ buyerId, businessOwnerId }) {
+  return Offer.findOne({
+    where: {
+      buyerId,
+      businessOwnerId,
+    },
+    order: [["updatedAt", "DESC"]],
+    attributes: ["id"],
+  });
 }
+
+}
+
 
 export default new OfferRepository();
