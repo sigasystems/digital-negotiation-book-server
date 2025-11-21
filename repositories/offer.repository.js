@@ -108,12 +108,17 @@ class OfferRepository {
 
   async searchOffers(filters, page, limit) {
     const offset = (page - 1) * limit;
-    return Offer.findAndCountAll({
-      where: filters,
-      order: [["createdAt", "DESC"]],
+
+    const result = await Offer.findAndCountAll({
+      where: {
+        ...filters,
+      },
       limit,
       offset,
+      order: [["createdAt", "DESC"]],
     });
+
+    return result;
   }
 
     async getNegotiationsByOfferId(offerId) {

@@ -75,9 +75,11 @@ const baseBuyerSchema = z.object({
 
 // ✅ For search queries — all optional
 export const buyerSearchSchemaValidation = z.object({
-  country: z.string().min(1, "Country cannot be empty").optional(),
-  status: z.enum(["active", "inactive"]).optional(),
-  isVerified: z.boolean().optional(),
+  country: z.string().optional(),
+  page: z.coerce.number().int().nonnegative().default(0),
+  limit: z.coerce.number().int().positive().default(10),
+  status: z.string().optional(),
+  isVerified: z.coerce.boolean().optional(),
 });
 
 export const buyerSchema = baseBuyerSchema;

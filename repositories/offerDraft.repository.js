@@ -2,6 +2,7 @@ import sequelize from "../config/db.js";
 import OfferDraft from "../models/offerDraft.model.js";
 import OfferDraftProduct from "../models/offerDraftProduct.model.js";
 import SizeBreakup from "../models/sizeBreakup.js";
+import { Op } from "sequelize";
 
 export const offerDraftRepository = {
   createWithProducts: async (draftData, products) => {
@@ -111,5 +112,36 @@ findAll: async (businessOwnerId, { offset, pageSize }) => {
     return draft;
   },
 
+search: async (ownerId, filters = {}, pagination = {}) => {
+  const where = {
+    businessOwnerId: ownerId,
+    isDeleted: false,
+  };
+
+  if (filters.draftNo) {
+    where.draftNo = Number(filters.draftNo);
+  }
+
+  if (filters.draftName) {
+    where.draftName = {
+      [Op.iLike]: `%${filters.draftName.trim()}%`,
+    };
+  }
+
+  if (filters.status) {
+    where.status = filters.status;
+  }
+
+  const limit = Number(pagination.limit || 10);
+  const page = Number(pagination.page || 0);
+  const offset = page * limit;
+
+  return OfferDraft.findAndCountAll({
+    where,
+    limit,
+    offset,
+    order: [["createdAt", "DESC"]],
+  });
+}
 };
 

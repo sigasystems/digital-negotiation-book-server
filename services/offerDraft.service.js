@@ -148,28 +148,18 @@ export const offerDraftService = {
     };
   },
 
-searchOfferDrafts: async ({ filters, pageIndex, pageSize }) => {
-    const whereClause = {};
-    if (filters.draftNo) whereClause.draftNo = Number(filters.draftNo);
-    if (filters.draftName) whereClause.draftName = { [Op.like]: `%${filters.draftName}%` };
-    if (filters.status) whereClause.status = filters.status;
-    if (filters.isDeleted !== undefined)
-      whereClause.isDeleted = filters.isDeleted === "true";
-
-  const offset = pageIndex * pageSize;
-  const limit = pageSize;
-
-  const { drafts, totalItems } = await offerDraftRepository.search({
-    whereClause,
-    offset,
-    limit,
-  });
+searchOfferDrafts: async (ownerId, filters, pagination) => {
+    const { count, rows } = await offerDraftRepository.search(
+      ownerId,
+      filters,
+      pagination
+    );
 
   return {
-    drafts: drafts.map(formatOfferDates),
-    totalItems,
-    pageIndex,
-    pageSize,
+    drafts: rows.map(formatOfferDates),
+    totalItems: count,
+    pageIndex: pagination.page,
+    pageSize: pagination.limit,
   };
 },
 

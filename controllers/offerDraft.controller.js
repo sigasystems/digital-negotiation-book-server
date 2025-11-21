@@ -95,13 +95,22 @@ export const searchOfferDrafts = asyncHandler(async (req, res) => {
   try {
     authorizeRoles(req, ["business_owner"]);
 
+    const ownerId = req.user.businessOwnerId;
+
     const { pageIndex = 0, pageSize = 10, ...filters } = req.query;
 
-    const result = await offerDraftService.searchOfferDrafts({
-      filters,
-      pageIndex: Number(pageIndex),
-      pageSize: Number(pageSize),
-    });
+    const result = await offerDraftService.searchOfferDrafts(
+      ownerId,
+      {
+        draftNo: filters.draftNo,
+        draftName: filters.draftName,
+        status: filters.status,
+      },
+      {
+        page: Number(pageIndex),
+        limit: Number(pageSize),
+      }
+    );
 
     return successResponse(res, 200, "Offer drafts fetched successfully", result);
   } catch (err) {
