@@ -168,16 +168,15 @@ export const getBuyerById = asyncHandler(async (req, res) => {
 export const searchBuyers = asyncHandler(async (req, res) => {
   try {
     authorizeRoles(req, ["business_owner"]);
+    const queryObj = req.query.query || {};
 
-    const country = req.query["params[country]"];
-    const status = req.query["params[status]"];
-    const isVerified = req.query["params[isVerified]"]
-      ? req.query["params[isVerified]"] === "true"
-      : undefined;
-    const page = Number(req.query["params[page]"]) || 0;
-    const limit = Number(req.query["params[limit]"]) || 10;
+    const country = queryObj.country;
+    const status = queryObj.status;
+    const isVerified =
+      queryObj.isVerified !== undefined
+        ? queryObj.isVerified === "true"
+        : undefined;
 
-    const ownerId = req.user.businessOwnerId;
 
     const parsed = buyerSearchSchemaValidation
       .pick({ country: true, status: true, isVerified: true })
@@ -190,6 +189,10 @@ export const searchBuyers = asyncHandler(async (req, res) => {
         parsed.error.issues.map((i) => i.message).join(", ")
       );
     }
+
+    const page = Number(queryObj.page) || 0;
+    const limit = Number(queryObj.limit) || 10;
+    const ownerId = req.user.businessOwnerId;
 
     const { count, rows } = await buyerService.searchBuyers(
       ownerId,

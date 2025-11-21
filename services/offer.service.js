@@ -296,9 +296,9 @@ const offerService = {
     page = +page || 1;
     limit = +limit || 20;
 
-    const filters = { businessOwnerId: user.id };
-    if (offerId) filters.id = +offerId;
-    if (offerName) filters.offer_name = { [Op.iLike]: `%${offerName}%` };
+    const filters = { businessOwnerId: user.businessOwnerId };
+    if (offerId) filters.id = Number(offerId);
+    if (offerName) filters.offerName = { [Op.iLike]: `%${offerName}%` };
     if (status) filters.status = status;
     if (isDeleted !== undefined)
       filters.isDeleted = String(isDeleted).toLowerCase() === "true";
