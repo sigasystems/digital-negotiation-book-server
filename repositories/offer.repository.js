@@ -1,20 +1,6 @@
 import { Offer, OfferDraft, BusinessOwner, OfferDraftProduct, SizeBreakup, OfferProduct, OfferSizeBreakup, OfferBuyer } from "../models/index.js";
 
 class OfferRepository {
-  // Draft
-  async findDraftById(draftId, transaction) {
-    return OfferDraft.findOne({
-      where: { draftNo: draftId },
-      include: [
-        {
-          model: BusinessOwner,
-          as: "businessOwner",
-          attributes: ["id", "first_name", "last_name"],
-        },
-      ],
-      transaction,
-    });
-  }
 
   async findDraftById(draftNo, transaction) {
     return await OfferDraft.findOne({
@@ -43,37 +29,46 @@ class OfferRepository {
 
   // Offer CRUD
     async createOffer(data, offerName, user, transaction, buyerId, destination) {
+      const { userRole, businessName, buyersCompanyName } = user || {};
+
+      const fromPartyValue =
+        userRole === "business_owner"
+          ? businessName
+          : buyersCompanyName || businessName || "";
+
+      const repoBuyerId = buyerId || (userRole === "buyer" ? user.id : null);
+
       const offer = await Offer.create({
         businessOwnerId: data.businessOwnerId,
         offerName,
-        businessName: user.businessName,
-        fromParty: user.businessName,
-        toParty: data.toParty,
-        buyerId: buyerId || null,
-        destination,
-        origin: data.origin,
-        processor: data.processor,
-        plantApprovalNumber: data.plantApprovalNumber,
-        brand: data.brand,
-        draftName: data.draftName,
-        offerValidityDate: data.offerValidityDate,
-        shipmentDate: data.shipmentDate,
+        businessName: businessName || buyersCompanyName || "",
+        fromParty: fromPartyValue,
+        toParty: data.toParty || null,
+        buyerId: repoBuyerId || null,
+        destination: destination || data.destination || null,
+        origin: data.origin || null,
+        processor: data.processor || null,
+        plantApprovalNumber: data.plantApprovalNumber || null,
+        brand: data.brand || null,
+        draftName: data.draftName || null,
+        offerValidityDate: data.offerValidityDate || null,
+        shipmentDate: data.shipmentDate || null,
         grandTotal: Number(data.grandTotal) || 0,
         quantity: Number(data.quantity) || 0,
-        tolerance: data.tolerance,
-        paymentTerms: data.paymentTerms,
-        remark: data.remark,
-        packing: data.packing,
+        tolerance: data.tolerance || null,
+        paymentTerms: data.paymentTerms || null,
+        remark: data.remark || null,
+        packing: data.packing || null,
         status: "open",
       }, { transaction });
 
       for (const p of data.products || []) {
         const offerProduct = await OfferProduct.create({
           offerId: offer.id,
-          productId: p.productId,
+          productId: p.productId || null,
           productName: p.productName || "",
           species: p.species || "",
-          packing: p.packing || "",
+          packing: p.packing || p.packing || null,
           sizeDetails: p.sizeDetails || null,
           breakupDetails: p.breakupDetails || null,
           priceDetails: p.priceDetails || null,

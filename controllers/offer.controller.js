@@ -3,12 +3,31 @@ import { asyncHandler } from "../handlers/asyncHandler.js";
 import { successResponse, errorResponse } from "../handlers/responseHandler.js";
 import { authorizeRoles } from "../utlis/helper.js";
 import { offerNegotiationService } from "../services/offerNegotiation.service.js";
+import {Offer, OfferProduct} from "../models/index.js";
 
 export const createOffer = asyncHandler(async (req, res) => {
   try {
-    authorizeRoles(req, ["business_owner","buyer"]);
-    const offer = await offerService.createOffer(req.params.id, req.body, req.user);
-    return successResponse(res, 201, "Offer created from draft successfully", { offer });
+    authorizeRoles(req, ["business_owner", "buyer"]);
+
+    const result = await offerService.createOffer(req.body, req.user);
+
+    return successResponse(res, 201, "Offer created successfully", result);
+  } catch (err) {
+    return errorResponse(res, 400, err.message);
+  }
+});
+
+export const createOfferVersion = asyncHandler(async (req, res) => {
+  try {
+    authorizeRoles(req, ["business_owner", "buyer"]);
+
+    const result = await offerService.createOfferVersion(
+      req.params.offerId,
+      req.body,
+      req.user
+    );
+
+    return successResponse(res, 201, "New offer version created", result);
   } catch (err) {
     return errorResponse(res, 400, err.message);
   }
@@ -150,15 +169,13 @@ export const getRecentNegotiations = asyncHandler(async (req, res) => {
 
 export const getLatestNegotiation = asyncHandler(async (req, res) => {
   try {
-    const offerIdRaw = req.params.id;
-    const buyerIdRaw = req.user?.id;
 
-    const offerId = parseInt(offerIdRaw, 10);
+    const offerId = parseInt(req.params.id, 10);
     if (Number.isNaN(offerId)) {
       return errorResponse(res, 400, "offerId must be an integer");
     }
 
-    const buyerId = String(buyerIdRaw || "").trim();
+    const buyerId = String(req.user?.id || "").trim();
     if (!buyerId || !/^[0-9a-fA-F-]{36}$/.test(buyerId)) {
       return errorResponse(res, 400, "buyerId must be a valid UUID");
     }
@@ -167,16 +184,40 @@ export const getLatestNegotiation = asyncHandler(async (req, res) => {
       return successResponse(res, 200, "No negotiations found", []);
     }
 
-    const latest = await offerNegotiationService.getLatestVersionSafe(offerId, buyerId);
-    if (!latest) {
+    const offer = await Offer.findOne({
+      where: { id: offerId },
+      include: [
+        {
+          model: OfferProduct,
+          as: "products",
+        },
+      ],
+    });
+
+    if (!offer) {
+      return successResponse(res, 200, "No offer found", []);
+    }
+
+    const latestVersion = await offerNegotiationService.getLatestVersionSafe(
+      offerId,
+      buyerId
+    );
+
+    if (!latestVersion) {
       return successResponse(res, 200, "No negotiations found", []);
     }
     const history = await offerNegotiationService.getVersionHistorySafe(
       offerId,
       buyerId,
-      latest.versionNo
+      latestVersion.versionNo
     );
-    return successResponse(res, 200, "Latest negotiation history", history);
+
+    return successResponse(res, 200, "Latest negotiation history", {
+      offer,
+      products: offer.products,
+      latestVersion,
+      history,
+    });
   } catch (err) {
     return errorResponse(res, 400, err.message);
   }
