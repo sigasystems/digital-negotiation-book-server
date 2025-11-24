@@ -14,8 +14,8 @@ const { addBuyer,checkRegistrationNumber,  deleteBuyer, activateBuyer, deactivat
 router.post(
   "/add-buyer",
   authenticateJWT,
-  checkPlanValidity,
-  checkPlanLimit("buyer"),
+  // checkPlanValidity,
+  // checkPlanLimit("buyer"),
   addBuyer
 );
 router.delete("/delete-buyer/:id", authenticateJWT, deleteBuyer);

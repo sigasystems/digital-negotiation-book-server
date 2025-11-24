@@ -68,6 +68,19 @@ Location.belongsTo(Country, {
   as: "country",
 });
 
+OfferBuyer.hasMany(OfferVersion, {
+  foreignKey: "offerId",
+  otherKey: "buyerId",
+  as: "versions"
+});
+
+OfferVersion.belongsTo(OfferBuyer, {
+  foreignKey: "offerId",
+  otherKey: "buyerId",
+  as: "offerBuyer"
+});
+
+
 // Country.hasMany(Location, { foreignKey: "countryId" });
 // Location.belongsTo(Country, { foreignKey: "countryId" });
 
