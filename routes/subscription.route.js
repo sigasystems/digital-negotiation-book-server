@@ -12,11 +12,7 @@ router.post("/create-checkout-session", async (req, res) => {
   try {
     const { userId, planId, billingCycle } = req.body;
 
-    console.log("📝 Create checkout session request:");
-    console.log("   userId:", userId);
-    console.log("   planId:", planId);
-    console.log("   billingCycle:", billingCycle);
-
+  
     // 1️⃣ Fetch user
     const user = await User.findByPk(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
@@ -25,11 +21,7 @@ router.post("/create-checkout-session", async (req, res) => {
     const plan = await Plan.findByPk(planId);
     if (!plan) return res.status(404).json({ message: "Plan not found" });
 
-    console.log("📋 Plan details:");
-    console.log("   Name:", plan.name);
-    console.log("   Monthly price:", plan.priceMonthly);
-    console.log("   Yearly price:", plan.priceYearly);
-
+    
     // 3️⃣ Validate billingCycle
     if (!["monthly", "yearly"].includes(billingCycle)) {
       return res.status(400).json({ message: "Invalid billing cycle" });
@@ -62,12 +54,7 @@ router.post("/create-checkout-session", async (req, res) => {
     }
 
     // 7️⃣ Create Stripe session for paid plan
-    console.log("💳 Creating Stripe session:");
-    console.log("   Mode: subscription");
-    console.log("   Price:", price);
-    console.log("   Interval:", stripeInterval);
-    console.log("   Amount (cents):", Math.round(Number(price) * 100));
-
+   
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       payment_method_types: ["card"],
@@ -92,9 +79,7 @@ router.post("/create-checkout-session", async (req, res) => {
       cancel_url: `${process.env.CLIENT_URL}/`,
     });
 
-    console.log("✅ Stripe checkout session created:", session.id);
-    console.log("   Session mode:", session.mode);
-    console.log("   Session subscription:", session.subscription);
+    
 
     // 8️⃣ Save payment as pending
     await Payment.create({
@@ -106,7 +91,6 @@ router.post("/create-checkout-session", async (req, res) => {
       subscriptionId: session.subscription || null,
     });
 
-    console.log("✅ Payment record created");
     res.json({ url: session.url });
   } catch (err) {
     console.error("Error in create-checkout-session:", err);

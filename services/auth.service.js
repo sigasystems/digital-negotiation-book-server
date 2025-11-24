@@ -110,7 +110,7 @@ export async function login({ res, email, password, businessName }) {
         ownerId: buyer.ownerId,
       };
       try {
-        const activeNegotiation = await offerRepository.findLatestActiveNegotiationForBuyer({
+          const activeNegotiation = await offerRepository.findLatestActiveNegotiationForBuyer({
           buyerId: buyer.id,
           businessOwnerId: buyer.ownerId,
         });

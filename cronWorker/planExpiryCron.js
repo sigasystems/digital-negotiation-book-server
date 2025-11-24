@@ -21,7 +21,7 @@ async function getExpiringPlans() {
   }
 }
 
-cron.schedule("40 10 * * *", async () => {
+cron.schedule("00 11 * * *", async () => {
   console.log("🔍 Checking for plans with upcoming end dates...");
 
   try {
@@ -34,7 +34,6 @@ cron.schedule("40 10 * * *", async () => {
     for (const plan of expiringPlans) {
       // Ensure email field exists or adjust if joined with user table
       if (!plan.userEmail) {
-        console.log(`⚠️ Skipping plan ${plan.id} - missing userEmail`);
         continue;
       }
       await sendExpiryMail({

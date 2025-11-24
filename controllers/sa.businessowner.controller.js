@@ -165,70 +165,91 @@ export const searchBusinessOwners = asyncHandler(async (req, res) => {
 
 export const checkBusinessOwnerUnique = asyncHandler(async (req, res) => {
   try {
-    // ✅ Accept both plain and nested query params (like ?params[email]=)
-    const email = req.query.email || req.query["params[email]"];
-    const businessName = req.query.businessName || req.query["params[businessName]"];
-    const registrationNumber = req.query.registrationNumber || req.query["params[registrationNumber]"];
+    // Log raw incoming query for debugging
 
-    // Check all fields and return specific errors for each
+    // Handle all possible formats of query parameters
+    const email =
+      req.query.email ||
+      req.query.params?.email ||
+      req.query["params[email]"] ||
+      null;
+    const businessName =
+      req.query.businessName ||
+      req.query.params?.businessName ||
+      req.query["params[businessName]"] ||
+      null;
+
+    const registrationNumber =
+      req.query.registrationNumber ||
+      req.query.params?.registrationNumber ||
+      req.query["params[registrationNumber]"] ||
+      null;
+
+    // Log extracted values
+   
+
     const results = {};
-    
-    // Check email if provided
+
+    // -------------------------
+    // Check Email
+    // -------------------------
     if (email) {
       const existingEmail = await userRepository.findByEmail(email);
-    
-    if(existingEmail)
-      {
-        results.email = {
-          exists: !!existingEmail,
-          field: "email",
-          message: existingEmail
-            ? "Email already registered. Please use another."
-            : "Email is available.",
-        };
-      }
-      else{
-        results.email = {
-          exists: !!existingEmail,
-          field: "email",
-          message: existingEmail
-            ? "Email already registered. Please use another."
-            : "Email is available.",
-        };
-      }
+
+      results.email = {
+        exists: !!existingEmail,
+        field: "email",
+        value: email,
+        message: existingEmail
+          ? "Email already registered. Please use another email."
+          : "Email is available.",
+      };
     }
 
-    // Check business name if provided
+    // -------------------------
+    // Check Business Name
+    // -------------------------
     if (businessName) {
-      const existingBusiness = await buyersRepository.findBusinessName(businessName);
+      const existing = await buyersRepository.findBusinessName(businessName);
+
       results.businessName = {
-        exists: !!existingBusiness,
+        exists: !!existing,
         field: "businessName",
-        message: existingBusiness
+        value: businessName,
+        message: existing
           ? "Business name already exists. Please choose another."
           : "Business name is available.",
       };
     }
 
-    // Check registration number if provided
+    // -------------------------
+    // Check Registration Number
+    // -------------------------
     if (registrationNumber) {
-      const existingRegistration = await buyersRepository.findRegistrationNumber(registrationNumber);
+      const existing = await buyersRepository.findRegistrationNumber(
+        registrationNumber
+      );
+
       results.registrationNumber = {
-        exists: !!existingRegistration,
+        exists: !!existing,
         field: "registrationNumber",
-        message: existingRegistration
+        value: registrationNumber,
+        message: existing
           ? "Registration number already exists. Please use another."
           : "Registration number is available.",
       };
-    }
+    } 
 
-    // Return all results
+    console.log("Validation Results:", results);
+
     return successResponse(res, 200, "Validation completed", results);
   } catch (error) {
     console.error("Unique check error:", error);
-    return errorResponse(res, 500, "Server error");
+    return errorResponse(res, 500, "Internal server error");
   }
 });
+
+
 
 export default {
   createBusinessOwner,

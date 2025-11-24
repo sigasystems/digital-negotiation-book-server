@@ -3,7 +3,6 @@ import Subscription from "../models/subscription.model.js";
 const checkPlanValidity = async (req, res, next) => {
   try {
     const user = req.user;
-    console.log('user from checkAvilability........',user.id);
 
     if (!user || !user.id) {
       return res.status(401).json({
@@ -28,7 +27,6 @@ const checkPlanValidity = async (req, res, next) => {
 
     const today = new Date();
     const endDate = new Date(subscription.endDate);
-    console.log('End date.....',endDate);
 
     if (today >= endDate) {
       return res.status(403).json({
@@ -50,5 +48,5 @@ const checkPlanValidity = async (req, res, next) => {
     });
   }
 };
-
+  
 export default checkPlanValidity;
