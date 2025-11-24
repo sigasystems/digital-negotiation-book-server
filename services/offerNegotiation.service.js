@@ -2,7 +2,8 @@ import { Offer, OfferBuyer, OfferVersion, OfferResult, Buyer, BusinessOwner, Off
 import { withTransactionOfferNegotiation, ensureActiveOffer, ensureActiveOwner, getLastVersion } from "../utlis/offerHelpers.js";
 import { generateEmailTemplate, sendEmailWithRetry } from "../utlis/emailTemplate.js";
 import transporter from "../config/nodemailer.js";
-import { Op } from "sequelize";
+import { buyerController } from "../controllers/index.js";
+import { withTransaction } from "../utlis/offerHelpers.js";
 
 export const offerNegotiationService = {
   async sendOffer(user, offerId, buyerIds, data) {
@@ -63,7 +64,7 @@ export const offerNegotiationService = {
         const fromEmail = process.env.EMAIL_USER || "noreply@yourapp.com";
 
           const offerVersion = await OfferVersion.create({
-            buyerId:buyerIdsArr,
+            buyerId: ob.buyerId,
             versionNo: nextVersion,
             fromParty: fromPartyDisplay,
             toParty: toPartyDisplay,
@@ -92,7 +93,7 @@ export const offerNegotiationService = {
             <li><b>Brand:</b> ${offerVersion.brand}</li>
             <li><b>Quantity:</b> ${offerVersion.quantity}</li>
             <li><b>Grand Total:</b> ${offerVersion.grandTotal}</li>
-            <li><b>Shipment Date:</b> ${offerVersion.shipmentDate?.toISOString().split('T')[0]}</li>
+            <li><b>Shipment Date:</b> ${offerVersion.shipmentDate?.toISOString().split("T")[0]}</li>
             <li><b>Remarks:</b> ${offerVersion.remark || "N/A"}</li>
           </ul>
         `,
@@ -199,9 +200,8 @@ export const offerNegotiationService = {
     if (
       userRole === "business_owner" &&
       offer.businessOwnerId !== businessOwnerId
-    ) {
+    )
       throw new Error("You are not authorized to access this offer");
-    }
     
     const offerBuyers = await OfferBuyer.findAll({
       where: { offerId: id },
@@ -331,17 +331,28 @@ export const offerNegotiationService = {
     );
   },
 
-  async getLatestNegotiation(ownerId, buyerId) {
-    const offerBuyer = await OfferBuyer.findOne({ where: { ...(ownerId && { ownerId }), ...(buyerId && { buyerId }) } });
+  async getLatestNegotiation(offerId, buyerId) {
+    const offerBuyer = await buyerController.findOfferBuyer(offerId, buyerId);
     if (!offerBuyer) return [];
 
-    const latest = await getLastVersion(OfferVersion, offerBuyer.id);
+    const latest = await buyerController.getLatestVersion(offerId, buyerId);
     if (!latest) return [];
 
-    return OfferVersion.findAll({
-      where: { buyerId: offerBuyer.id, versionNo: { [Op.lte]: latest.versionNo } },
-      order: [["versionNo", "ASC"]],
-    });
+    return buyerController.getVersionHistory(offerId, buyerId, latest.versionNo);
+  },
 
-  }
+  async getOfferBuyerSafe(offerId, buyerId) {
+    if (!offerId || !buyerId) return null;
+    return await buyerController.findOfferBuyer(offerId, buyerId);
+  },
+
+  async getLatestVersionSafe(offerId, buyerId) {
+    if (!offerId || !buyerId) return null;
+    return await buyerController.getLatestVersion(offerId, buyerId);
+  },
+
+  async getVersionHistorySafe(offerId, buyerId, versionNo) {
+    if (!offerId || !buyerId || !versionNo) return [];
+    return await buyerController.getVersionHistory(offerId, buyerId, versionNo);
+  },
 };

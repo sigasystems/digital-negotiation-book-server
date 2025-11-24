@@ -7,6 +7,7 @@
   import * as superadminController from "./sa.businessowner.controller.js"
   import * as offerController from "./offer.controller.js"
   import * as offeDraftController from "./offerDraft.controller.js"
+  import * as buyerController from "./OfferNegotiationRepository.controller.js"
   export {
     planController,
     authcontroller,
@@ -16,5 +17,6 @@
     locationController,
     superadminController,
     offerController,
-    offeDraftController
+    offeDraftController,
+    buyerController
   };

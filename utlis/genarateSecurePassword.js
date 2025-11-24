@@ -8,7 +8,7 @@ export default function generateSecurePassword(length = 12) {
   const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const lower = "abcdefghijklmnopqrstuvwxyz";
   const numbers = "0123456789";
-  const symbols = "!@#$%^&*()[]{}<>?/|~`";
+  const symbols = "!@#$%^&*";
 
   const allChars = upper + lower + numbers + symbols;
 

@@ -34,7 +34,7 @@ router.patch("/open/:id", openOffer);
 router.delete("/delete/:id", deleteOffer);
 router.get("/search", searchOffers);
 router.get("/negotiation/:id",getNegotiations)
-router.get("/last-negotiation", getLatestNegotiation);
+router.get("/last-negotiation/:id", getLatestNegotiation);
 router.get("/all-negotiations", getRecentNegotiations);
 router.post("/respond/:id", respondOffer);
 router.post("/send/:id", sendOffer);

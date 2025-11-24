@@ -15,7 +15,7 @@ export const createProducts = asyncHandler(async (req, res) => {
 });
 
 export const getAllProducts = asyncHandler(async (req, res) => {
-  const ownerId = req.user?.businessOwnerId;
+  const ownerId = req.user?.businessOwnerId || req.user?.ownerId;
 
   try {
     if (!ownerId) throw new Error("ownerId is required");
