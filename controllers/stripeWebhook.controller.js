@@ -45,7 +45,6 @@ const stripeWebhookController = async (req, res) => {
         const session = event.data.object;
         // Only process subscription checkouts
         if (session.mode !== "subscription" || !session.subscription) {
-          console.log("⚠️ Not a subscription checkout, skipping");
           break;
         }
 

@@ -146,7 +146,6 @@ data.priceYearlyId = data.stripePriceYearlyId;
 
     // 2️⃣ Determine Stripe priceId
     const priceId = billingCycle === "yearly" ? plan.stripePriceYearlyId : plan.stripePriceMonthlyId;
-    console.log('price id....', priceId);
     if (!priceId) throw new Error(`Stripe prsice ID missing for ${billingCycle} plan`);
 
     // 3️⃣ Fetch user

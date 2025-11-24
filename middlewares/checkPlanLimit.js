@@ -16,11 +16,9 @@
             return errorResponse(res, 404, "Usage record not found for user");
           }
 
-          console.log('user id from checkPlanlimit....',usage);
 
           // ✅ Check if planKey exists
           const planKey = usage.planKey;
-          console.log("plan key....", planKey);
           if (!planKey) { 
             return errorResponse(res, 404, "User does not have a plan assigned");
           }

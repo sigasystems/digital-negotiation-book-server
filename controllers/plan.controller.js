@@ -75,7 +75,6 @@ export const upgradeOrRenewPlan = async (req, res) => {
   try {
     const userId = req.user?.id || req.body.userId;
     const { planId, billingCycle = "monthly" } = req.body;
-    console.log('plan id and billingCycle....', planId, billingCycle);
 
     if (!userId || !planId) 
       return errorResponse(res, 400, "Missing required data");
