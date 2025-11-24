@@ -4,198 +4,197 @@ import { createOfferSchema } from "../validations/offer.validation.js";
 import { validateSizeBreakups } from "../utlis/dateFormatter.js";
 import { withTransaction, validateOfferData, ensureOfferOwnership, normalizeDateFields, ensureActiveOwner } from "../utlis/offerHelpers.js";
 import { Op } from "sequelize";
-import {BusinessOwner, Buyer, OfferBuyer, OfferVersion} from "../models/index.js";
+import {BusinessOwner, Buyer, OfferBuyer, OfferVersion, Offer } from "../models/index.js";
 import { generateEmailTemplate, sendEmailWithRetry } from "../utlis/emailTemplate.js";
 import transporter from "../config/nodemailer.js";
 
 const offerService = {
-  async createOffer(draftNo, offerBody, user) {
+  async createOffer(offerBody, user) {
     return withTransaction(sequelize, async (t) => {
-      const { offerName, destination, buyerId, ...restData } = offerBody;
       const { id: userId, userRole, businessName, businessOwnerId } = user;
 
-      if (!offerName || typeof offerName !== "string" || !offerName.trim()) {
-        throw new Error("Offer name is required and must be a non-empty string");
-      }
-      if (!["business_owner", "buyer"].includes(userRole)) {
-        throw new Error("Unauthorized role");
-      }
-      if (!businessOwnerId) {
-        throw new Error("Business owner ID missing in token");
-      }
-      if (!businessName) {
-        throw new Error("Business name not found in token");
-      }
-
-    const draft = await offerRepository.findDraftById(draftNo, t);
-    if (!draft) throw new Error("Draft not found");
-
-    if (draft.businessOwnerId !== businessOwnerId) {
-      throw new Error("You are not authorized to create an offer for this draft");
-    }
-
-
-    const existingOffers = await offerRepository.findAllOffers({ businessOwnerId });
-   if (
-        existingOffers?.some(
-          (o) => o.offerName?.toLowerCase() === offerName.toLowerCase()
-        )
-      ) {
-        throw new Error("Offer name already exists for this business owner");
-      }
-
-      if (!draft.draftProducts || draft.draftProducts.length === 0) {
-        throw new Error("Draft must have at least one product before creating an offer");
-      }
-
-      const enrichedProducts = (restData.products || []).map((p, index) => {
-        const draftProduct = draft.draftProducts[index] || {};
-          return {
-              ...draftProduct,
-              ...p,
-              productName: p.productName || draftProduct.productName || "",
-              speciesName: p.species || draftProduct.species || "",
-            };
-      });
-
-      const mergedData = {
-        ...draft.dataValues,
-        ...restData,
-        products: enrichedProducts,
-        draftProducts: draft.draftProducts,
-      };
-
-      const createdOffer = await offerRepository.createOffer(
-        mergedData,
+      const {
         offerName,
-        user,
-        t,
         buyerId,
-        destination
+        origin,
+        destination,
+        productName,
+        speciesName,
+        brand,
+        plantApprovalNumber,
+        quantity,
+        tolerance,
+        paymentTerms,
+        sizeBreakups = [],
+        grandTotal,
+        shipmentDate,
+        remark,
+        offerValidityDate,
+        processor,
+        draftName,
+        draftNo,
+      } = offerBody;
+
+      if (!offerName) throw new Error("Offer name is required");
+      if (!buyerId) throw new Error("Buyer ID is required");
+       if (!origin) throw new Error("Origin is required");
+      if (!destination) throw new Error("Destination is required");
+
+      const buyer = await Buyer.findByPk(buyerId, { transaction: t });
+      if (!buyer) throw new Error("Buyer not found");
+
+      if (buyer.ownerId !== businessOwnerId) {
+        throw new Error(
+          "Buyer does not belong to the specified business owner"
+        );
+      }
+
+      let draft = null;
+      if (draftNo) {
+        draft = await offerRepository.findDraftById(draftNo, t);
+        if (!draft) throw new Error("Draft not found");
+      }
+
+      const newOffer = await Offer.create(
+        {
+          businessOwnerId,
+          offerName,
+          businessName,
+          fromParty: `${businessName} / business_owner`,
+          toParty: `${buyer.buyersCompanyName} / buyer`,
+          buyerId,
+          draftName,
+          origin,
+          destination,
+          processor,
+          productName,
+          speciesName,
+          brand,
+          plantApprovalNumber,
+          quantity,
+          tolerance,
+          paymentTerms,
+          grandTotal,
+          shipmentDate,
+          remark,
+          offerValidityDate: offerValidityDate || new Date(),
+        },
+        { transaction: t }
       );
 
-      const buyerIdsArr = buyerId ? [buyerId] : createdOffer.buyerId ? [createdOffer.buyerId] : [];
-      if (buyerIdsArr.length === 0) {
-        throw new Error("Buyer ID missing — cannot create offer without a buyer");
-      }
+      // Create Offer Version 1
+      const firstVersion = await OfferVersion.create(
+        {
+          buyerId,
+          offerId: newOffer.id,
+          offerName,
+          versionNo: 1,
+          fromParty: `${businessName} / business_owner`,
+          toParty: `${buyer.buyersCompanyName} / buyer`,
+          productName: productName || "Unnamed Product",
+          speciesName: speciesName || "Unknown",
+          brand: brand || "N/A",
+          plantApprovalNumber: plantApprovalNumber || "N/A",
+          sizeBreakups: sizeBreakups || [],
+          quantity: quantity || null,
+          tolerance: tolerance || null,
+          paymentTerms: paymentTerms || null,
+          grandTotal: grandTotal || null,
+          shipmentDate: shipmentDate || null,
+          remark: remark || null,
+          offerValidityDate: offerValidityDate || new Date(),
+        },
+        { transaction: t }
+      );
 
-      let owner, buyers;
-      if (userRole === "business_owner") {
-        buyers = await Buyer.findAll({ where: { id: buyerIdsArr }, transaction: t });
-        if (buyers.length !== buyerIdsArr.length) throw new Error("Buyer not found");
-        if (buyers.some((b) => b.ownerId !== businessOwnerId)) {
+      return {
+        newOfferCreated: true,
+        offer: newOffer,
+        version: firstVersion,
+      };
+    });
+  },
+
+    async createOfferVersion(offerId, offerBody, user) {
+      return withTransaction(sequelize, async (t) => {
+        const { id: userId, userRole, businessName, businessOwnerId } = user;
+
+        const offer = await Offer.findByPk(offerId, { transaction: t });
+        if (!offer) throw new Error("Offer not found");
+
+        const buyerId = offer.buyerId;
+        if (!buyerId) throw new Error("Buyer missing on offer");
+
+        const buyer = await Buyer.findByPk(buyerId, { transaction: t });
+        if (!buyer) throw new Error("Buyer not found");
+
+        if (userRole === "business_owner") {
+        if (buyer.ownerId !== businessOwnerId)
           throw new Error("Buyer does not belong to your business");
+        } else {
+          if (buyer.id !== userId) throw new Error("Unauthorized buyer");
         }
-        owner = await ensureActiveOwner(BusinessOwner, businessOwnerId, t);
-      } else {
-        const buyer = await Buyer.findByPk(userId, { transaction: t });
-        if (!buyer || !buyerIdsArr.includes(userId)) throw new Error("Unauthorized buyer");
-        buyers = [buyer];
-        owner = await ensureActiveOwner(BusinessOwner, buyer.ownerId, t);
-      }
 
-      const newMappings = buyerIdsArr.map((buyerId) => ({
-        offerId: createdOffer.id,
-        buyerId,
-        ownerId: userRole === "business_owner" ? businessOwnerId : owner.id,
-        status: "open",
-      }));
-
-      const createdMappings = await OfferBuyer.bulkCreate(newMappings, {
-        transaction: t,
-        returning: true,
-      });
-
-      const emailErrors = [];
-
-      const primaryProduct = mergedData.products?.[0] || {};
-
-      for (const ob of createdMappings) {
-        const buyer = buyers.find((b) => b.id === ob.buyerId);
-        if (!buyer) continue;
-
-        const fromPartyDisplay =
+        const fromParty =
           userRole === "business_owner"
             ? `${businessName} / business_owner`
             : `${buyer.buyersCompanyName} / buyer`;
 
-        const toPartyDisplay =
+        const toParty =
           userRole === "business_owner"
             ? `${buyer.buyersCompanyName} / buyer`
-            : `${owner.businessName} / business_owner`;
+            : `${businessName} / business_owner`;
 
-        const toEmail = buyer.contactEmail;
-        const fromEmail = process.env.EMAIL_USER || "noreply@yourapp.com";
-        const offerVersion = await OfferVersion.create(
+        const lastVersion = await OfferVersion.findOne({
+          where: { offerId, buyerId },
+          order: [["versionNo", "DESC"]],
+          transaction: t,
+        });
+
+        const nextVersionNo = lastVersion ? lastVersion.versionNo + 1 : 1;
+
+        const {
+          productName,
+          speciesName,
+          brand,
+          plantApprovalNumber,
+          quantity,
+          tolerance,
+          paymentTerms,
+          sizeBreakups = [],
+          grandTotal,
+          shipmentDate,
+          remark,
+        } = offerBody;
+
+        const newVersion = await OfferVersion.create(
           {
             buyerId,
-            versionNo: 1,
-            offerId: createdOffer.id,
-            fromParty: fromPartyDisplay,
-            toParty: toPartyDisplay,
-            offerName: createdOffer.offerName,
-            productName: primaryProduct.productName || "Unnamed Product",
-            speciesName: primaryProduct.speciesName || "Unknown",
-            brand: mergedData.brand ?? createdOffer.brand,
+            offerId,
+            offerName: offer.offerName,
+            versionNo: nextVersionNo,
+            fromParty,
+            toParty,
+            productName: productName ?? offer.productName,
+            speciesName: speciesName ?? offer.speciesName,
+            brand: brand ?? offer.brand,
             plantApprovalNumber:
-              mergedData.plantApprovalNumber ?? createdOffer.plantApprovalNumber,
-            quantity: mergedData.quantity ?? createdOffer.quantity,
-            tolerance: mergedData.tolerance ?? createdOffer.tolerance,
-            paymentTerms: mergedData.paymentTerms ?? createdOffer.paymentTerms,
-            sizeBreakups: primaryProduct.sizeBreakups ?? [],
-            grandTotal: mergedData.grandTotal ?? createdOffer.grandTotal,
-            shipmentDate: mergedData.shipmentDate ?? createdOffer.shipmentDate,
-            remark: mergedData.remark ?? createdOffer.remark,
-            status: "open",
+              plantApprovalNumber ?? offer.plantApprovalNumber,
+            quantity: quantity ?? offer.quantity,
+            tolerance: tolerance ?? offer.tolerance,
+            paymentTerms: paymentTerms ?? offer.paymentTerms,
+            sizeBreakups,
+            grandTotal: grandTotal ?? offer.grandTotal,
+            shipmentDate: shipmentDate ?? offer.shipmentDate,
+            remark: remark ?? offer.remark,
           },
           { transaction: t }
         );
 
-        const emailHtml = generateEmailTemplate({
-          title: `New Offer Created: ${offerVersion.offerName}`,
-          subTitle: `Hello ${toPartyDisplay},`,
-          body: `
-            <p>${fromPartyDisplay} has sent you a new offer.</p>
-            <ul>
-              <li><b>Product:</b> ${offerVersion.productName}</li>
-              <li><b>Species:</b> ${offerVersion.speciesName}</li>
-              <li><b>Brand:</b> ${offerVersion.brand}</li>
-              <li><b>Quantity:</b> ${offerVersion.quantity}</li>
-              <li><b>Grand Total:</b> ${offerVersion.grandTotal}</li>
-              <li><b>Shipment Date:</b> ${
-                offerVersion.shipmentDate
-                  ? offerVersion.shipmentDate.toISOString().split("T")[0]
-                  : "N/A"
-              }</li>
-              <li><b>Remarks:</b> ${offerVersion.remark || "N/A"}</li>
-            </ul>
-          `,
-          footer: "Please review and take necessary action.",
-        });
-
-        try {
-          await sendEmailWithRetry(transporter, {
-            from: `"${fromPartyDisplay}" <${fromEmail}>`,
-            to: toEmail,
-            subject: `New Offer from ${fromPartyDisplay}`,
-            html: emailHtml,
-          });
-        } catch (err) {
-          emailErrors.push({
-            buyerId: ob.buyerId,
-            buyerName: buyer.buyersCompanyName,
-            message: err.message || "Failed to send email",
-          });
-        }
-      }
-
       return {
-        offerId: createdOffer.id,
-        buyers,
-        owner,
-        businessName,
-        userRole,
-        emailErrors,
+          newOfferCreated: false,
+          offer,
+          version: newVersion,
       };
     });
   },

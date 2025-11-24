@@ -3,6 +3,7 @@ import { withTransactionOfferNegotiation, ensureActiveOffer, ensureActiveOwner, 
 import { generateEmailTemplate, sendEmailWithRetry } from "../utlis/emailTemplate.js";
 import transporter from "../config/nodemailer.js";
 import { buyerController } from "../controllers/index.js";
+import { Op } from "sequelize";
 import { withTransaction } from "../utlis/offerHelpers.js";
 
 export const offerNegotiationService = {
@@ -194,7 +195,7 @@ export const offerNegotiationService = {
         "updatedAt",
       ],
     });
-
+    console.log("Fetched offer:", offer);
     if (!offer) throw new Error("Offer not found");
 
     if (
@@ -253,7 +254,6 @@ export const offerNegotiationService = {
         "createdAt",
       ],
     });
-
     return {
       offer: {
       offerId: offer.id,
@@ -354,5 +354,52 @@ export const offerNegotiationService = {
   async getVersionHistorySafe(offerId, buyerId, versionNo) {
     if (!offerId || !buyerId || !versionNo) return [];
     return await buyerController.getVersionHistory(offerId, buyerId, versionNo);
+  },
+
+  async getOfferBuyerSafe(offerId, buyerId) {
+    try {
+      const record = await OfferBuyer.findOne({
+        where: { offerId, buyerId, status: "open" },
+      });
+
+      return record || null;
+    } catch (err) {
+      console.error("getOfferBuyerSafe error:", err);
+      return null;
+    }
+  },
+
+  async getLatestVersionSafe(offerId, buyerId) {
+    try {
+      const latest = await OfferVersion.findOne({
+        where: { offerId, buyerId },
+        order: [["versionNo", "DESC"]],
+      });
+
+      return latest || null;
+    } catch (err) {
+      console.error("getLatestVersionSafe error:", err);
+      return null;
+    }
+  },
+
+  async getVersionHistorySafe(offerId, buyerId, maxVersionNo) {
+    try {
+      if (!offerId || !buyerId || !maxVersionNo) return [];
+
+      const history = await OfferVersion.findAll({
+        where: {
+          offerId,
+          buyerId,
+          versionNo: { [Op.lte]: maxVersionNo },
+        },
+        order: [["versionNo", "ASC"]],
+      });
+
+      return history || [];
+    } catch (err) {
+      console.error("getVersionHistorySafe error:", err);
+      return [];
+    }
   },
 };
