@@ -195,22 +195,19 @@ export const offerNegotiationService = {
         "updatedAt",
       ],
     });
-    console.log("Fetched offer:", offer);
     if (!offer) throw new Error("Offer not found");
 
     if (
       userRole === "business_owner" &&
       offer.businessOwnerId !== businessOwnerId
-    )
+    ){
       throw new Error("You are not authorized to access this offer");
-    
+    }
     const offerBuyers = await OfferBuyer.findAll({
       where: { offerId: id },
       attributes: ["id", "buyerId", "ownerId"],
     });
 
-    if (!offerBuyers.length)
-      throw new Error("No negotiations found for this offer");
 
     const buyerIdList = offerBuyers.map((ob) => ob.buyerId);
 
@@ -225,13 +222,17 @@ export const offerNegotiationService = {
       priceDetails: p.priceDetails,
       packing: p.packing,
     }));
+    const versionWhere = {
+      offerId: id,
+      offerName: offer.offerName,
+    };
+
+    if (buyerIdList.length > 0) {
+      versionWhere.buyerId = buyerIdList;
+    }
 
     const versions = await OfferVersion.findAll({
-      where: {
-        offerId: id,
-        offer_name: offer.offerName,
-        buyer_id: buyerIdList,
-      },
+      where: versionWhere,
       order: [["versionNo", "ASC"]],
       attributes: [
         "id",
@@ -239,7 +240,7 @@ export const offerNegotiationService = {
         "fromParty",
         "toParty",
         "offerId",
-        "offer_name",
+        "offerName",
         "productName",
         "speciesName",
         "brand",
@@ -293,7 +294,7 @@ export const offerNegotiationService = {
         fromParty: v.fromParty,
         toParty: v.toParty,
         offerId: v.offerId,
-        offerName: v.offer_name,
+        offerName: v.offerName,
         productName: v.productName,
         speciesName: v.speciesName,
         brand: v.brand,
@@ -356,18 +357,6 @@ export const offerNegotiationService = {
     return await buyerController.getVersionHistory(offerId, buyerId, versionNo);
   },
 
-  async getOfferBuyerSafe(offerId, buyerId) {
-    try {
-      const record = await OfferBuyer.findOne({
-        where: { offerId, buyerId, status: "open" },
-      });
-
-      return record || null;
-    } catch (err) {
-      console.error("getOfferBuyerSafe error:", err);
-      return null;
-    }
-  },
 
   async getLatestVersionSafe(offerId, buyerId) {
     try {

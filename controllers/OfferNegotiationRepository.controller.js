@@ -9,12 +9,10 @@ function ensureUUID(id) {
 }
 
 export async function findOfferBuyer(offerId, buyerId) {
-  buyerId = ensureUUID(buyerId);
   return OfferBuyer.findOne({ where: { offerId, buyerId } });
 }
 
 export async function getLatestVersion(offerId, buyerId) {
-  buyerId = ensureUUID(buyerId);
   return OfferVersion.findOne({
     where: { offerId, buyerId },
     order: [["versionNo", "DESC"]],
@@ -22,7 +20,6 @@ export async function getLatestVersion(offerId, buyerId) {
 }
 
 export async function getVersionHistory(offerId, buyerId, maxVersionNo) {
-  buyerId = ensureUUID(buyerId);
   return OfferVersion.findAll({
     where: { offerId, buyerId, versionNo: { [Op.lte]: maxVersionNo } },
     order: [["versionNo", "ASC"]],
