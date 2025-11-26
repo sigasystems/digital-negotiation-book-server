@@ -3,7 +3,7 @@ import { asyncHandler } from "../handlers/asyncHandler.js";
 import { successResponse, errorResponse } from "../handlers/responseHandler.js";
 import { authorizeRoles } from "../utlis/helper.js";
 import { offerNegotiationService } from "../services/offerNegotiation.service.js";
-import {Offer, OfferProduct} from "../models/index.js";
+import {Buyer, Offer, OfferBuyer, OfferProduct} from "../models/index.js";
 
 export const createOffer = asyncHandler(async (req, res) => {
   try {
@@ -175,11 +175,28 @@ export const getLatestNegotiation = asyncHandler(async (req, res) => {
       return errorResponse(res, 400, "offerId must be an integer");
     }
 
-    const buyerId = String(req.user?.id || "").trim();
-    if (!buyerId || !/^[0-9a-fA-F-]{36}$/.test(buyerId)) {
-      return errorResponse(res, 400, "buyerId must be a valid UUID");
+    let buyerId;
+
+    const offerBuyerRow = await OfferBuyer.findOne({
+      where: { offerId },
+      attributes: ["buyerId"],
+    });
+
+    if (!offerBuyerRow) {
+      return successResponse(res, 200, "No negotiations found", []);
     }
-    const offerBuyer = await offerNegotiationService.getOfferBuyerSafe(offerId, buyerId);
+
+    buyerId = offerBuyerRow.buyerId;
+
+    if (!buyerId) {
+      return successResponse(res, 200, "No negotiations found", []);
+    }
+
+    const offerBuyer = await offerNegotiationService.getOfferBuyerSafe(
+      offerId,
+      buyerId
+    );
+
     if (!offerBuyer) {
       return successResponse(res, 200, "No negotiations found", []);
     }
