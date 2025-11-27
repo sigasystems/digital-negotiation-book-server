@@ -230,10 +230,10 @@ export const getLatestNegotiation = asyncHandler(async (req, res) => {
     );
 
     return successResponse(res, 200, "Latest negotiation history", {
-      offer,
+      // offer,
       products: offer.products,
       latestVersion,
-      history,
+      // history,
     });
   } catch (err) {
     return errorResponse(res, 400, err.message);
