@@ -123,14 +123,14 @@ export const offerNegotiationService = {
 
   async respondOffer(user, offerId, buyerId, action) {
     return withTransaction(async (t) => {
-      const { id: userId, userRole } = user;
+      const { businessOwnerId, userRole, name, email } = user;
       const offer = await ensureActiveOffer(Offer, offerId, t);
       const buyer = await Buyer.findByPk(buyerId, { transaction: t });
       if (!buyer) throw new Error("Buyer not found");
 
       const owner =
         userRole === "business_owner"
-          ? await ensureActiveOwner(BusinessOwner, userId, t)
+          ? await ensureActiveOwner(BusinessOwner, businessOwnerId, t)
           : await ensureActiveOwner(BusinessOwner, buyer.ownerId, t);
 
       if (buyer.ownerId !== offer.businessOwnerId)
@@ -139,24 +139,34 @@ export const offerNegotiationService = {
       const offerBuyer = await OfferBuyer.findOne({ where: { offerId, buyerId }, transaction: t });
       if (!offerBuyer) throw new Error("OfferBuyer not found");
 
-      const lastVersion = await getLastVersion(OfferVersion, offerBuyer.id, t);
+      const latestVersion = await OfferVersion.findOne({
+        where: { offerId },
+        order: [["versionNo", "DESC"]],
+        transaction: t,
+      });
+      if (!latestVersion) throw new Error("No offer version found for this offer");
 
-      return OfferResult.create(
+      const result = await OfferResult.create(
         {
-        offerVersionId: lastVersion?.id,
+        offerVersionId: latestVersion.id,
         offerId,
         ownerId: owner.id,
         buyerId: buyer.id,
-        isAccepted: action === "accept" ? true : null,
-        isRejected: action === "reject" ? true : null,
-        offerName: offer.offerName,
+        isAccepted: action === "accept",
+          acceptedBy: action === "accept" ? name || email || userRole : null,
+        isRejected: action === "reject",
+          rejectedBy: action === "reject" ? name || email || userRole : null,
+        offerName: latestVersion.offerName,
         ownerName: owner.businessName,
         buyerName: buyer.buyersCompanyName,
         ownerCompanyName: owner.businessName,
-        buyerCompanyName: buyer.buyersCompanyName
+        buyerCompanyName: buyer.buyersCompanyName,
         },
         { transaction: t }
       );
+      await offer.update({ status: "close" }, { transaction: t });
+
+      return result;
     });
   },
 

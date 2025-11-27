@@ -1,6 +1,6 @@
 import sequelize from "../config/db.js";
 
-export async function withTransaction(sequelize, callback) {
+export async function withTransaction(callback) {
   const transaction = await sequelize.transaction();
   try {
     const result = await callback(transaction);
