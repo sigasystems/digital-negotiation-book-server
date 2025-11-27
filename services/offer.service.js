@@ -4,14 +4,14 @@ import { createOfferSchema } from "../validations/offer.validation.js";
 import { validateSizeBreakups } from "../utlis/dateFormatter.js";
 import { withTransaction, validateOfferData, ensureOfferOwnership, normalizeDateFields, ensureActiveOwner } from "../utlis/offerHelpers.js";
 import { Op } from "sequelize";
-import {BusinessOwner, Buyer, OfferBuyer, OfferVersion, Offer, OfferProduct, OfferSizeBreakup } from "../models/index.js";
+import {BusinessOwner, Buyer, OfferBuyer, OfferVersion, Offer, OfferProduct, OfferSizeBreakup, OfferDraft } from "../models/index.js";
 import { generateEmailTemplate, sendEmailWithRetry } from "../utlis/emailTemplate.js";
 import transporter from "../config/nodemailer.js";
 
 const offerService = {
   async createOffer(offerBody, user) {
-    return withTransaction(sequelize, async (t) => {
-      const { id: userId, userRole, businessName, businessOwnerId, ownerId, email: ownerEmail } = user;
+    return withTransaction(async (t) => {
+      const { userRole, businessName, businessOwnerId, ownerId, name, email } = user;
 
       const {
         offerName,
@@ -47,13 +47,18 @@ const offerService = {
       }
 
       const resolvedOwnerId = businessOwnerId || ownerId;
+      const combinedProducts = [...products, ...draftProducts];
+      const allSizeBreakups = [
+        ...products.flatMap((p) => p.sizeBreakups || []),
+        ...draftProducts.flatMap((p) => p.sizeBreakups || []),
+      ];
 
       let fromParty, toParty, fromEmail, toEmail;
 
       const buyerCompanyName = buyer.buyersCompanyName;
       const buyerEmail = buyer.contactEmail;
 
-      const businessOwnerEmail = ownerEmail; 
+      const businessOwnerEmail = email;
 
       if (userRole === "business_owner") {
         fromParty = businessName;
@@ -70,20 +75,17 @@ const offerService = {
       }
 
       if (draftNo) {
-        const draft = await offerRepository.findDraftById(draftNo, t);
+        const draft = await OfferDraft.findByPk(draftNo, { transaction: t });
         if (!draft) throw new Error("Draft not found");
       }
 
-      const combinedProducts = [...products, ...draftProducts];
-      const allSizeBreakups = [
-        ...products.flatMap((p) => p.sizeBreakups || []),
-        ...draftProducts.flatMap((p) => p.sizeBreakups || []),
-      ];
 
       const existingOffer = await Offer.findOne({
         where: { offerName, isDeleted: false },
         transaction: t,
       });
+
+      let offer, version;
 
       if (existingOffer) {
         const lastVersion = await OfferVersion.findOne({
@@ -93,7 +95,8 @@ const offerService = {
         });
 
         const newVersionNo = lastVersion ? lastVersion.versionNo + 1 : 1;
-        const version = await OfferVersion.create(
+
+        version = await OfferVersion.create(
           {
             offerId: existingOffer.id,
             buyerId,
@@ -117,74 +120,9 @@ const offerService = {
           { transaction: t }
         );
 
-        const offerProductRecords = await Promise.all(
-          combinedProducts.map(async (p) => {
-            const offerProduct = await OfferProduct.create(
-              {
-                offerId: existingOffer.id,
-                productId: p.productId,
-                productName: p.productName,
-                species: p.species,
-                sizeDetails: p.sizeDetails || null,
-                breakupDetails: p.breakupDetails || null,
-                priceDetails: p.priceDetails || null,
-                packing: p.packing || null,
-              },
-              { transaction: t }
-            );
-
-            if (Array.isArray(p.sizeBreakups)) {
-              const sizeBreakups = p.sizeBreakups.map((s) => ({
-                offerProductId: offerProduct.id,
-                size: s.size,
-                breakup: s.breakup,
-                price: s.price,
-                condition: s.condition,
-              }));
-
-              await OfferSizeBreakup.bulkCreate(sizeBreakups, { transaction: t });
-            }
-
-            return offerProduct;
-          })
-        );
-
-        const loginUrl = `${process.env.CLIENT_URL}/login`;
-
-        const emailHtml = generateEmailTemplate({
-          title: `New Version / Counter Offer`,
-          subTitle: `${offerName} has a new version (${newVersionNo}).`,
-          body: `
-            <p><b>From:</b> ${fromParty}</p>
-            <p><b>To:</b> ${toParty}</p>
-            <p><b>Offer Name:</b> ${offerName}</p>
-            <p><b>Version:</b> ${newVersionNo}</p>
-            <a href="${loginUrl}"
-              style="padding:10px 20px;background:#007bff;color:white;border-radius:5px;text-decoration:none;">
-              Login
-            </a>
-          `,
-        });
-
-        await sendEmailWithRetry(
-          transporter,
-          {
-            from: `"${fromParty}" <${fromEmail}>`,
-            to: toEmail,
-            subject: `Counter Offer / Version Update: ${offerName}`,
-            html: emailHtml,
-          },
-          2
-        );
-
-        return {
-          newOfferCreated: false,
-          offer: existingOffer,
-          version,
-          products: offerProductRecords,
-        };
-      }
-      const offer = await Offer.create(
+        offer = existingOffer;
+      } else {
+        offer = await Offer.create(
         {
           businessOwnerId: resolvedOwnerId,
           offerName,
@@ -210,17 +148,11 @@ const offerService = {
       );
 
       await OfferBuyer.create(
-        {
-          offerId: offer.id,
-          buyerId: buyer.id,
-          ownerId: resolvedOwnerId,
-          status: "open",
-        },
+          { offerId: offer.id, buyerId, ownerId: resolvedOwnerId, status: "open" },
         { transaction: t }
       );
 
-
-      const version = await OfferVersion.create(
+       version = await OfferVersion.create(
         {
           offerId: offer.id,
           buyerId,
@@ -243,6 +175,7 @@ const offerService = {
         },
         { transaction: t }
       );
+      }
 
 
       const offerProductRecords = await Promise.all(
@@ -281,14 +214,16 @@ const offerService = {
       const loginUrl = `${process.env.CLIENT_URL}/login`;
 
       const emailHtml = generateEmailTemplate({
-        title: `Offer Notification`,
-        subTitle: `${offerName} has been created.`,
+        title: existingOffer ? `New Version / Counter Offer` : `Offer Notification`,
+        subTitle: existingOffer
+          ? `${offerName} has a new version (${version.versionNo}).`
+          : `${offerName} has been created.`,
         body: `
           <p><b>From:</b> ${fromParty}</p>
           <p><b>To:</b> ${toParty}</p>
           <p><b>Offer Name:</b> ${offerName}</p>
-          <a href="${loginUrl}"
-            style="padding:10px 20px;background:#007bff;color:white;border-radius:5px;text-decoration:none;">
+          ${existingOffer ? `<p><b>Version:</b> ${version.versionNo}</p>` : ""}
+          <a href="${loginUrl}" style="padding:10px 20px;background:#007bff;color:white;border-radius:5px;text-decoration:none;">
             Login
           </a>
         `,
@@ -299,18 +234,15 @@ const offerService = {
         {
           from: `"${fromParty}" <${fromEmail}>`,
           to: toEmail,
-          subject: `Offer Created: ${offerName}`,
+          subject: existingOffer
+            ? `Counter Offer / Version Update: ${offerName}`
+            : `Offer Created: ${offerName}`,
           html: emailHtml,
         },
         2
       );
 
-      return {
-        newOfferCreated: true,
-        offer,
-        version,
-        products: offerProductRecords,
-      };
+      return { newOfferCreated: !existingOffer, offer, version, products: offerProductRecords };
     });
   },
 
