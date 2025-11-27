@@ -48,14 +48,25 @@ const offerService = {
 
       const resolvedOwnerId = businessOwnerId || ownerId;
 
-      let fromParty, toParty;
+      let fromParty, toParty, fromEmail, toEmail;
+
+      const buyerCompanyName = buyer.buyersCompanyName;
+      const buyerEmail = buyer.contactEmail;
+
+      const businessOwnerEmail = ownerEmail; 
 
       if (userRole === "business_owner") {
         fromParty = businessName;
-        toParty = buyer.buyersCompanyName;
-      } else if (userRole === "buyer") {
-        fromParty = buyer.buyersCompanyName;
+        toParty = buyerCompanyName;
+
+        fromEmail = businessOwnerEmail;
+        toEmail = buyerEmail;
+      } else {
+        fromParty = buyerCompanyName;
         toParty = businessName;
+
+        fromEmail = buyerEmail;
+        toEmail = businessOwnerEmail;
       }
 
       if (draftNo) {
@@ -63,6 +74,116 @@ const offerService = {
         if (!draft) throw new Error("Draft not found");
       }
 
+      const combinedProducts = [...products, ...draftProducts];
+      const allSizeBreakups = [
+        ...products.flatMap((p) => p.sizeBreakups || []),
+        ...draftProducts.flatMap((p) => p.sizeBreakups || []),
+      ];
+
+      const existingOffer = await Offer.findOne({
+        where: { offerName, isDeleted: false },
+        transaction: t,
+      });
+
+      if (existingOffer) {
+        const lastVersion = await OfferVersion.findOne({
+          where: { offerId: existingOffer.id },
+          order: [["versionNo", "DESC"]],
+          transaction: t,
+        });
+
+        const newVersionNo = lastVersion ? lastVersion.versionNo + 1 : 1;
+        const version = await OfferVersion.create(
+          {
+            offerId: existingOffer.id,
+            buyerId,
+            offerName,
+            versionNo: newVersionNo,
+            fromParty,
+            toParty,
+            productName: combinedProducts[0]?.productName || null,
+            speciesName: combinedProducts[0]?.species || null,
+            brand,
+            plantApprovalNumber,
+            sizeBreakups: allSizeBreakups,
+            quantity,
+            tolerance,
+            paymentTerms,
+            grandTotal,
+            shipmentDate,
+            remark,
+            offerValidityDate: offerValidityDate || new Date(),
+          },
+          { transaction: t }
+        );
+
+        const offerProductRecords = await Promise.all(
+          combinedProducts.map(async (p) => {
+            const offerProduct = await OfferProduct.create(
+              {
+                offerId: existingOffer.id,
+                productId: p.productId,
+                productName: p.productName,
+                species: p.species,
+                sizeDetails: p.sizeDetails || null,
+                breakupDetails: p.breakupDetails || null,
+                priceDetails: p.priceDetails || null,
+                packing: p.packing || null,
+              },
+              { transaction: t }
+            );
+
+            if (Array.isArray(p.sizeBreakups)) {
+              const sizeBreakups = p.sizeBreakups.map((s) => ({
+                offerProductId: offerProduct.id,
+                size: s.size,
+                breakup: s.breakup,
+                price: s.price,
+                condition: s.condition,
+              }));
+
+              await OfferSizeBreakup.bulkCreate(sizeBreakups, { transaction: t });
+            }
+
+            return offerProduct;
+          })
+        );
+
+        const loginUrl = `${process.env.CLIENT_URL}/login`;
+
+        const emailHtml = generateEmailTemplate({
+          title: `New Version / Counter Offer`,
+          subTitle: `${offerName} has a new version (${newVersionNo}).`,
+          body: `
+            <p><b>From:</b> ${fromParty}</p>
+            <p><b>To:</b> ${toParty}</p>
+            <p><b>Offer Name:</b> ${offerName}</p>
+            <p><b>Version:</b> ${newVersionNo}</p>
+            <a href="${loginUrl}"
+              style="padding:10px 20px;background:#007bff;color:white;border-radius:5px;text-decoration:none;">
+              Login
+            </a>
+          `,
+        });
+
+        await sendEmailWithRetry(
+          transporter,
+          {
+            from: `"${fromParty}" <${fromEmail}>`,
+            to: toEmail,
+            subject: `Counter Offer / Version Update: ${offerName}`,
+            html: emailHtml,
+          },
+          2
+        );
+
+        return {
+          newOfferCreated: false,
+          offer: existingOffer,
+          version,
+          products: offerProductRecords,
+        };
+      }
       const offer = await Offer.create(
         {
           businessOwnerId: resolvedOwnerId,
@@ -98,10 +219,6 @@ const offerService = {
         { transaction: t }
       );
 
-      const allSizeBreakups = [
-        ...products.flatMap((p) => p.sizeBreakups || []),
-        ...draftProducts.flatMap((p) => p.sizeBreakups || []),
-      ];
 
       const version = await OfferVersion.create(
         {
@@ -111,8 +228,8 @@ const offerService = {
           versionNo: 1,
           fromParty,
           toParty,
-          productName: products[0]?.productName || draftProducts[0]?.productName || null,
-          speciesName: products[0]?.species || draftProducts[0]?.species || null,
+          productName: combinedProducts[0]?.productName || null,
+          speciesName: combinedProducts[0]?.species || null,
           brand,
           plantApprovalNumber,
           sizeBreakups: allSizeBreakups,
@@ -127,7 +244,6 @@ const offerService = {
         { transaction: t }
       );
 
-      const combinedProducts = [...products, ...draftProducts];
 
       const offerProductRecords = await Promise.all(
         combinedProducts.map(async (p) => {
@@ -145,7 +261,7 @@ const offerService = {
             { transaction: t }
           );
 
-          if (p.sizeBreakups && Array.isArray(p.sizeBreakups)) {
+          if (Array.isArray(p.sizeBreakups)) {
             const sizeBreakups = p.sizeBreakups.map((s) => ({
               offerProductId: offerProduct.id,
               size: s.size,
@@ -161,30 +277,18 @@ const offerService = {
         })
       );
 
-      let fromEmail = process.env.EMAIL_USER;
-      let toEmail = userRole === "business_owner" ? buyer.contactEmail : ownerEmail;
 
-      const loginUrl = `${process.env.FRONTEND_URL}/login`;
+      const loginUrl = `${process.env.CLIENT_URL}/login`;
 
       const emailHtml = generateEmailTemplate({
         title: `Offer Notification`,
-        subTitle: `${offerName} has been created and sent.`,
+        subTitle: `${offerName} has been created.`,
         body: `
           <p><b>From:</b> ${fromParty}</p>
           <p><b>To:</b> ${toParty}</p>
           <p><b>Offer Name:</b> ${offerName}</p>
-          <p><b>Buyer:</b> ${buyer.buyersCompanyName} (${buyer.contactEmail})</p>
-          <p><b>Business Owner:</b> ${businessName}</p>
           <a href="${loginUrl}"
-            style="
-              display:inline-block;
-              padding:10px 20px;
-              background:#007bff;
-              color:white;
-              border-radius:5px;
-              font-weight:bold;
-              text-decoration:none;
-            ">
+            style="padding:10px 20px;background:#007bff;color:white;border-radius:5px;text-decoration:none;">
             Login
           </a>
         `,
