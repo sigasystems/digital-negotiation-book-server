@@ -1,13 +1,8 @@
-import transporter from "../config/nodemailer.js";
 import stripe from "../config/stripe.js";
-import { getPlanById } from "../controllers/plan.controller.js";
-import { errorResponse, successResponse } from "../handlers/responseHandler.js";
 import Plan from "../models/plan.model.js";
 import User from "../models/user.model.js";
-import { paymentRepository } from "../repositories/payment.repository.js";
 import { PlanRepository } from "../repositories/plan.repository.js";
 import userRepository from "../repositories/user.repository.js";
-import { emailLoginButton } from "../utlis/emailTemplate.js";
 import { createPlanSchema, updatePlanSchema } from "../validations/plan.validation.js";
 
 export const PlanService = {

@@ -30,7 +30,7 @@ const Subscription = sequelize.define("Subscription", {
     defaultValue: "trialing",
   },
   paymentStatus: {
-    type: DataTypes.ENUM("paid", "unpaid"),
+    type: DataTypes.ENUM("paid", "unpaid" ,"ugrade", "downgrade"),
     defaultValue: "unpaid",
   },
   startDate: {

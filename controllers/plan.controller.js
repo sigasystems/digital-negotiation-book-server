@@ -2,6 +2,7 @@ import { errorResponse, successResponse } from "../handlers/responseHandler.js";
 import { asyncHandler } from "../handlers/asyncHandler.js";
 import { authorizeRoles } from "../utlis/helper.js";
 import {PlanService} from "../services/plan.service.js";
+import Subscription from "../models/subscription.model.js";
 
 export const createPlan = asyncHandler(async (req, res) => {
   try {
@@ -81,6 +82,7 @@ export const upgradeOrRenewPlan = async (req, res) => {
 
     // Call service (no res object here)
     const result = await PlanService.upgradeOrRenewPlan(userId, planId, billingCycle);
+    await Subscription.update({ paymentStatus: "ugrade" }, { where: { userId } });
 
     return successResponse(res, 200, {
       message: "Subscription session created successfully",

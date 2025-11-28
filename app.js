@@ -17,6 +17,7 @@ import {
   paymentRoutes,
   subscriptionRoutes,
   countryRoutes,
+  planUpgradeRoutes,
 } from "./routes/index.js";
 
 import { notFoundHandler, errorHandler } from "./handlers/index.js";
@@ -86,6 +87,7 @@ app.use("/api/product", productRoutes);
 app.use("/api/location", locationRoutes);
 app.use("/api/country", countryRoutes);
 app.use("/api/offer", offerRoute);
+app.use("/api/plan-upgrade", planUpgradeRoutes);
 
 // ---------------------------
 // Error Handlers

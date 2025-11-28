@@ -35,23 +35,6 @@ router.post("/create-checkout-session", async (req, res) => {
       billingCycle === "yearly" ? plan.priceYearly : plan.priceMonthly;
 
     // 6️⃣ Handle free (trial) plan directly
-    if (!price || Number(price) <= 0) {
-      const payment = await Payment.create({
-        userId: user.id,
-        planId: plan.id,
-        amount: 0,
-        status: "success",
-        transactionId: `TRIAL-${Date.now()}`,
-        subscriptionId: null,
-        remarks: "Trial plan activated",
-      });
-
-      return res.json({
-        message: "Trial plan activated successfully",
-        trial: true,
-        paymentId: payment.id,
-      });
-    }
 
     // 7️⃣ Create Stripe session for paid plan
    
