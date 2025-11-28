@@ -51,7 +51,7 @@ const User = sequelize.define(
         is: /^[A-Za-z0-9\s&',.-]{2,100}$/i, // allows names like "Ocean Fresh & Co."
       },
     },
-
+    subscriptionId: { type: DataTypes.INTEGER, defaultValue: null },
     created_at: {
       type: DataTypes.DATE,
       defaultValue: sequelize.literal("now()"),

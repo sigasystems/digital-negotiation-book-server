@@ -240,7 +240,6 @@ export const checkBusinessOwnerUnique = asyncHandler(async (req, res) => {
       };
     } 
 
-    console.log("Validation Results:", results);
 
     return successResponse(res, 200, "Validation completed", results);
   } catch (error) {

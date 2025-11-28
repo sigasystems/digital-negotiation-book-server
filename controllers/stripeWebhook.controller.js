@@ -137,7 +137,6 @@ const stripeWebhookController = async (req, res) => {
             endDate: new Date(stripeSub.current_period_end * 1000),
           });
         } else {
-          console.log("⚠️ Subscription not found in database:", stripeSub.id);
         }
 
         break;
@@ -159,7 +158,6 @@ const stripeWebhookController = async (req, res) => {
             paymentStatus: "unpaid",
           });
         } else {
-          console.log("⚠️ Subscription not found in database:", stripeSub.id);
         }
 
         break;
@@ -172,7 +170,6 @@ const stripeWebhookController = async (req, res) => {
         const invoice = event.data.object;
 
         if (!invoice.subscription) {
-          console.log("⚠️ Invoice without subscription, skipping");
           break;
         }
 
@@ -227,7 +224,6 @@ const stripeWebhookController = async (req, res) => {
         const invoice = event.data.object;
 
         if (!invoice.subscription) {
-          console.log("⚠️ Invoice without subscription, skipping");
           break;
         }
 
@@ -270,7 +266,6 @@ const stripeWebhookController = async (req, res) => {
       // DEFAULT (LOG UNHANDLED EVENTS)
       // ----------------------------------------------------------
       default:
-        console.log(`ℹ️ Unhandled event type: ${event.type}`);
     }
 
     // Always return 200 to acknowledge receipt

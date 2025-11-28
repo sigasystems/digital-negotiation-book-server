@@ -49,7 +49,6 @@ export const PlanRepository = {
 
   markPaid: async (subscriptionId) => {
     if (!subscriptionId) {
-      console.log("No subscriptionId provided to markPaid");
       return;
     }
 
