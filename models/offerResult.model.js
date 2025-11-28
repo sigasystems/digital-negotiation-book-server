@@ -43,7 +43,6 @@ const OfferResult = sequelize.define(
     },
     isAccepted: {
         type: DataTypes.BOOLEAN,
-        allowNull: true,
         defaultValue: null,
         field: "is_accepted",
     },
@@ -54,7 +53,6 @@ const OfferResult = sequelize.define(
     },
     isRejected: {
         type: DataTypes.BOOLEAN,
-        allowNull: true,
         defaultValue: null,
         field: "is_rejected",
         },
@@ -105,8 +103,5 @@ const OfferResult = sequelize.define(
   }
 );
 
-// Associations
-OfferVersion.hasMany(OfferResult, { foreignKey: "OfferVersionId", as: "results" });
-OfferResult.belongsTo(OfferVersion, { foreignKey: "OfferVersionId", as: "OfferVersion" });
 
 export default OfferResult;
