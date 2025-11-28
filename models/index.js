@@ -80,6 +80,46 @@ OfferVersion.belongsTo(OfferBuyer, {
   as: "offerBuyer"
 });
 
+OfferVersion.hasMany(OfferResult, {
+  foreignKey: "offerVersionId",
+  as: "results",
+});
+
+OfferResult.belongsTo(OfferVersion, {
+  foreignKey: "offerVersionId",
+  as: "offerVersion",
+});
+
+Offer.hasMany(OfferResult, {
+  foreignKey: "offerId",
+  as: "results",
+});
+
+OfferResult.belongsTo(Offer, {
+  foreignKey: "offerId",
+  as: "offer",
+});
+
+Buyer.hasMany(OfferResult, {
+  foreignKey: "buyerId",
+  as: "offerResults",
+});
+
+OfferResult.belongsTo(Buyer, {
+  foreignKey: "buyerId",
+  as: "buyer",
+});
+
+BusinessOwner.hasMany(OfferResult, {
+  foreignKey: "ownerId",
+  as: "offerResults",
+});
+
+OfferResult.belongsTo(BusinessOwner, {
+  foreignKey: "ownerId",
+  as: "owner",
+});
+
 
 // Country.hasMany(Location, { foreignKey: "countryId" });
 // Location.belongsTo(Country, { foreignKey: "countryId" });
