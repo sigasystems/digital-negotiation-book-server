@@ -63,7 +63,12 @@ const Offer = sequelize.define("Offer", {
     field: "payment_terms"
   },
   remark: { type: DataTypes.STRING },
-  status: { type: DataTypes.ENUM("open", "close"), defaultValue: "open" },
+  status: { type: DataTypes.ENUM("open",
+    "close",
+    "buyer_accepted",
+    "buyer_rejected",
+    "business_owner_accepted",
+    "business_owner_rejected"), defaultValue: "open" },
   isDeleted: {
     type: DataTypes.BOOLEAN, defaultValue: false,
     field: "is_deleted",

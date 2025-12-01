@@ -164,7 +164,24 @@ export const offerNegotiationService = {
         },
         { transaction: t }
       );
-      await offer.update({ status: "close" }, { transaction: t });
+
+      const statusMap = {
+        business_owner: {
+          accept: "business_owner_accepted",
+          reject: "business_owner_rejected",
+        },
+        buyer: {
+          accept: "buyer_accepted",
+          reject: "buyer_rejected",
+        },
+      };
+      const newStatus =
+        statusMap[userRole] && statusMap[userRole][action]
+          ? statusMap[userRole][action]
+          : null;
+      if (!newStatus) throw new Error("Invalid action or user role");
+
+      await offer.update({ status: newStatus }, { transaction: t });
 
       return result;
     });
