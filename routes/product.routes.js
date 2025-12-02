@@ -9,8 +9,8 @@ const router = express.Router();
 router.post(
   "/add-product",
   authenticateJWT,
-  checkPlanValidity,
-  checkPlanLimit("product"), 
+  // checkPlanValidity,
+  // checkPlanLimit("product"), 
   productController.createProducts
 );
 router.get("/getall-products", authenticateJWT, productController.getAllProducts);
