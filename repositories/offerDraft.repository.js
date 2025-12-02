@@ -64,6 +64,59 @@ export const offerDraftRepository = {
     return OfferDraft.findOne({ where: { draftName } });
   },
 
+  update: async (draftInstance, draftData) => {
+  const transaction = await sequelize.transaction();
+
+  try {
+    if (!draftInstance || !draftInstance.draftNo) {
+      throw new Error("Invalid draft instance passed to update()");
+    }
+
+    const draftNo = draftInstance.draftNo;
+
+    // Lock the parent row ONLY
+    await OfferDraft.findByPk(draftNo, {
+      transaction,
+      lock: transaction.LOCK.UPDATE
+    });
+
+    // Fetch draft with relations (NO lock)
+    const draft = await OfferDraft.findByPk(draftNo, {
+      include: [
+        {
+          model: OfferDraftProduct,
+          as: "draftProducts",
+          include: [{ model: SizeBreakup, as: "sizeBreakups" }]
+        }
+      ],
+      transaction
+    });
+
+    if (!draft) throw new Error("Offer draft not found");
+
+    // Update ONLY draft fields (status, name, etc.)
+    await draft.update(draftData, { transaction });
+
+    await transaction.commit();
+
+    // Return fully populated updated draft
+    return await OfferDraft.findByPk(draftNo, {
+      include: [
+        {
+          model: OfferDraftProduct,
+          as: "draftProducts",
+          include: [{ model: SizeBreakup, as: "sizeBreakups" }]
+        }
+      ]
+    });
+
+  } catch (err) {
+    await transaction.rollback();
+    throw err;
+  }
+},
+
+
   findDraftById: async (draftNo) => {
     return OfferDraft.findOne({
       where: { draftNo },
