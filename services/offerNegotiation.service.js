@@ -167,12 +167,12 @@ export const offerNegotiationService = {
 
       const statusMap = {
         business_owner: {
-          accept: "business_owner_accepted",
-          reject: "business_owner_rejected",
+          accept: "Business Owner Accepted",
+          reject: "Business Owner Rejected",
         },
         buyer: {
-          accept: "buyer_accepted",
-          reject: "buyer_rejected",
+          accept: "Buyer Accepted",
+          reject: "Buyer Rejected",
         },
       };
       const newStatus =
