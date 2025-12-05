@@ -168,34 +168,106 @@ export const getBuyerById = asyncHandler(async (req, res) => {
 export const searchBuyers = asyncHandler(async (req, res) => {
   try {
     authorizeRoles(req, ["business_owner"]);
-    let parsedUrl;
-    const queryObj = req.query.query || {};
     
-    // Alternative: Try to extract from URL directly
-    let statusFromUrl = null;
-    if (parsedUrl) {
-      // Check for query[status] or query%5Bstatus%5D
-      for (const [key, value] of parsedUrl.searchParams.entries()) {
-        if (key === 'query[status]' || key.includes('status')) {
-          statusFromUrl = value;
-          break;
+    // Helper function to parse queries for Vercel
+    const parseVercelQuery = (req) => {
+      const result = {};
+      
+      console.log("=== PARSING QUERY FOR VERCEl ===");
+      console.log("All query keys received:", Object.keys(req.query));
+      console.log("Full req.query:", req.query);
+      
+      // FIRST: Check for direct parameters (status=active)
+      // This should be the primary method
+      if (req.query.status) {
+        result.status = req.query.status;
+        console.log(`Found status in req.query.status: ${result.status}`);
+      }
+      if (req.query.country) {
+        result.country = req.query.country;
+      }
+      if (req.query.isVerified !== undefined) {
+        result.isVerified = req.query.isVerified;
+      }
+      if (req.query.page !== undefined) {
+        result.page = req.query.page;
+      }
+      if (req.query.limit !== undefined) {
+        result.limit = req.query.limit;
+      }
+      
+      // SECOND: Check for query[field]=value format (Vercel might store it differently)
+      Object.keys(req.query).forEach(key => {
+        // Handle query[status]=active format
+        const match = key.match(/^query\[([^\]]+)\]$/);
+        if (match) {
+          const fieldName = match[1];
+          result[fieldName] = req.query[key];
+          console.log(`Found ${fieldName} = ${req.query[key]} in query[${fieldName}]`);
+        }
+        // Handle URL-encoded query%5Bstatus%5D=active
+        const encodedMatch = key.match(/^query%5B([^%]+)%5D$/);
+        if (encodedMatch) {
+          const fieldName = encodedMatch[1];
+          result[fieldName] = req.query[key];
+          console.log(`Found ${fieldName} = ${req.query[key]} in query%5B${fieldName}%5D`);
+        }
+      });
+      
+      // THIRD: Check for nested query object (works locally)
+      if (req.query.query) {
+        console.log("req.query.query exists, type:", typeof req.query.query);
+        if (typeof req.query.query === 'object') {
+          // Merge object properties
+          Object.assign(result, req.query.query);
+          console.log("Merged from req.query.query object:", req.query.query);
+        } else if (typeof req.query.query === 'string') {
+          // Try to parse as JSON string
+          try {
+            const parsed = JSON.parse(req.query.query);
+            Object.assign(result, parsed);
+            console.log("Parsed JSON string from req.query.query:", parsed);
+          } catch (e) {
+            console.log("Could not parse req.query.query as JSON:", e.message);
+          }
         }
       }
+      
+      console.log("Final parsed query object:", result);
+      return result;
+    };
+    
+    // Parse the query using our helper
+    const queryObj = parseVercelQuery(req);
+    
+    // Extract values with defaults
+    const country = queryObj.country || undefined;
+    const status = queryObj.status; // Keep as is, don't default yet
+    const isVerified = queryObj.isVerified !== undefined 
+      ? queryObj.isVerified === "true" 
+      : undefined;
+    
+    console.log("Extracted values:", { country, status, isVerified });
+    
+    // CRITICAL FIX: If status is null/undefined, provide default
+    let finalStatus = status;
+    if (!status) {
+      console.log("WARNING: Status is null/undefined, defaulting to 'active'");
+      finalStatus = 'active';
     }
     
-    // Use the status from URL if queryObj doesn't have it
-    const country = queryObj.country;
-    const status = queryObj.status || statusFromUrl;
-    const isVerified =
-      queryObj.isVerified !== undefined
-        ? queryObj.isVerified === "true"
-        : undefined;
-    console.log("status",status)
+    console.log("Status for validation:", finalStatus);
+    
     const parsed = buyerSearchSchemaValidation
       .pick({ country: true, status: true, isVerified: true })
-      .safeParse({ country, status, isVerified });
+      .safeParse({ 
+        country: country, 
+        status: finalStatus, 
+        isVerified: isVerified 
+      });
 
     if (!parsed.success) {
+      console.log("Validation failed:", parsed.error.errors);
       return errorResponse(
         res,
         400,
@@ -203,15 +275,24 @@ export const searchBuyers = asyncHandler(async (req, res) => {
       );
     }
 
+    console.log("Validation passed, parsed data:", parsed.data);
+    
     const page = Number(queryObj.page) || 0;
     const limit = Number(queryObj.limit) || 10;
     const ownerId = req.user.businessOwnerId;
-    console.log("parsed data",parsed.data)
+    
+    console.log("Calling service with:", {
+      ownerId,
+      query: parsed.data,
+      pagination: { page, limit }
+    });
+    
     const { count, rows } = await buyerService.searchBuyers(
       ownerId,
       parsed.data,
       { page, limit }
     );
+    
     return successResponse(res, 200, "Buyers filtered successfully", {
       buyers: rows,
       totalItems: count,
@@ -219,6 +300,7 @@ export const searchBuyers = asyncHandler(async (req, res) => {
       currentPage: Number(page),
     });
   } catch (err) {
+    console.error("Error in searchBuyers:", err);
     return errorResponse(res, 500, err.message || "Failed to search buyers");
   }
 });
