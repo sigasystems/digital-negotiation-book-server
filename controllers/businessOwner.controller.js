@@ -206,7 +206,7 @@ export const searchBuyers = asyncHandler(async (req, res) => {
     const page = Number(queryObj.page) || 0;
     const limit = Number(queryObj.limit) || 10;
     const ownerId = req.user.businessOwnerId;
-
+    console.log("parsed data",parsed.data)
     const { count, rows } = await buyerService.searchBuyers(
       ownerId,
       parsed.data,
