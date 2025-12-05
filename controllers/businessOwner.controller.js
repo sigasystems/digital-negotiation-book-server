@@ -174,33 +174,60 @@ export const searchBuyers = asyncHandler(async (req, res) => {
     console.log("req.query.query:", req.query.query);
     console.log("req.query.query type:", typeof req.query.query);
     
-    // Log raw query string
-    const url = require('url');
-    const parsedUrl = url.parse(req.originalUrl, true);
-    console.log("Original query string:", parsedUrl.query);
-    let queryObj = {};
+    // Use WHATWG URL API (available in modern Node.js)
+    console.log("Original URL:", req.originalUrl);
     
-    if (req.query.query && typeof req.query.query === 'object') {
-      queryObj = req.query.query;
-    } 
-    else if (req.query.query && typeof req.query.query === 'string') {
+    // Parse URL using WHATWG URL - works in both browser and Node.js
+    let parsedUrl;
+    try {
+      // Create a dummy base URL since we only have the path
+      const baseUrl = `http://${req.headers.host || 'localhost'}`;
+      parsedUrl = new URL(req.originalUrl, baseUrl);
+      console.log("Parsed URL search params:", parsedUrl.searchParams.toString());
+      
+      // Get individual parameters
+      console.log("URLSearchParams entries:");
+      for (const [key, value] of parsedUrl.searchParams.entries()) {
+        console.log(`  ${key} = ${value}`);
+      }
+    } catch (error) {
+      console.log("URL parsing error:", error.message);
+    }
+    
+    const queryObj = req.query.query || {};
+    
+    // DEBUG: Check how queryObj is structured
+    console.log("queryObj:", queryObj);
+    console.log("queryObj.status:", queryObj.status);
+    console.log("queryObj.status type:", typeof queryObj.status);
+    
+    // Check if it's a string that needs parsing
+    if (typeof queryObj === 'string') {
+      console.log("queryObj is a string, attempting to parse as JSON");
       try {
-        queryObj = JSON.parse(req.query.query);
-      } catch (err) {
-        console.error("Failed to parse query string:", err);
+        const parsed = JSON.parse(queryObj);
+        console.log("Parsed queryObj:", parsed);
+      } catch (e) {
+        console.log("Failed to parse as JSON:", e.message);
       }
     }
-    else {
-      const allowedParams = ['country', 'status', 'isVerified', 'page', 'limit'];
-      allowedParams.forEach(param => {
-        if (req.query[param] !== undefined) {
-          queryObj[param] = req.query[param];
+    
+    // Alternative: Try to extract from URL directly
+    let statusFromUrl = null;
+    if (parsedUrl) {
+      // Check for query[status] or query%5Bstatus%5D
+      for (const [key, value] of parsedUrl.searchParams.entries()) {
+        if (key === 'query[status]' || key.includes('status')) {
+          statusFromUrl = value;
+          break;
         }
-      });
+      }
+      console.log("Status from URL search params:", statusFromUrl);
     }
-
+    
+    // Use the status from URL if queryObj doesn't have it
     const country = queryObj.country;
-    const status = queryObj.status;
+    const status = queryObj.status || statusFromUrl;
     const isVerified =
       queryObj.isVerified !== undefined
         ? queryObj.isVerified === "true"
