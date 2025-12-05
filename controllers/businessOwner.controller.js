@@ -190,7 +190,7 @@ export const searchBuyers = asyncHandler(async (req, res) => {
       queryObj.isVerified !== undefined
         ? queryObj.isVerified === "true"
         : undefined;
-
+    console.log("status",status)
     const parsed = buyerSearchSchemaValidation
       .pick({ country: true, status: true, isVerified: true })
       .safeParse({ country, status, isVerified });
