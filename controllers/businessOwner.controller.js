@@ -218,7 +218,7 @@ export const searchBuyers = asyncHandler(async (req, res) => {
       parsed.data,
       { page, limit }
     );
-
+    console.log("rpws",rows)
     return successResponse(res, 200, "Buyers filtered successfully", {
       buyers: rows,
       totalItems: count,
