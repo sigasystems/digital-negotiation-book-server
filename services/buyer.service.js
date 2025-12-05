@@ -270,6 +270,7 @@ export const buyerService = {
 
   searchBuyers: async (ownerId, query = {}, pagination = {}) => {
     const filters = {};
+    filters.ownerId = ownerId;
 
     const country = query.country?.trim();
     const status = query.status?.trim();

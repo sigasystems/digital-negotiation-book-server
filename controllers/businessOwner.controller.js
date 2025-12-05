@@ -168,7 +168,26 @@ export const getBuyerById = asyncHandler(async (req, res) => {
 export const searchBuyers = asyncHandler(async (req, res) => {
   try {
     authorizeRoles(req, ["business_owner"]);
-    const queryObj = req.query.query || {};
+    let queryObj = {};
+    
+    if (req.query.query && typeof req.query.query === 'object') {
+      queryObj = req.query.query;
+    } 
+    else if (req.query.query && typeof req.query.query === 'string') {
+      try {
+        queryObj = JSON.parse(req.query.query);
+      } catch (err) {
+        console.error("Failed to parse query string:", err);
+      }
+    }
+    else {
+      const allowedParams = ['country', 'status', 'isVerified', 'page', 'limit'];
+      allowedParams.forEach(param => {
+        if (req.query[param] !== undefined) {
+          queryObj[param] = req.query[param];
+        }
+      });
+    }
 
     const country = queryObj.country;
     const status = queryObj.status;

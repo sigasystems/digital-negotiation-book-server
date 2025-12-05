@@ -61,8 +61,13 @@ async  findRegistrationNumber(registrationNumber) {
   }
 
   async searchBuyers(ownerId, filters, { limit, offset }) {
+    const finalFilters = { ...filters };
+    if (!finalFilters.ownerId) {
+      finalFilters.ownerId = ownerId;
+    }
+    
     return Buyer.findAndCountAll({
-      where: { ownerId, ...filters },
+      where: finalFilters,
       limit,
       offset,
       order: [["createdAt", "DESC"]],
