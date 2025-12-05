@@ -276,6 +276,7 @@ export const buyerService = {
     const status = query.status?.trim();
     const isVerified =
       typeof query.isVerified !== "undefined" ? query.isVerified : undefined;
+      console.log("search at service",status)
 
     if (country) filters.country = { [Op.iLike]: `%${country}%` };
     if (status) filters.status = status;

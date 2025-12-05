@@ -61,6 +61,7 @@ async  findRegistrationNumber(registrationNumber) {
   }
 
   async searchBuyers(ownerId, filters, { limit, offset }) {
+    console.log("search at repo",filters)
     const finalFilters = { ...filters };
     if (!finalFilters.ownerId) {
       finalFilters.ownerId = ownerId;

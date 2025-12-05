@@ -168,49 +168,8 @@ export const getBuyerById = asyncHandler(async (req, res) => {
 export const searchBuyers = asyncHandler(async (req, res) => {
   try {
     authorizeRoles(req, ["business_owner"]);
-    console.log("Environment:", process.env.NODE_ENV);
-    console.log("Full req.query:", JSON.stringify(req.query, null, 2));
-    console.log("req.query type:", typeof req.query);
-    console.log("req.query.query:", req.query.query);
-    console.log("req.query.query type:", typeof req.query.query);
-    
-    // Use WHATWG URL API (available in modern Node.js)
-    console.log("Original URL:", req.originalUrl);
-    
-    // Parse URL using WHATWG URL - works in both browser and Node.js
     let parsedUrl;
-    try {
-      // Create a dummy base URL since we only have the path
-      const baseUrl = `http://${req.headers.host || 'localhost'}`;
-      parsedUrl = new URL(req.originalUrl, baseUrl);
-      console.log("Parsed URL search params:", parsedUrl.searchParams.toString());
-      
-      // Get individual parameters
-      console.log("URLSearchParams entries:");
-      for (const [key, value] of parsedUrl.searchParams.entries()) {
-        console.log(`  ${key} = ${value}`);
-      }
-    } catch (error) {
-      console.log("URL parsing error:", error.message);
-    }
-    
     const queryObj = req.query.query || {};
-    
-    // DEBUG: Check how queryObj is structured
-    console.log("queryObj:", queryObj);
-    console.log("queryObj.status:", queryObj.status);
-    console.log("queryObj.status type:", typeof queryObj.status);
-    
-    // Check if it's a string that needs parsing
-    if (typeof queryObj === 'string') {
-      console.log("queryObj is a string, attempting to parse as JSON");
-      try {
-        const parsed = JSON.parse(queryObj);
-        console.log("Parsed queryObj:", parsed);
-      } catch (e) {
-        console.log("Failed to parse as JSON:", e.message);
-      }
-    }
     
     // Alternative: Try to extract from URL directly
     let statusFromUrl = null;
@@ -222,7 +181,6 @@ export const searchBuyers = asyncHandler(async (req, res) => {
           break;
         }
       }
-      console.log("Status from URL search params:", statusFromUrl);
     }
     
     // Use the status from URL if queryObj doesn't have it
@@ -233,10 +191,6 @@ export const searchBuyers = asyncHandler(async (req, res) => {
         ? queryObj.isVerified === "true"
         : undefined;
 
-    console.log("Final parsed values:");
-    console.log("- country:", country);
-    console.log("- status:", status);
-    console.log("- isVerified:", isVerified);
     const parsed = buyerSearchSchemaValidation
       .pick({ country: true, status: true, isVerified: true })
       .safeParse({ country, status, isVerified });
@@ -258,7 +212,6 @@ export const searchBuyers = asyncHandler(async (req, res) => {
       parsed.data,
       { page, limit }
     );
-    console.log("rpws",rows)
     return successResponse(res, 200, "Buyers filtered successfully", {
       buyers: rows,
       totalItems: count,
