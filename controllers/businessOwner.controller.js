@@ -168,6 +168,16 @@ export const getBuyerById = asyncHandler(async (req, res) => {
 export const searchBuyers = asyncHandler(async (req, res) => {
   try {
     authorizeRoles(req, ["business_owner"]);
+    console.log("Environment:", process.env.NODE_ENV);
+    console.log("Full req.query:", JSON.stringify(req.query, null, 2));
+    console.log("req.query type:", typeof req.query);
+    console.log("req.query.query:", req.query.query);
+    console.log("req.query.query type:", typeof req.query.query);
+    
+    // Log raw query string
+    const url = require('url');
+    const parsedUrl = url.parse(req.originalUrl, true);
+    console.log("Original query string:", parsedUrl.query);
     let queryObj = {};
     
     if (req.query.query && typeof req.query.query === 'object') {
@@ -196,7 +206,10 @@ export const searchBuyers = asyncHandler(async (req, res) => {
         ? queryObj.isVerified === "true"
         : undefined;
 
-
+    console.log("Final parsed values:");
+    console.log("- country:", country);
+    console.log("- status:", status);
+    console.log("- isVerified:", isVerified);
     const parsed = buyerSearchSchemaValidation
       .pick({ country: true, status: true, isVerified: true })
       .safeParse({ country, status, isVerified });
