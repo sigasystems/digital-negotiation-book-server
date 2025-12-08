@@ -11,7 +11,7 @@ import transporter from "../config/nodemailer.js";
 const offerService = {
   async createOffer(offerBody, user) {
     return withTransaction(async (t) => {
-      const { userRole, businessName, businessOwnerId, ownerId, name, email } = user;
+      const { userRole, businessName, businessOwnerId, ownerId, name, email, id: userId } = user;
 
       const {
         offerName,
@@ -59,6 +59,19 @@ const offerService = {
       const buyerEmail = buyer.contactEmail;
 
       const businessOwnerEmail = email;
+      let businessOwnerBusinessName = businessName;
+      
+      if (userRole === "buyer") {
+        if (ownerId) {
+          const businessOwnerUser = await BusinessOwner.findOne({
+            where: { id: ownerId },
+            transaction: t
+          });         
+          if (businessOwnerUser) {
+            businessOwnerBusinessName = businessOwnerUser.businessName || businessOwnerUser.name;
+          }
+        }
+      }
 
       if (userRole === "business_owner") {
         fromParty = businessName;
@@ -68,7 +81,7 @@ const offerService = {
         toEmail = buyerEmail;
       } else {
         fromParty = buyerCompanyName;
-        toParty = businessName;
+        toParty = businessOwnerBusinessName;
 
         fromEmail = buyerEmail;
         toEmail = businessOwnerEmail;
@@ -126,7 +139,7 @@ const offerService = {
         {
           businessOwnerId: resolvedOwnerId,
           offerName,
-          businessName,
+          businessName: businessOwnerBusinessName,
           fromParty,
           toParty,
           buyerId,
