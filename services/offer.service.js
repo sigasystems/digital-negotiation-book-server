@@ -399,13 +399,13 @@ const offerService = {
   },
 
   async deleteOffer(id, user) {
-    return withTransaction(sequelize, async (t) => {
-      const offer = await offerRepository.findOfferById(id, t);
+    return withTransaction(async (transaction) => {
+      const offer = await offerRepository.findOfferById(id, transaction);
       if (!offer) throw new Error("Offer not found");
       ensureOfferOwnership(offer, user);
       if (offer.isDeleted) throw new Error("Offer already deleted");
 
-      await offerRepository.updateOffer(offer, { isDeleted: true, status: "close" }, t);
+      await offer.destroy({ transaction });
       return offer.id;
     });
   },
