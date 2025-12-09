@@ -14,12 +14,12 @@ const assertOwnerMatch = (recordOwnerId, userOwnerId) => {
 };
 
 export const createWithCountry = async (data, user) => {
-  const ownerid =
+  const ownerId =
     user?.ownerId ||
     user?.businessOwnerId ||
     user?.businessOwner?.id;
 
-  if (!ownerid) return { error: "Unauthorized: ownerId missing" };
+  if (!ownerId) return { error: "Unauthorized: ownerId missing" };
 
   const validation = locationsArraySchema.safeParse(data);
   if (!validation.success)
@@ -35,21 +35,21 @@ export const createWithCountry = async (data, user) => {
     let country = await Country.findOne({
       where: {
         code: countryCode,
-        ownerId: ownerid,
+        ownerId,
       },
     });
     if (!country) {
       country = await Country.create({
         code: countryCode,
         name: countryName,
-        ownerId: ownerid,
+        ownerId,
       });
     }
 
     let location = await Location.findOne({
       where: {
         code,
-        ownerid,
+        ownerId,
       },
     });
 
@@ -58,8 +58,8 @@ export const createWithCountry = async (data, user) => {
         city,
         state,
         code,
-        ownerId: ownerid,
-        countryid: country.id
+        ownerId,
+        countryId: country.id,
       });
     }
 
