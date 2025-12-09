@@ -1,6 +1,6 @@
 import express from "express";
 import { authenticateJWT } from "../middlewares/authenticateJWT.js";
-import {offeDraftController} from "../controllers/index.js"
+import { offeDraftController } from "../controllers/index.js";
 import { checkPlanLimit } from "../middlewares/checkPlanLimit.js";
 import checkPlanValidity from "../middlewares/checkPlanValidity.js";
 
@@ -12,21 +12,25 @@ const {
   deleteOfferDraft,
   updateOfferStatus,
   searchOfferDrafts,
-  fetchLatestDraftNo
+  fetchLatestDraftNo,
 } = offeDraftController;
 
 const router = express.Router();
 
 router.use(authenticateJWT);
-router.post("/create-draft", authenticateJWT  , 
-  // checkPlanValidity , checkPlanLimit("offer"), 
-  createOfferDraft);
+router.post(
+  "/create-draft",
+  authenticateJWT,
+  checkPlanValidity,
+  checkPlanLimit("offer"),
+  createOfferDraft
+);
 router.get("/get-all", getAllOfferDrafts);
 router.get("/get/:id", getOfferDraftById);
 router.patch("/update/:id", updateOfferDraft);
 router.delete("/delete/:id", deleteOfferDraft);
 router.patch("/:id/status", updateOfferStatus);
 router.get("/search", searchOfferDrafts);
-router.get("/latest", fetchLatestDraftNo );
+router.get("/latest", fetchLatestDraftNo);
 
 export default router;

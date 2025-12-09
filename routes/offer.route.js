@@ -25,7 +25,7 @@ const {
 router.use(authenticateJWT);
 
 router.post("/create-offer/:id" ,
-  //  checkPlanLimit("offer"), 
+   checkPlanLimit("offer"), 
    createOffer);
 router.get("/next-offer-name", getNextOfferName);
 router.get("/get-all", getAllOffers);

@@ -6,12 +6,10 @@ export const getPlanUsage = async (req, res) => {
 
     const usage = await UserPlanUsage.findOne({ where: { userId } });
     if (!usage) {
-       console.error("Usage record not found");
     }
 
     const plan = await Plan.findOne({ where: { key: usage.planKey } });
     if (!plan) {
-       console.error("Plan not found for user");
     }
 
     // Build a structured usage response
@@ -37,12 +35,10 @@ export const getPlanUsage = async (req, res) => {
         used: usage.usedLocations,
         max: plan.maxLocations,
         remaining: plan.maxLocations - usage.usedLocations,
-      }
+      },
     };
 
-     res.status(200).json({ success: true, data: response });
-
+    res.status(200).json({ success: true, data: response });
   } catch (error) {
- console.error(error);
   }
 };
