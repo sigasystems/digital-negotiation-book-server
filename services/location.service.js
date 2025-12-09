@@ -43,7 +43,16 @@ export const locationService = {
         delete loc.countryCode;
       }
 
-      const toCreate = locations.map((loc) => ({ ...loc, ownerId }));
+      const missingCountryId = locations.some(loc => !loc.countryId);
+      if (missingCountryId) {
+        return { error: [{ message: "One or more locations missing countryId after processing" }] };
+      }
+
+      const toCreate = locations.map((loc) => ({ 
+        ...loc, 
+        ownerId,
+        countryId: loc.countryId.toString()
+      }));
 
       const codes = toCreate.map((t) => t.code);
       const existingLocations = await locationRepository.findByCodes(codes, ownerId, { transaction: tx });
