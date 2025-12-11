@@ -21,11 +21,56 @@ export const buyerService = {
   addBuyer: async (ownerId, buyerData, owner) => {
     const { registrationNumber, contactEmail, contactName, contactPhone } = buyerData;
 
-    const existingUser = await buyersRepository.findUserByEmail(contactEmail);
+    const existingUser = await buyersRepository.findUserByEmail(contactEmail);  
     if (existingUser) {
-      const error = new Error("Buyer already added.  Please use different email!");
+      if (existingUser.roleId === 3) {
+      const error = new Error("Buyer already added. Please use different email!");
+        error.statusCode = 400;
+        throw error;
+      }
+      await buyersRepository.updateUserRole(existingUser.id, 3);
+      
+      const existingBuyerForUser = await buyersRepository.findBuyerByUserId(existingUser.id);
+      if (existingBuyerForUser) {
+        const error = new Error("Buyer already exists for this user");
       error.statusCode = 400;
       throw error;
+    }
+
+      const newBuyer = await buyersRepository.create({
+        ...buyerData,
+        ownerId,
+        userId: existingUser.id,
+        isVerified: true,
+      });
+
+      const loginUrl = `${process.env.CLIENT_URL}/login`;
+      const mailOptions = {
+        from: `"${owner.businessName}" <${process.env.EMAIL_USER}>`,
+        to: newBuyer.contactEmail,
+        subject: `Buyer account updated for ${owner.businessName}`,
+        html: generateEmailTemplate({
+          title: `Account Updated for ${owner.businessName}`,
+          subTitle: "Your account has been granted buyer access",
+          body: `
+            <p>Hello <b>${newBuyer.contactName || newBuyer.contactEmail}</b>,</p>
+            <p>Your existing account has been granted buyer access to <b>${owner.businessName}</b>.</p>
+            <p>You can now log in with your existing credentials.</p>
+            
+            <p>
+              <a href="${loginUrl}" 
+                style="display:inline-block; background:#4CAF50; color:white; padding:12px 24px; 
+                      text-decoration:none; border-radius:6px; font-weight:bold;">
+                Login
+              </a>
+            </p>
+          `,
+        }),
+      };
+
+      await sendEmailWithRetry(transporter, mailOptions, 2);
+
+      return { created: newBuyer, userUpdated: true };
     }
 
     if (registrationNumber) {
@@ -70,7 +115,6 @@ export const buyerService = {
       isVerified: true,
     });
 
-    // Send welcome email
     const loginUrl = `${process.env.CLIENT_URL}/login`;
     const mailOptions = {
       from: `"${owner.businessName}" <${process.env.EMAIL_USER}>`,
@@ -104,7 +148,7 @@ export const buyerService = {
 
     await sendEmailWithRetry(transporter, mailOptions, 2);
 
-    return { created: newBuyer };
+    return { created: newBuyer, userUpdated: false };
   },
 
   deleteBuyer: async (buyer, owner) => {
@@ -274,13 +318,14 @@ export const buyerService = {
 
     const country = query.country?.trim();
     const productName = query.productName?.trim();
+    const locationName = query.locationName?.trim();
     const status = query.status?.trim();
     const isVerified =
       typeof query.isVerified !== "undefined" ? query.isVerified : undefined;
-      console.log("search at service",status)
 
     if (country) filters.country = { [Op.iLike]: `%${country}%` };
     if (productName) filters.productName = { [Op.iLike]: `%${productName}%` };
+    if (locationName) filters.locationName = { [Op.iLike]: `%${locationName}%` };
     if (status) filters.status = status;
     if (typeof isVerified !== "undefined") filters.isVerified = isVerified;
 

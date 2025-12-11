@@ -54,6 +54,10 @@ const Buyer = sequelize.define('Buyer', {
     type: DataTypes.STRING,
     allowNull: false
   },
+  locationName: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
   state: DataTypes.STRING,
   city: DataTypes.STRING,
   address: DataTypes.TEXT,
