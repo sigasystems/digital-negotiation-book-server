@@ -273,12 +273,14 @@ export const buyerService = {
     filters.ownerId = ownerId;
 
     const country = query.country?.trim();
+    const productName = query.productName?.trim();
     const status = query.status?.trim();
     const isVerified =
       typeof query.isVerified !== "undefined" ? query.isVerified : undefined;
       console.log("search at service",status)
 
     if (country) filters.country = { [Op.iLike]: `%${country}%` };
+    if (productName) filters.productName = { [Op.iLike]: `%${productName}%` };
     if (status) filters.status = status;
     if (typeof isVerified !== "undefined") filters.isVerified = isVerified;
 

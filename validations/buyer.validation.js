@@ -14,6 +14,9 @@ const toCamelCaseKeys = (obj) => {
 
 const baseBuyerSchema = z.object({
   ownerId: z.string().uuid({ message: "Owner ID must be a valid UUID" }),
+  productName: z.string()
+  .min(1, { message: "Product name is required" })
+  .max(255, { message: "Product name cannot exceed 255 characters" }),
 
   // Company Identity
   buyersCompanyName: z
@@ -80,6 +83,7 @@ export const buyerSearchSchemaValidation = z.object({
   limit: z.coerce.number().int().positive().default(10),
   status: z.string().optional(),
   isVerified: z.coerce.boolean().optional(),
+  productName: z.string().optional(),
 });
 
 export const buyerSchema = baseBuyerSchema;
