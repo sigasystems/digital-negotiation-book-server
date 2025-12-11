@@ -190,6 +190,9 @@ export const searchBuyers = asyncHandler(async (req, res) => {
       if (queryParams.productName) {
         result.productName = queryParams.productName;
       }
+      if (queryParams.locationName) {
+        result.locationName = queryParams.locationName;
+      }
       if (queryParams.isVerified !== undefined) {
         result.isVerified = queryParams.isVerified;
       }
@@ -241,7 +244,8 @@ export const searchBuyers = asyncHandler(async (req, res) => {
     // Extract values with defaults
     const country = queryObj.country || undefined;
     const status = queryObj.status;
-    const productName = queryObj.productName; // Keep as is, don't default yet
+    const productName = queryObj.productName;
+    const locationName = queryObj.locationName;
     const isVerified =
       queryObj.isVerified !== undefined
         ? queryObj.isVerified === "true"
@@ -254,12 +258,13 @@ export const searchBuyers = asyncHandler(async (req, res) => {
     }
 
     const parsed = buyerSearchSchemaValidation
-      .pick({ country: true, status: true, isVerified: true, productName: true })
+      .pick({ country: true, status: true, isVerified: true, productName: true, locationName : true })
       .safeParse({
         country: country,
         status: finalStatus,
         isVerified: isVerified,
         productName: productName,
+        locationName: locationName
       });
 
     if (!parsed.success) {

@@ -18,6 +18,11 @@ const baseBuyerSchema = z.object({
   .min(1, { message: "Product name is required" })
   .max(255, { message: "Product name cannot exceed 255 characters" }),
 
+  locationName: z.string()
+  .min(1, { message: "Location name is required" })
+  .max(255, { message: "Location name cannot exceed 255 characters" }),
+
+
   // Company Identity
   buyersCompanyName: z
     .string()
@@ -84,6 +89,7 @@ export const buyerSearchSchemaValidation = z.object({
   status: z.string().optional(),
   isVerified: z.coerce.boolean().optional(),
   productName: z.string().optional(),
+  locationName: z.string().optional(),
 });
 
 export const buyerSchema = baseBuyerSchema;

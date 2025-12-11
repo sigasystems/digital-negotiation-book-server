@@ -8,8 +8,6 @@ class BuyerRepository {
 
   // Check if registration number exists in either table
 async  findRegistrationNumber(registrationNumber) {
-  const owner = await BusinessOwner.findOne({ where: { registrationNumber } });
-  if (owner) return true;
   const buyer = await Buyer.findOne({ where: { registrationNumber } });
   if (buyer) return true;
   return false;
@@ -61,7 +59,6 @@ async  findRegistrationNumber(registrationNumber) {
   }
 
   async searchBuyers(ownerId, filters, { limit, offset }) {
-    console.log("search at repo",filters)
     const finalFilters = { ...filters };
     if (!finalFilters.ownerId) {
       finalFilters.ownerId = ownerId;
@@ -92,9 +89,6 @@ async  findRegistrationNumber(registrationNumber) {
       where: { businessName: businessName.trim() },
     });
   }
-  async findRegistrationNumber(registrationNumber) {
-    return BusinessOwner.findOne({ where: { registrationNumber } });
-  }
 
   // ===== User =====
   async findUserByEmail(email) {
@@ -115,6 +109,14 @@ async  findRegistrationNumber(registrationNumber) {
   return BusinessOwner.findOne({
     where: { userId: userId },
   });
+}
+
+  async updateUserRole(id, roleId) {
+    return User.update({ roleId }, { where: { id } });
+  }
+
+  async findBuyerByUserId(id) {
+    return Buyer.findOne({ where: { id } });
 }
 
 }
