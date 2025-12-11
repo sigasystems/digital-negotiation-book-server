@@ -176,25 +176,28 @@ export const searchBuyers = asyncHandler(async (req, res) => {
 
     // Helper function to parse queries for Vercel
     const parseVercelQuery = (req) => {
+      const queryParams = req.query.query || {};
       const result = {};
 
       // FIRST: Check for direct parameters (status=active)
       // This should be the primary method
-      if (req.query.status) {
-        result.status = req.query.status;
-        console.log(`Found status in req.query.status: ${result.status}`);
+      if (queryParams.status) {
+        result.status = queryParams.status;
       }
-      if (req.query.country) {
-        result.country = req.query.country;
+      if (queryParams.country) {
+        result.country = queryParams.country;
       }
-      if (req.query.isVerified !== undefined) {
-        result.isVerified = req.query.isVerified;
+      if (queryParams.productName) {
+        result.productName = queryParams.productName;
       }
-      if (req.query.page !== undefined) {
-        result.page = req.query.page;
+      if (queryParams.isVerified !== undefined) {
+        result.isVerified = queryParams.isVerified;
       }
-      if (req.query.limit !== undefined) {
-        result.limit = req.query.limit;
+      if (queryParams.page !== undefined) {
+        result.page = queryParams.page;
+      }
+      if (queryParams.limit !== undefined) {
+        result.limit = queryParams.limit;
       }
 
       // SECOND: Check for query[field]=value format (Vercel might store it differently)
@@ -237,7 +240,8 @@ export const searchBuyers = asyncHandler(async (req, res) => {
 
     // Extract values with defaults
     const country = queryObj.country || undefined;
-    const status = queryObj.status; // Keep as is, don't default yet
+    const status = queryObj.status;
+    const productName = queryObj.productName; // Keep as is, don't default yet
     const isVerified =
       queryObj.isVerified !== undefined
         ? queryObj.isVerified === "true"
@@ -250,11 +254,12 @@ export const searchBuyers = asyncHandler(async (req, res) => {
     }
 
     const parsed = buyerSearchSchemaValidation
-      .pick({ country: true, status: true, isVerified: true })
+      .pick({ country: true, status: true, isVerified: true, productName: true })
       .safeParse({
         country: country,
         status: finalStatus,
         isVerified: isVerified,
+        productName: productName,
       });
 
     if (!parsed.success) {
@@ -269,11 +274,6 @@ export const searchBuyers = asyncHandler(async (req, res) => {
     const limit = Number(queryObj.limit) || 10;
     const ownerId = req.user.businessOwnerId;
 
-    console.log("Calling service with:", {
-      ownerId,
-      query: parsed.data,
-      pagination: { page, limit },
-    });
 
     const { count, rows } = await buyerService.searchBuyers(
       ownerId,

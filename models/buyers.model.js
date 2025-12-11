@@ -5,7 +5,7 @@ import {BusinessOwner} from "./index.js";
 const Buyer = sequelize.define('Buyer', {
   id: {
     type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4, // auto-generate if not provided
+    defaultValue: DataTypes.UUIDV4,
     primaryKey: true
   },
   ownerId: {
@@ -47,6 +47,10 @@ const Buyer = sequelize.define('Buyer', {
     allowNull: true
   },
   country: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  productName: {
     type: DataTypes.STRING,
     allowNull: false
   },
