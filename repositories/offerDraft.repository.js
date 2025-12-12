@@ -192,31 +192,38 @@ search: async (ownerId, filters = {}, pagination = {}) => {
   if (filters.productName) {
     const productNameFilter = filters.productName.trim();
     
-    return OfferDraft.findAndCountAll({
-      where,
-      include: [{
-        model: OfferDraftProduct,
-        as: 'draftProducts',
+    const matchingDrafts = await OfferDraftProduct.findAll({
         where: {
           productName: {
             [Op.iLike]: `%${productNameFilter}%`,
           }
         },
-        required: true,
-      }],
-      limit,
-      offset,
-      order: [["createdAt", "DESC"]],
+      attributes: ['draftNo'],
       distinct: true,
-      subQuery: false,
     });
+
+    const draftNumbers = matchingDrafts.map(d => d.draftNo);
+    
+    if (draftNumbers.length > 0) {
+      where.draftNo = {
+        [Op.in]: draftNumbers,
+      };
+    } else {
+      return { count: 0, rows: [] };
+    }
   }
 
   return OfferDraft.findAndCountAll({
     where,
+    include: [{
+      model: OfferDraftProduct,
+      as: 'draftProducts',
+      required: false,
+    }],
     limit,
     offset,
     order: [["createdAt", "DESC"]],
+    distinct: true,
   });
 }
 };
