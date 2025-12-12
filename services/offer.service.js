@@ -459,14 +459,14 @@ const offerService = {
   async getNextOfferName(businessOwnerId) {
   const lastOffer = await offerRepository.findLastOfferByOwner(businessOwnerId);
   if (!lastOffer || !lastOffer.offerName) {
-    return "Offer 1";
+    return this._formatOfferName(1);
   }
   const lastName = lastOffer.offerName.trim();
-  const match = lastName.match(/(\d+)$/);
+  const match = lastName.match(/^(\d+)/);
   const lastNumber = match ? parseInt(match[1], 10) : 0;
   const nextNumber = lastNumber + 1;
 
-  return `Offer ${nextNumber}`;
+  return this._formatOfferName(nextNumber);
 }
 };
 

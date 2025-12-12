@@ -189,6 +189,29 @@ search: async (ownerId, filters = {}, pagination = {}) => {
   const page = Number(pagination.page || 0);
   const offset = page * limit;
 
+  if (filters.productName) {
+    const productNameFilter = filters.productName.trim();
+    
+    return OfferDraft.findAndCountAll({
+      where,
+      include: [{
+        model: OfferDraftProduct,
+        as: 'draftProducts',
+        where: {
+          productName: {
+            [Op.iLike]: `%${productNameFilter}%`,
+          }
+        },
+        required: true,
+      }],
+      limit,
+      offset,
+      order: [["createdAt", "DESC"]],
+      distinct: true,
+      subQuery: false,
+    });
+  }
+
   return OfferDraft.findAndCountAll({
     where,
     limit,

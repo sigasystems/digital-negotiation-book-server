@@ -105,6 +105,7 @@ export const searchOfferDrafts = asyncHandler(async (req, res) => {
         draftNo: filters.draftNo,
         draftName: filters.draftName,
         status: filters.status,
+        productName: filters.productName,
       },
       {
         page: Number(pageIndex),
